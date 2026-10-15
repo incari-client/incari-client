@@ -50,7 +50,9 @@ val gameJvmArgs = repoRoot.dir("work/natives").asFile.let { natives ->
         "-Dorg.lwjgl.system.SharedLibraryExtractPath=${natives.resolve("lwjgl")}",
         "-Dio.netty.native.workdir=${natives.resolve("netty")}",
         "-Dminecraft.launcher.brand=incari-dev",
-    )
+    ) + if (System.getProperty("os.name").lowercase().startsWith("mac")) {
+        listOf("-XstartOnFirstThread")
+    } else emptyList()
 }
 
 /**
