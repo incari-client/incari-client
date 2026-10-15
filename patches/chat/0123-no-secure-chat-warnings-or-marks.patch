@@ -28,3 +28,21 @@ index e82aa07132f5402c6ca9bea3e8e96b7b276439ca..981b7f7e0036b053530345e9f9e0ddf7
 +                GuiMessageTag tag = null;
 +                // Incari end
                  MessageSignature signature = message.signature();
+diff --git a/src/main/java/net/minecraft/client/multiplayer/chat/GuiMessageTag.java b/src/main/java/net/minecraft/client/multiplayer/chat/GuiMessageTag.java
+index 06b9e54bdb5dc0f29154dd9c753b9476b3095973..3d0b7c0ff9980a6d501601ad362b1c856c38d41b 100644
+--- a/src/main/java/net/minecraft/client/multiplayer/chat/GuiMessageTag.java
++++ b/src/main/java/net/minecraft/client/multiplayer/chat/GuiMessageTag.java
+@@ -24,3 +24,5 @@
+     public static GuiMessageTag system() {
+-        return SYSTEM;
++        // Incari start: disable system message indicators
++        return null;
++        // Incari end
+     }
+@@ -28,3 +30,5 @@
+     public static GuiMessageTag systemSinglePlayer() {
+-        return SYSTEM_SINGLE_PLAYER;
++        // Incari start: disable singleplayer system message indicators
++        return null;
++        // Incari end
+     }
