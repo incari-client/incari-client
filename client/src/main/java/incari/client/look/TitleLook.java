@@ -186,26 +186,15 @@ public final class TitleLook {
             }
             y += ROW + ROW_GAP;
         }
-        int half = (columnWidth - ROW_GAP) / 2;
         rise(
                 add,
                 place(
                         Ui.menuButton(
                                 Component.translatable("menu.options"),
                                 Icons.GEAR,
-                                half,
+                                columnWidth,
                                 () -> minecraft.gui.setScreen(new OptionsScreen(title, minecraft.options))),
                         columnX,
-                        y));
-        rise(
-                add,
-                place(
-                        Ui.menuButton(
-                                Component.translatable("menu.quit"),
-                                Icons.POWER,
-                                columnWidth - half - ROW_GAP,
-                                minecraft::stop),
-                        columnX + half + ROW_GAP,
                         y));
 
         layOutCard(title, add, width, height);
