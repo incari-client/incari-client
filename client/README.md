@@ -39,6 +39,8 @@ patches call. It's one compilation because the calls go both ways (ARCHITECTURE.
 - **Replacements are written fresh**, never adapted from the decompiled class (`./incari copycheck`).
 - **Vendor code is compiled as-is**: lint off, never edited to silence a warning. Incari's sources
   are rechecked with the full gates by `strictCompile`.
+- **Screens fit the smallest GUI the game allows, 320x240**, in Incari's font and the pixel font:
+  widgets trim their own text (`Ui.fit`), list rows narrow with the screen. `smokeLayout` checks.
 - **The build needs `./incari setup` first**; it fails with that hint otherwise.
 - **Output matches the jar**: every class Mojang ships is compiled from source (11,383 for 26.3).
 

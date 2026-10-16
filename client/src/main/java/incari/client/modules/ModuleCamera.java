@@ -6,11 +6,13 @@ import incari.framework.event.Events;
 import incari.framework.event.Turn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
+import net.minecraft.client.player.LocalPlayer;
 
 /**
  * The turn and camera events ({@link Events#TURN}, {@link Events#CAMERA}): the mouse's turns,
  * which a module may keep from the player, and the camera's angles each frame, which a module may
- * change without turning the player (Freelook). Game and render thread (one thread).
+ * change without turning the player (Freelook); and what Zoom holds: the field of view and the
+ * game's smooth camera. Game and render thread (one thread).
  */
 public final class ModuleCamera {
 
@@ -22,12 +24,20 @@ public final class ModuleCamera {
 
     private static final CameraAngles ANGLES = new CameraAngles();
 
+    /** The world's field of view as a share of the game's ({@code Game.overrideFov}). */
+    private static float fovScale = 1;
+
+    /** Whether a module holds the smooth camera on, and the player's own while it does. */
+    private static boolean smoothHeld;
+
+    private static boolean smoothBefore;
+
     private ModuleCamera() {}
 
     /**
      * Hook ({@code MouseHandler.turnPlayer}, before the player turns): the turn handed to modules.
      *
-     * @return whether a module took it, so the player doesn't turn
+     * @return whether a module took it, or turned the player itself, so the game doesn't
      */
     public static boolean turn(double x, double y) {
         ModuleSystem system = IncariModules.current();
@@ -39,7 +49,41 @@ public final class ModuleCamera {
         double pitch = options.invertMouseY().get() ? -y : y;
         TURN.reset((float) yaw * DEGREES, (float) pitch * DEGREES);
         system.events().fireTurn(TURN);
-        return TURN.consumed();
+        if (TURN.consumed()) {
+            return true;
+        }
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (!TURN.scaled() || player == null) {
+            return false;
+        }
+        // Already inverted, in degrees: back to the game's units.
+        player.turn(TURN.yaw() / DEGREES, TURN.pitch() / DEGREES);
+        return true;
+    }
+
+    /** Hook ({@code Camera.calculateFov}): the world's field of view as a module leaves it. */
+    public static float fov(float fov) {
+        return fov * fovScale;
+    }
+
+    /** {@code Game.overrideFov}'s. */
+    static void fovScale(float scale) {
+        fovScale = scale;
+    }
+
+    /** {@code Game.overrideSmoothCamera}'s: F8's smooth camera, the player's own put back after. */
+    static void smooth(boolean on) {
+        if (on == smoothHeld) {
+            return;
+        }
+        Options options = Minecraft.getInstance().options;
+        if (on) {
+            smoothBefore = options.smoothCamera;
+            options.smoothCamera = true;
+        } else {
+            options.smoothCamera = smoothBefore;
+        }
+        smoothHeld = on;
     }
 
     /**

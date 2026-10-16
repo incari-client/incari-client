@@ -141,6 +141,15 @@ public interface Game {
         public void overrideGlintColor(int rgb) {}
 
         @Override
+        public void overrideFov(float scale) {}
+
+        @Override
+        public void overrideSmoothCamera(boolean on) {}
+
+        @Override
+        public void overrideSaturation(int rgb) {}
+
+        @Override
         public void effectOnTarget(Effect effect, int count, boolean sound) {}
     };
 
@@ -287,6 +296,25 @@ public interface Game {
 
     /** Colors the enchantment glint {@code rgb} instead of its purple; -1 for the game's own. */
     void overrideGlintColor(int rgb);
+
+    /**
+     * Narrows the world's field of view to {@code scale} of the game's (0.25: a quarter, four times
+     * zoomed), on this client only; the hand and the HUD keep theirs. 1 gives the game's own back.
+     * Held until changed.
+     */
+    void overrideFov(float scale);
+
+    /**
+     * Turns the game's cinematic camera (smooth turning, F8's) on while held; false gives the player's
+     * own back.
+     */
+    void overrideSmoothCamera(boolean on);
+
+    /**
+     * Shows the player's saturation on the hunger bar: the saturated shanks outlined in {@code rgb}. -1 for
+     * the game's own bar. Held until changed.
+     */
+    void overrideSaturation(int rgb);
 
     /**
      * Shows {@code count} of {@code effect}'s particles on the entity the player last hit, or where

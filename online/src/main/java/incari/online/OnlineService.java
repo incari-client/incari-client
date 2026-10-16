@@ -172,6 +172,9 @@ public final class OnlineService implements Online {
     /** The latest release the service named in its last {@code hello} answer. */
     private @Nullable String latestRelease;
 
+    /** That release's changelog, one change a line; empty when the service gave none. */
+    private List<String> releaseNotes = List.of();
+
     private boolean shareServer = true;
     private boolean badge = true;
     private long revision;
@@ -392,6 +395,14 @@ public final class OnlineService implements Online {
      */
     public @Nullable String latestRelease() {
         return latestRelease;
+    }
+
+    /**
+     * What's new in {@link #latestRelease}, one change a line, as the service gave it; empty if it
+     * gave none. Lines that aren't plain text ({@link Releases#note}) are dropped.
+     */
+    public List<String> releaseNotes() {
+        return releaseNotes;
     }
 
     /** Whether a session is saved on this device: the account screen shows "Signing in" while it resumes. */
@@ -1296,17 +1307,21 @@ public final class OnlineService implements Online {
             }
             greeted = true;
             openDeadline = -1;
-            String release = answer.get("release") instanceof JsonObject named
-                            && named.get("version") instanceof JsonPrimitive version
+            JsonObject named = answer.get("release") instanceof JsonObject object ? object : null;
+            String release = named != null && named.get("version") instanceof JsonPrimitive version
                     ? Releases.valid(version.getAsString())
                     : null;
-            if (release != null && !release.equals(latestRelease)) {
-                latestRelease = release;
-                revision++;
+            if (named != null && release != null) {
+                List<String> notes = releaseNotes(named);
+                if (!release.equals(latestRelease) || !notes.equals(releaseNotes)) {
+                    latestRelease = release;
+                    releaseNotes = notes;
+                    revision++;
+                }
             }
-            List<Featured> named = featured(answer);
-            if (named != null && !named.equals(featured)) {
-                featured = named;
+            List<Featured> servers = featured(answer);
+            if (servers != null && !servers.equals(featured)) {
+                featured = servers;
                 revision++;
             }
             backoff.connected(clock.getAsLong());
@@ -1807,6 +1822,23 @@ public final class OnlineService implements Online {
             codes.add(RecoveryCodes.display(code));
         }
         return List.copyOf(codes);
+    }
+
+    /** {@code release.notes}: the first {@link Releases#MAX_NOTES} lines that are plain text, the rest dropped. */
+    private static List<String> releaseNotes(JsonObject release) {
+        if (!(release.get("notes") instanceof JsonArray list)) {
+            return List.of();
+        }
+        List<String> notes = new ArrayList<>();
+        for (JsonElement entry : list) {
+            if (notes.size() < Releases.MAX_NOTES
+                    && entry instanceof JsonPrimitive note
+                    && note.isString()
+                    && Releases.note(note.getAsString())) {
+                notes.add(note.getAsString().strip());
+            }
+        }
+        return List.copyOf(notes);
     }
 
     /** {@code hello}'s {@code featured}, the entries in bounds; null if it named none. */

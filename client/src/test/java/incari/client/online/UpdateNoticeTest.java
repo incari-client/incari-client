@@ -22,8 +22,8 @@ class UpdateNoticeTest {
     }
 
     /** A client that has said hello to a service naming {@code release} as the latest. */
-    private OnlineService greeted(String release) {
-        fake.announceRelease(release);
+    private OnlineService greeted(String release, String... notes) {
+        fake.announceRelease(release, notes);
         Map<String, String> files = new HashMap<>();
         OnlineService online = new OnlineService(
                 "wss://online.test/v1/ws",
@@ -75,5 +75,22 @@ class UpdateNoticeTest {
         UpdateNotice.force(true);
         assertThat(UpdateNotice.newer(greeted(IncariBuild.VERSION))).isNull();
         assertThat(UpdateNotice.newer(greeted("0.0.1"))).isNull();
+    }
+
+    @Test
+    void theNoticeCarriesTheNewerReleasesChangelog() {
+        UpdateNotice.force(true);
+        assertThat(UpdateNotice.notes(greeted("999.0.0", "Faster chunk loading", "A changelog")))
+                .containsExactly("Faster chunk loading", "A changelog");
+        assertThat(UpdateNotice.notes(greeted("999.0.0"))).isEmpty();
+    }
+
+    @Test
+    void noChangelogWithoutANotice() {
+        assertThat(UpdateNotice.notes(greeted("999.0.0", "Faster chunk loading")))
+                .as("dev build")
+                .isEmpty();
+        UpdateNotice.force(true);
+        assertThat(UpdateNotice.notes(greeted("0.0.1", "Old news"))).isEmpty();
     }
 }

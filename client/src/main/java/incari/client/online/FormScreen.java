@@ -65,6 +65,11 @@ abstract class FormScreen extends Screen {
 
     private int statusY = -1;
 
+    /** In {@link #init}: a rebuild asked for now waits until it's done ({@link #rebuildWidgets}). */
+    private boolean laying;
+
+    private boolean layAgain;
+
     private Component status = Component.empty();
     private int statusColor = Theme.MUTED;
     private boolean busy;
@@ -80,6 +85,32 @@ abstract class FormScreen extends Screen {
 
     @Override
     protected final void init() {
+        laying = true;
+        try {
+            lay();
+        } finally {
+            laying = false;
+        }
+        if (layAgain) {
+            layAgain = false;
+            rebuildWidgets();
+        }
+    }
+
+    /**
+     * An answer that comes at once (offline, signed out) asks for a rebuild from inside {@link
+     * #build}: done there, the new layout would stack its widgets onto the half-built old one's.
+     */
+    @Override
+    protected void rebuildWidgets() {
+        if (laying) {
+            layAgain = true;
+            return;
+        }
+        super.rebuildWidgets();
+    }
+
+    private void lay() {
         // A resize lays the screen out again: what was typed stays.
         kept.clear();
         for (AbstractWidget widget : stacked) {

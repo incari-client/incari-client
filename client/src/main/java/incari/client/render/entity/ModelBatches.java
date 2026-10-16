@@ -32,7 +32,8 @@ import org.slf4j.Logger;
  * instead of every entity's every vertex transformed and written on the CPU. The game's
  * {@code ModelFeatureRenderer} owns one of these; its hooks hand each model submit here first
  * ({@link #take}), and whatever is taken is drawn by {@link #draw} with the group the game's own
- * vertices draw in.
+ * vertices draw in, before them: a block entity's crumbling overlay, drawn the game's way, writes no
+ * depth, so a model drawn after it would cover it.
  *
  * <p>Per instance the CPU runs the model's {@code setupAnim} and writes one matrix per part
  * ({@link ModelMesh#writeRows}); the vertices are baked once. Taken: opaque and cutout models (the

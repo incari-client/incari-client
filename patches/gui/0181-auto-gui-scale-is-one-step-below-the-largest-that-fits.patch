@@ -1,0 +1,17 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 17:42:00 -0400
+Subject: [PATCH] gui: Auto GUI scale is one step below the largest that fits
+
+
+diff --git a/src/main/java/net/minecraft/client/Minecraft.java b/src/main/java/net/minecraft/client/Minecraft.java
+index a349a50049e75179aa64e528553d4e6dcdf3302d..26bc167966e04c64cf4b94ad70bc0bc29417275d 100644
+--- a/src/main/java/net/minecraft/client/Minecraft.java
++++ b/src/main/java/net/minecraft/client/Minecraft.java
+@@ -1454,3 +1454,5 @@
+     public void resizeGui() {
+-        int guiScale = this.window.calculateScale(this.options.guiScale().get(), this.isEnforceUnicode());
++        // Incari start: Auto, the default, is one step below the largest scale that fits
++        int guiScale = incari.client.ui.AutoGuiScale.of(this.window, this.options.guiScale().get(), this.isEnforceUnicode());
++        // Incari end
+         this.window.setGuiScale(guiScale);

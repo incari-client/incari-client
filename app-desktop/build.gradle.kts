@@ -12,6 +12,11 @@ plugins {
 dependencies {
     implementation(project(":client"))
     implementation(project(":platform-desktop"))
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj)
+    testRuntimeOnly(libs.junit.launcher)
 }
 
 val repoRoot = rootProject.layout.projectDirectory
@@ -234,6 +239,14 @@ tasks.register<JavaExec>("smokeFit") {
     description = "Screenshots screens with long or player-chosen text at GUI scale 2, 3 and 4 in a 1366x768 window, and at 3 in 1280x720 and 1024x768."
     runsGame(repoRoot.dir("run/smoke-fit").asFile, providers.provider { "IncariSmoke" }, "fit")
     args("--width", "1366", "--height", "768")
+}
+
+// Every screen's layout judged at the GUI sizes players get, from 320x240 up, in both fonts: a
+// widget off the screen or over another, or text past its box, fails. Problems in layout.txt.
+tasks.register<JavaExec>("smokeLayout") {
+    group = "verification"
+    description = "Checks every Incari screen's layout at six GUI sizes from 320x240, in both fonts."
+    runsGame(repoRoot.dir("run/smoke-layout").asFile, providers.provider { "IncariSmoke" }, "layout")
 }
 
 // The HUD editor (ADR 0049) from the module menu, dragged and resized in both GUI presets.

@@ -29,6 +29,7 @@ screenshots under `run/smoke-*/incari-smoke/`, and halts the JVM if the game han
 | `smokeModules`, `smokeFeatures`, `smokeHudModules`, `smokeVisualModules`, `smokeScreenModules`, `smokeWaypoints`, `smokeCosmetics` | Modules turned on in a world, with screenshots |
 | `smokeHudEditor` | Drag and resize in the HUD editor |
 | `smokeScreens`, `smokeLook`, `smokeFit` | Screen edits and skins; the look in both GUI presets; text fitting at GUI scales 2–4 |
+| `smokeLayout` | Every Incari screen at six GUI sizes from 320x240, in both fonts: no widget off the screen or over another, no text past its box. Problems in `layout.txt` |
 
 `worldgenServer -Pworldgen=on|off` runs the dedicated server for ADR 0041's world generation check.
 
@@ -40,5 +41,6 @@ screenshots under `run/smoke-*/incari-smoke/`, and halts the JVM if the game han
 ## How to test
 
 ```sh
-./gradlew :app-desktop:check
+./gradlew :app-desktop:check       # the layout rules' unit tests (LayoutRulesTest)
+./gradlew :app-desktop:smokeLayout # after changing a screen's layout or Ui's widgets
 ```

@@ -7,11 +7,13 @@ import incari.client.ui.Theme;
 import incari.online.OnlineService;
 import incari.online.Social;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -133,6 +135,13 @@ public final class ChatMenu {
         @Override
         protected void updateWidgetNarration(NarrationElementOutput output) {
             defaultButtonNarrationText(output);
+        }
+
+        @Override
+        public @Nullable ComponentPath nextFocusPath(FocusNavigationEvent navigationEvent) {
+            // Never takes the keyboard's focus: the chat screen tries arrow navigation before its
+            // own history keys, so a focusable button here would eat Up and Down.
+            return null;
         }
     }
 }

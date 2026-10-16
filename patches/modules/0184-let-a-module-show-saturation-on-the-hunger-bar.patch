@@ -1,0 +1,17 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 20:25:12 -0400
+Subject: [PATCH] modules: Let a module show saturation on the hunger bar
+
+Saturation outlines each saturated shank over the game's.
+
+diff --git a/src/main/java/net/minecraft/client/gui/Hud.java b/src/main/java/net/minecraft/client/gui/Hud.java
+index 5df4bb155b3435bd21d7060af60aecee9323cd3c..05dcf5d0fd23b85b84eeaf4449277dc288d0f885 100644
+--- a/src/main/java/net/minecraft/client/gui/Hud.java
++++ b/src/main/java/net/minecraft/client/gui/Hud.java
+@@ -1026,2 +1026,5 @@
+             }
++            // Incari start: a module may show saturation on the bar (Saturation)
++            incari.client.modules.ModuleHunger.shank(graphics, player, i, xo, yo, half, full);
++            // Incari end
+         }

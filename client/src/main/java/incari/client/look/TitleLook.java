@@ -67,6 +67,7 @@ public final class TitleLook {
     private static final Component SUBTITLE = Component.literal("CLIENT  ·  " + IncariBuild.VERSION);
     private static final Component CARD_LABEL = Component.literal("OFFLINE MODE");
     private static final Component UPDATE_HINT = Component.literal("GitHub");
+    private static final Component NOTES_HINT = Component.literal("What's new");
     private static final Component COPYRIGHT = Component.translatable("title.credits");
     private static final String VERSION =
             "Incari  ·  Minecraft " + SharedConstants.getCurrentVersion().name();
@@ -99,7 +100,7 @@ public final class TitleLook {
 
     private static long accountRevision = -1;
     /** The update notice at the top, hidden until the online service names a newer release. */
-    private static @Nullable Button update;
+    private static Ui.@Nullable MenuButton update;
 
     private static long updateRevision = -1;
 
@@ -200,8 +201,8 @@ public final class TitleLook {
         layOutCard(title, add, width, height);
 
         // A newer Incari Client: shown once the online service says so (release builds only).
-        Button notice = Ui.menuButton(Component.empty(), Icons.ARROW, UPDATE_HINT, 0, () -> UpdateNotice.open(title));
-        notice.setTooltip(Ui.tooltip("Open Incari Client on GitHub"));
+        Ui.MenuButton notice =
+                Ui.menuButton(Component.empty(), Icons.ARROW, UPDATE_HINT, 0, () -> UpdateNotice.open(title));
         notice.visible = false;
         update = notice;
         updateRevision = -1;
@@ -310,7 +311,7 @@ public final class TitleLook {
      * screens' links on the left and the language and accessibility buttons on the right.
      */
     private static void refreshUpdate(int width) {
-        Button button = update;
+        Ui.MenuButton button = update;
         if (button == null) {
             return;
         }
@@ -327,14 +328,28 @@ public final class TitleLook {
         }
         Component label = Component.literal(
                 newer.isEmpty() ? "A new Incari Client is out" : "Incari Client " + newer + " is out");
+        // With a changelog, the notice opens it (and the tooltip shows it); without, the repository.
+        List<String> notes = UpdateNotice.notes(online);
+        Component hint = notes.isEmpty() ? UPDATE_HINT : NOTES_HINT;
+        button.setHint(hint);
+        button.setTooltip(Ui.tooltip(notes.isEmpty() ? "Open Incari Client on GitHub" : whatsNew(notes)));
         Font font = Minecraft.getInstance().font;
         // The menu button's insets: 8 and the icon (9 + 6) before the label, the hint's gap, 8 after.
-        int buttonWidth = 8 + 15 + font.width(label) + 14 + font.width(UPDATE_HINT) + 8;
+        int buttonWidth = 8 + 15 + font.width(label) + 14 + font.width(hint) + 8;
         button.setMessage(label);
         button.setWidth(buttonWidth);
         int left = linksRight + 6;
         int right = width - 2 * ROW - 16;
         button.setPosition(Math.max(left, Math.min((width - buttonWidth) / 2, right - buttonWidth)), 6);
+    }
+
+    /** The tooltip's changelog: each change on its own line, then where pressing leads. */
+    private static String whatsNew(List<String> notes) {
+        StringBuilder text = new StringBuilder("What's new:");
+        for (String note : notes) {
+            text.append("\n\u2022 ").append(note);
+        }
+        return text.append("\n\nClick to get it").toString();
     }
 
     private static AbstractWidget place(AbstractWidget widget, int x, int y) {
@@ -400,10 +415,15 @@ public final class TitleLook {
         graphics.pose().popMatrix();
     }
 
-    /** {@code TitleScreen.extractRenderState}, after its widgets: the version in the bottom left corner. */
+    /**
+     * {@code TitleScreen.extractRenderState}, after its widgets: the version in the bottom left
+     * corner, a line up where the screen is too narrow for it beside the copyright.
+     */
     public static void extractFront(Screen title, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         Font font = Minecraft.getInstance().font;
-        graphics.text(font, VERSION, 6, title.height - 12, Theme.MUTED, false);
+        int copyrightLeft = title.width - font.width(COPYRIGHT) - 6;
+        int y = 6 + font.width(VERSION) + Theme.GAP * 2 > copyrightLeft ? title.height - 24 : title.height - 12;
+        graphics.text(font, VERSION, 6, y, Theme.MUTED, false);
     }
 
     /** Incari's mark and INCARI, letter-spaced, and the line under them. */

@@ -2,19 +2,25 @@ package incari.client.relay;
 
 import com.mojang.logging.LogUtils;
 import incari.client.platform.ClientPlatform;
+import incari.client.ui.EditedScreen;
 import incari.net.WebSocketUrl;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
@@ -48,8 +54,47 @@ public final class RelayScreen extends Screen {
         row.addChild(Button.builder(
                         Component.literal("Shared..."),
                         button -> Minecraft.getInstance().gui.setScreen(new RelayScreen(multiplayerScreen)))
-                .width(74)
+                .width(ROW_BUTTON)
                 .build());
+    }
+
+    /** The multiplayer screen's bottom buttons' width, as the game and {@link #addButton} make them. */
+    private static final int ROW_BUTTON = 74;
+
+    private static final int ROW_SPACING = 4;
+
+    /**
+     * An edit to {@code JoinMultiplayerScreen} ({@code Looks}): its bottom row, which Incari's
+     * button makes wider than the narrowest screen (320), shares the screen's width when it doesn't
+     * fit. The top row is centred again too: the game centred both by the bottom row's old width.
+     */
+    public static void fitRow(EditedScreen<JoinMultiplayerScreen> edited) {
+        fit(edited, "selectServer.select", 100);
+        fit(edited, "gui.back", ROW_BUTTON);
+    }
+
+    /** The row with the button labelled {@code key}, its buttons {@code full} wide where they fit, centred. */
+    private static void fit(EditedScreen<JoinMultiplayerScreen> edited, String key, int full) {
+        AbstractWidget anchor = edited.find(key);
+        if (anchor == null) {
+            return;
+        }
+        List<AbstractWidget> row = new ArrayList<>();
+        for (AbstractWidget widget : edited.widgets()) {
+            if (widget.getY() == anchor.getY()) {
+                row.add(widget);
+            }
+        }
+        row.sort(Comparator.comparingInt(AbstractWidget::getX));
+        int count = row.size();
+        int each = Math.min(full, (edited.width() - 2 * 6 - (count - 1) * ROW_SPACING) / count);
+        int x = (edited.width() - count * each - (count - 1) * ROW_SPACING) / 2;
+        for (AbstractWidget button : row) {
+            // Set every layout: a screen made wider again gets its full-width buttons back.
+            button.setWidth(each);
+            button.setX(x);
+            x += each + ROW_SPACING;
+        }
     }
 
     @Override

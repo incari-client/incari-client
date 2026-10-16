@@ -101,6 +101,8 @@ public final class WardrobeScreen extends Screen {
     private int gridHeight;
     private int contentHeight;
     private int previewX;
+    /** The preview's width: {@link #PREVIEW}, less on a narrow screen so a card still fits beside. */
+    private int previewWidth = PREVIEW;
 
     private @Nullable PlayerPreview preview;
     private @Nullable Button signIn;
@@ -149,10 +151,12 @@ public final class WardrobeScreen extends Screen {
         addRenderableWidget(done);
 
         // The player, on the right, with whether others see it and the switch for others' below.
-        previewX = panelX + panelWidth - PADDING - PREVIEW;
+        previewWidth = Math.clamp(panelWidth - SIDEBAR - 2 * PADDING - 2 * CARD_WIDTH - GAP, 88, PREVIEW);
+        previewX = panelX + panelWidth - PADDING - previewWidth;
         int previewTop = panelY + PADDING + 14;
         int previewHeight = panelHeight - PADDING - 14 - 64;
-        PlayerPreview player = new PlayerPreview(previewX + 8, previewTop, PREVIEW - 16, previewHeight, this::shown);
+        PlayerPreview player =
+                new PlayerPreview(previewX + 8, previewTop, previewWidth - 16, previewHeight, this::shown);
         Cosmetic.Slot facing = tab.slot;
         if (facing != null) {
             player.face(facing);
@@ -160,7 +164,7 @@ public final class WardrobeScreen extends Screen {
         preview = player;
         addRenderableWidget(player);
         int belowY = previewTop + previewHeight + 4;
-        Button signInButton = Ui.button(Component.literal("Sign In"), PREVIEW, () -> {
+        Button signInButton = Ui.button(Component.literal("Sign In"), previewWidth, () -> {
             if (minecraft != null) {
                 minecraft.gui.setScreen(new AccountScreen(this));
             }
@@ -169,7 +173,7 @@ public final class WardrobeScreen extends Screen {
         signInButton.setTooltip(Ui.tooltip("Sign in so other Incari players can see your cosmetics"));
         signIn = signInButton;
         addRenderableWidget(signInButton);
-        addRenderableWidget(new OthersSwitch(previewX, panelY + panelHeight - 8 - 14, PREVIEW));
+        addRenderableWidget(new OthersSwitch(previewX, panelY + panelHeight - 8 - 14, previewWidth));
 
         gridX = panelX + SIDEBAR + PADDING;
         gridWidth = previewX - PADDING - gridX;
@@ -177,14 +181,20 @@ public final class WardrobeScreen extends Screen {
         outfitName = null;
         if (tab == Tab.OUTFITS) {
             int saveWidth = 70;
-            EditBox name = Ui.textField(font, Component.literal("Outfit name"), gridWidth - saveWidth - Theme.GAP, 24);
+            // A grid too narrow for both side by side puts Save under the name.
+            boolean stacked = gridWidth < saveWidth + Theme.GAP + 80;
+            int nameWidth = stacked ? gridWidth : gridWidth - saveWidth - Theme.GAP;
+            EditBox name = Ui.textField(font, Component.literal("Outfit name"), nameWidth, 24);
             name.setMaxLength(Wardrobe.MAX_OUTFIT_NAME);
-            name.setHint(Component.literal("Name this outfit"));
+            name.setHint(Component.literal(Ui.fit(font, "Name this outfit", nameWidth - 8)));
             name.setPosition(gridX, gridY);
             addRenderableWidget(name);
             outfitName = name;
-            Button save = Ui.button(Component.literal("Save"), saveWidth, this::saveOutfit);
-            save.setPosition(gridX + gridWidth - saveWidth, gridY);
+            if (stacked) {
+                gridY += Theme.CONTROL_HEIGHT + Theme.GAP;
+            }
+            Button save = Ui.button(Component.literal("Save"), stacked ? gridWidth : saveWidth, this::saveOutfit);
+            save.setPosition(stacked ? gridX : gridX + gridWidth - saveWidth, gridY);
             save.setTooltip(Ui.tooltip("Save what you're wearing as an outfit"));
             addRenderableWidget(save);
             gridY += Theme.CONTROL_HEIGHT + PADDING;
@@ -323,9 +333,10 @@ public final class WardrobeScreen extends Screen {
         // The name over the preview, in the name tag cosmetic if one's shown.
         Cosmetic nametag = shown().in(Cosmetic.Slot.NAMETAG);
         String name = PlayerName.name();
-        Component label = nametag == null ? Component.literal(name) : NameTags.styled(name, nametag);
+        Component styled = nametag == null ? Component.literal(name) : NameTags.styled(name, nametag);
+        FormattedCharSequence label = Ui.fit(font, styled, previewWidth - 6);
         int labelWidth = font.width(label);
-        int labelX = previewX + (PREVIEW - labelWidth) / 2;
+        int labelX = previewX + (previewWidth - labelWidth) / 2;
         int labelY = panelY + PADDING;
         graphics.fill(labelX - 3, labelY - 2, labelX + labelWidth + 2, labelY + 9, 0x40000000);
         graphics.text(font, label, labelX, labelY, 0xFFFFFFFF, false);
@@ -336,9 +347,9 @@ public final class WardrobeScreen extends Screen {
         PlayerPreview player = preview;
         int statusY = player == null ? panelY : player.getBottom() + 4;
         boolean shared = wardrobe.shared();
-        Component status = Component.literal(shared ? "Incari players see these" : "Only you see these");
+        String status = Ui.fit(font, shared ? "Incari players see these" : "Only you see these", previewWidth - 12);
         int statusWidth = font.width(status) + 12;
-        int statusX = previewX + (PREVIEW - statusWidth) / 2;
+        int statusX = previewX + (previewWidth - statusWidth) / 2;
         (shared ? Icons.CHECK : Icons.EYE).draw(graphics, statusX, statusY, 9, shared ? Theme.POSITIVE : Theme.MUTED);
         graphics.text(font, status, statusX + 12, statusY + 1, shared ? Theme.POSITIVE : Theme.MUTED, false);
 
@@ -459,8 +470,14 @@ public final class WardrobeScreen extends Screen {
         @Override
         protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
             boolean on = wardrobe.showOthers();
+            // Cut short of the switch beside a narrow preview; the tooltip says what it does.
             graphics.text(
-                    font, getMessage(), getX(), getY() + 2, isHoveredOrFocused() ? Theme.TEXT : Theme.MUTED, false);
+                    font,
+                    Ui.fit(font, getMessage(), getWidth() - Panels.SWITCH_WIDTH - 4),
+                    getX(),
+                    getY() + 2,
+                    isHoveredOrFocused() ? Theme.TEXT : Theme.MUTED,
+                    false);
             Panels.toggle(graphics, getRight() - Panels.SWITCH_WIDTH, getY() + 1, on, 1.0F);
         }
 

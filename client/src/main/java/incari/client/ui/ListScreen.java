@@ -106,11 +106,12 @@ public abstract class ListScreen extends Screen {
         }
         // A glass panel behind the rows, drawn with the backdrop.
         ScreenPanels.clear(this);
+        int rowWidth = rows != null ? rows.getRowWidth() : Theme.ROW_WIDTH;
         ScreenPanels.add(
                 this,
-                this.width / 2 - Theme.ROW_WIDTH / 2 - 12,
+                this.width / 2 - rowWidth / 2 - 12,
                 current.getHeaderHeight() + 4,
-                Theme.ROW_WIDTH + 24,
+                rowWidth + 24,
                 current.getContentHeight() - 8);
     }
 

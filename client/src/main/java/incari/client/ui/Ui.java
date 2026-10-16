@@ -16,6 +16,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
@@ -116,12 +117,34 @@ public final class Ui {
         return text.isEmpty() ? null : Tooltip.create(Component.literal(text));
     }
 
-    /** {@code text} cut to {@code width} with "..." at the end if it's wider; whole if it fits. */
+    /**
+     * {@code text} cut to {@code width} with "..." at the end if it's wider; whole if it fits;
+     * nothing where there's no room even for the "...".
+     */
     public static String fit(Font font, String text, int width) {
         if (font.width(text) <= width) {
             return text;
         }
+        if (width < font.width(ELLIPSIS)) {
+            return "";
+        }
         return cut(font, text, width);
+    }
+
+    /**
+     * {@code text} cut to {@code width} with "..." at the end if it's wider, keeping its style;
+     * whole if it fits. Draw-time: allocates only when it cuts.
+     */
+    public static FormattedCharSequence fit(Font font, Component text, int width) {
+        if (font.width(text) <= width) {
+            return text.getVisualOrderText();
+        }
+        if (width < font.width(ELLIPSIS)) {
+            return FormattedCharSequence.EMPTY;
+        }
+        FormattedText kept = font.substrByWidth(text, Math.max(0, width - font.width(ELLIPSIS)));
+        return Language.getInstance()
+                .getVisualOrder(FormattedText.composite(kept, FormattedText.of(ELLIPSIS, text.getStyle())));
     }
 
     private static String cut(Font font, String text, int width) {
@@ -162,12 +185,17 @@ public final class Ui {
         private static final int ICON = 9;
 
         private final @Nullable Icons icon;
-        private final Component hint;
+        private Component hint;
         private boolean centered;
 
         MenuButton(Component label, @Nullable Icons icon, Component hint, int width, Runnable action) {
             super(0, 0, width, Theme.CONTROL_HEIGHT, label, button -> action.run(), DEFAULT_NARRATION);
             this.icon = icon;
+            this.hint = hint;
+        }
+
+        /** The hint at its right end; empty for none. */
+        public void setHint(Component hint) {
             this.hint = hint;
         }
 
@@ -185,19 +213,25 @@ public final class Ui {
             float t = Motion.ease(
                     Motion.key(getX(), getY(), getWidth(), getHeight()), active && isHoveredOrFocused() ? 1 : 0);
             int x = getX() + 8 + Math.round(t * 3);
+            int right = getRight() - 8;
+            int iconRoom = icon != null ? ICON + 6 : 0;
+            // The hint goes first when both don't fit: a narrow screen keeps the label readable.
+            int hintWidth = hint.getString().isEmpty() ? 0 : font.width(hint);
+            boolean showHint = hintWidth > 0 && x + iconRoom + font.width(getMessage()) + 6 + hintWidth <= right;
+            int room = right - x - iconRoom;
             if (centered) {
-                int content = font.width(getMessage()) + (icon != null ? ICON + 6 : 0);
+                int content = Math.min(font.width(getMessage()), getWidth() - 16 - iconRoom) + iconRoom;
                 x = getX() + (getWidth() - content) / 2;
+                room = content - iconRoom;
             }
             int textY = getY() + (getHeight() - 7) / 2;
             if (icon != null) {
                 icon.draw(graphics, x, getY() + (getHeight() - ICON) / 2, ICON, color);
                 x += ICON + 6;
             }
-            graphics.text(font, getMessage(), x, textY, color, false);
-            if (!hint.getString().isEmpty()) {
-                int hintX = getRight() - 8 - font.width(hint);
-                graphics.text(font, hint, hintX, textY, ARGB.multiplyAlpha(Theme.MUTED, alpha), false);
+            graphics.text(font, fit(font, getMessage(), room), x, textY, color, false);
+            if (showHint) {
+                graphics.text(font, hint, right - hintWidth, textY, ARGB.multiplyAlpha(Theme.MUTED, alpha), false);
             }
         }
     }
@@ -247,7 +281,8 @@ public final class Ui {
             wrap(font, textWidth);
             int textY = getY() + (getHeight() - 9 - lines.size() * 10) / 2;
             int title = active ? Theme.TEXT : Theme.MUTED;
-            graphics.text(font, getMessage(), textX, textY, ARGB.multiplyAlpha(title, alpha), false);
+            graphics.text(
+                    font, fit(font, getMessage(), textWidth), textX, textY, ARGB.multiplyAlpha(title, alpha), false);
             int muted = ARGB.multiplyAlpha(Theme.MUTED, alpha);
             for (FormattedCharSequence line : lines) {
                 textY += 10;

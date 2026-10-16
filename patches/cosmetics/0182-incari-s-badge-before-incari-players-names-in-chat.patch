@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 18:43:22 -0400
+Subject: [PATCH] cosmetics: Incari's badge before Incari players' names in
+ chat
+
+
+diff --git a/src/main/java/net/minecraft/client/gui/components/ChatComponent.java b/src/main/java/net/minecraft/client/gui/components/ChatComponent.java
+index 319262167035fd15c44d3130575da7b080861177..8987d8620f48c0ed6e447e907e11961de9071c10 100644
+--- a/src/main/java/net/minecraft/client/gui/components/ChatComponent.java
++++ b/src/main/java/net/minecraft/client/gui/components/ChatComponent.java
+@@ -266,3 +266,5 @@
+     ) {
+-        GuiMessage message = new GuiMessage(this.minecraft.gui.hud.getGuiTicks(), contents, signature, source, tag);
++        // Incari start: Incari's badge before Incari players' names, as in the tab list
++        GuiMessage message = new GuiMessage(this.minecraft.gui.hud.getGuiTicks(), incari.client.cosmetics.Cosmetics.chatMessage(contents), signature, source, tag);
++        // Incari end
+         if (this.visibleMessageFilter.test(message)) {

@@ -319,6 +319,21 @@ final class ModuleGame implements Game {
     }
 
     @Override
+    public void overrideFov(float scale) {
+        ModuleCamera.fovScale(scale);
+    }
+
+    @Override
+    public void overrideSmoothCamera(boolean on) {
+        ModuleCamera.smooth(on);
+    }
+
+    @Override
+    public void overrideSaturation(int rgb) {
+        ModuleHunger.saturation(rgb);
+    }
+
+    @Override
     public void effectOnTarget(incari.framework.game.Effect effect, int count, boolean sound) {
         ModuleEffects.effect(effect, count, sound);
     }

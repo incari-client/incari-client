@@ -222,7 +222,7 @@ public final class ChatMenuScreen extends Screen {
     private void initSignedOut() {
         int buttonWidth = 120;
         int x = mainX + (mainWidth - buttonWidth) / 2;
-        int y = py + ph / 2 + 4;
+        int y = signedOutTop() + 46 + signedOutLines().size() * 10 + 6;
         if (online.status() == Status.SIGNED_OUT) {
             Button signIn = Ui.button(
                     Component.literal("Sign In"), buttonWidth, () -> minecraft.gui.setScreen(new AccountScreen(this)));
@@ -988,35 +988,41 @@ public final class ChatMenuScreen extends Screen {
 
     private void drawSignedOut(GuiGraphicsExtractor graphics) {
         int cx = mainX + mainWidth / 2;
-        int y = py + ph / 2 - 46;
+        int y = signedOutTop();
         Icons.CHAT.draw(graphics, cx - 12, y, 24, ARGB.multiplyAlpha(Theme.ACCENT, 0.9F));
-        String title;
-        String body;
-        switch (online.status()) {
-            case OFF -> {
-                title = "Chat isn't available";
-                body = "Incari accounts aren't available in this version.";
-            }
-            case UPDATE_NEEDED -> {
-                title = "Update required";
-                body = "Update Incari Client to use chat.";
-            }
-            case CONNECTING -> {
-                title = "Connecting...";
-                body = "Your network may be blocking Incari. The game works the same without it.";
-            }
-            default -> {
-                title = "Incari Chat";
-                body = "Sign in to add friends and message them on any server.";
-            }
-        }
-        graphics.centeredText(font, title, cx, y + 32, Theme.TEXT);
-        List<FormattedCharSequence> wrapped = font.split(Component.literal(body), Math.min(mainWidth - 40, 260));
+        graphics.centeredText(font, signedOutText()[0], cx, y + 32, Theme.TEXT);
         int lineY = y + 46;
-        for (FormattedCharSequence line : wrapped) {
+        for (FormattedCharSequence line : signedOutLines()) {
             graphics.centeredText(font, line, cx, lineY, Theme.MUTED);
             lineY += 10;
         }
+    }
+
+    /**
+     * Where the signed-out panel's icon goes: the icon, title, text and button (if any) centred as
+     * one, so however many lines the text wraps to, the button stays below it.
+     */
+    private int signedOutTop() {
+        boolean button = online.status() == Status.SIGNED_OUT || online.status() == Status.CONNECTING;
+        int height = 46 + signedOutLines().size() * 10 + (button ? 6 + Theme.CONTROL_HEIGHT : 0);
+        return py + Math.max(4, (ph - height) / 2);
+    }
+
+    private List<FormattedCharSequence> signedOutLines() {
+        return font.split(Component.literal(signedOutText()[1]), Math.min(mainWidth - 40, 260));
+    }
+
+    /** The signed-out panel's title and text, for the service's state. */
+    private String[] signedOutText() {
+        return switch (online.status()) {
+            case OFF -> new String[] {"Chat isn't available", "Incari accounts aren't available in this version."};
+            case UPDATE_NEEDED -> new String[] {"Update required", "Update Incari Client to use chat."};
+            case CONNECTING ->
+                new String[] {
+                    "Connecting...", "Your network may be blocking Incari. The game works the same without it."
+                };
+            default -> new String[] {"Incari Chat", "Sign in to add friends and message them on any server."};
+        };
     }
 
     private void drawHome(GuiGraphicsExtractor graphics) {

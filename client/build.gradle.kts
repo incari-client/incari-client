@@ -167,6 +167,8 @@ dependencies {
     implementation(project(":features:cooldownindicator"))
     implementation(project(":features:crosshair"))
     implementation(project(":features:freelook"))
+    implementation(project(":features:zoom"))
+    implementation(project(":features:saturation"))
     implementation(project(":features:weatherchanger"))
     implementation(project(":features:lowshield"))
     implementation(project(":features:shortswords"))

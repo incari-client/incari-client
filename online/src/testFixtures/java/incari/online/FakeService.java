@@ -42,6 +42,9 @@ public final class FakeService implements PlatformNetwork {
     @Nullable
     String release;
 
+    /** That release's changelog, sent as {@code release.notes} when there's any. */
+    List<String> releaseNotes = List.of();
+
     /** The featured servers {@code hello} names as {name, address} (ADR 0062), or none. */
     @Nullable
     List<String[]> featured;
@@ -166,8 +169,9 @@ public final class FakeService implements PlatformNetwork {
     }
 
     /** Names {@code version} as the latest release in every {@code hello} answer from now on (null: none). */
-    public void announceRelease(@Nullable String version) {
+    public void announceRelease(@Nullable String version, String... notes) {
         release = version;
+        releaseNotes = List.of(notes);
     }
 
     /** The client went away (its WebSocket closed): what it said about where it was goes, as on the backend. */
@@ -230,6 +234,11 @@ public final class FakeService implements PlatformNetwork {
                 if (release != null) {
                     JsonObject named = new JsonObject();
                     named.addProperty("version", release);
+                    if (!releaseNotes.isEmpty()) {
+                        JsonArray notes = new JsonArray();
+                        releaseNotes.forEach(notes::add);
+                        named.add("notes", notes);
+                    }
                     ok.add("release", named);
                 }
                 if (featured != null) {

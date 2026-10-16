@@ -69,6 +69,26 @@ class OnlineServiceTest {
     }
 
     @Test
+    void helloCarriesTheReleaseNotes() {
+        assertThat(started().service.releaseNotes()).isEmpty();
+        fake.announceRelease("0.3.1", "Faster chunk loading", "  A changelog  ");
+        assertThat(started().service.releaseNotes()).containsExactly("Faster chunk loading", "A changelog");
+    }
+
+    @Test
+    void releaseNotesThatAreNotPlainTextAreDropped() {
+        String[] notes = new String[Releases.MAX_NOTES + 3];
+        notes[0] = "hidden\u200Bspace";
+        notes[1] = "x".repeat(Releases.MAX_NOTE + 1);
+        for (int i = 2; i < notes.length; i++) {
+            notes[i] = "Change " + i;
+        }
+        fake.announceRelease("0.3.1", notes);
+        List<String> kept = started().service.releaseNotes();
+        assertThat(kept).hasSize(Releases.MAX_NOTES).startsWith("Change 2").doesNotContain(notes[0]);
+    }
+
+    @Test
     void aReleaseThatIsNotAVersionIsIgnored() {
         fake.announceRelease("0.3.1 <script>");
         assertThat(started().service.latestRelease()).isNull();

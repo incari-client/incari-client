@@ -18,6 +18,8 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -38,9 +40,9 @@ import org.jspecify.annotations.Nullable;
  * draw. Others' are drawn only for Incari players the service named, and only while
  * {@link Wardrobe#showOthers} is on.
  *
- * <p>The game calls in from five hooks: the player renderer's layers ({@link #layer}) and its
+ * <p>The game calls in from six hooks: the player renderer's layers ({@link #layer}) and its
  * render state ({@link #extract}), the player model's pose ({@link #pose}), the tab list's names
- * ({@link #tabListName}), and once a tick ({@link #tick}): emotes start and end, trails are left,
+ * ({@link #tabListName}), chat ({@link #chatMessage}), and once a tick ({@link #tick}): emotes start and end, trails are left,
  * moving capes are painted.
  *
  * <p>Render thread (the game's thread in Incari's builds). {@link #extract} runs for every player
@@ -122,15 +124,34 @@ public final class Cosmetics {
         if (online.status() != Online.Status.SIGNED_IN) {
             return name;
         }
-        LocalPlayer me = Minecraft.getInstance().player;
-        boolean badge;
-        if (me != null && me.getUUID().equals(id)) {
-            badge = online.showsBadge();
-        } else {
-            IncariPlayer incari = online.player(id);
-            badge = incari != null && incari.badge() && ClientSettings.SHOW_BADGES.get();
+        return showsBadge(online, id) ? Badges.badgedInTabList(id, name) : name;
+    }
+
+    /**
+     * {@code ChatComponent.addMessage}: {@code message} with Incari's badge before the first mention
+     * of each Incari player in it, as the tab list has it, or {@code message}. Players are found by
+     * their name in the tab list, since most servers send chat as plain text with no sender.
+     */
+    public static Component chatMessage(Component message) {
+        OnlineService online = IncariOnline.service();
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        if (online.status() != Online.Status.SIGNED_IN || connection == null) {
+            return message;
         }
-        return badge ? Badges.badgedInTabList(id, name) : name;
+        return Badges.badgedInChat(message, name -> {
+            PlayerInfo info = connection.getPlayerInfo(name);
+            return info != null && showsBadge(online, info.getProfile().id());
+        });
+    }
+
+    /** Whether the player {@code id}'s badge shows: theirs if they let it, the player's own if they do. */
+    private static boolean showsBadge(OnlineService online, UUID id) {
+        LocalPlayer me = Minecraft.getInstance().player;
+        if (me != null && me.getUUID().equals(id)) {
+            return online.showsBadge();
+        }
+        IncariPlayer incari = online.player(id);
+        return incari != null && incari.badge() && ClientSettings.SHOW_BADGES.get();
     }
 
     /** {@code PlayerModel.setupAnim}'s end: an emote's pose over the game's. */

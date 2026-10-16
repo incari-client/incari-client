@@ -61,7 +61,7 @@ final class Presets {
                     AUTO_SPRINT),
             new Preset(
                     "QoL",
-                    "Getting around: minimap, waypoints, coordinates, FPS and more. " + SHARED,
+                    "Getting around: minimap, waypoints, coordinates, zoom, saturation, FPS and more. " + SHARED,
                     Set.of(
                             "minimap",
                             "waypoints",
@@ -70,6 +70,8 @@ final class Presets {
                             "shulkertooltips",
                             "clearchat",
                             "freelook",
+                            "zoom",
+                            "saturation",
                             "customscoreboard",
                             "togglesprint",
                             "fullbright",

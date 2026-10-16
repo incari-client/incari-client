@@ -21,6 +21,12 @@ public final class ControlList extends ContainerObjectSelectionList<ControlList.
     /** A label's description is wrapped to this, as the game wraps its own tooltips. */
     private static final int TOOLTIP_WIDTH = 200;
 
+    /**
+     * Kept clear at each side of the rows: the scrollbar (its width and gap) and the panel's edge
+     * ({@link ListScreen}), so a screen as narrow as the game allows (320) never cuts them off.
+     */
+    public static final int EDGE = 16;
+
     /** An empty list the width of the screen, between {@code y} and {@code y + height}. */
     public ControlList(Minecraft minecraft, int width, int height, int y) {
         super(minecraft, width, height, y, Theme.ROW_HEIGHT);
@@ -42,7 +48,7 @@ public final class ControlList extends ContainerObjectSelectionList<ControlList.
 
     @Override
     public int getRowWidth() {
-        return Theme.ROW_WIDTH;
+        return Math.max(0, Math.min(Theme.ROW_WIDTH, getWidth() - 2 * EDGE));
     }
 
     @Override
@@ -143,7 +149,12 @@ public final class ControlList extends ContainerObjectSelectionList<ControlList.
         @Override
         public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
             int y = getContentBottom() - minecraft.font.lineHeight - 2;
-            graphics.centeredText(minecraft.font, text, getContentXMiddle(), y, Theme.ACCENT);
+            graphics.centeredText(
+                    minecraft.font,
+                    Ui.fit(minecraft.font, text, getContentWidth()),
+                    getContentXMiddle(),
+                    y,
+                    Theme.ACCENT);
         }
 
         @Override
@@ -188,17 +199,29 @@ public final class ControlList extends ContainerObjectSelectionList<ControlList.
                 x -= Theme.GAP;
             }
             int labelY = getContentYMiddle() - minecraft.font.lineHeight / 2;
-            graphics.text(minecraft.font, label, getContentX(), labelY, Theme.TEXT);
-            Component shown = tooltip;
-            int labelRight = getContentX() + minecraft.font.width(label);
-            if (shown != null
+            // The label gets what the controls leave; cut, it shows whole in its tooltip.
+            int room = x - getContentX();
+            boolean cut = minecraft.font.width(label) > room;
+            graphics.text(minecraft.font, Ui.fit(minecraft.font, label, room), getContentX(), labelY, Theme.TEXT);
+            int labelRight = getContentX() + Math.min(room, minecraft.font.width(label));
+            if ((cut || tooltip != null)
                     && mouseX >= getContentX()
                     && mouseX < labelRight
                     && mouseY >= getContentY()
                     && mouseY < getContentBottom()) {
+                Component description = tooltip;
+                Component shown = cut || description == null ? whole() : description;
                 graphics.setTooltipForNextFrame(
                         minecraft.font, minecraft.font.split(shown, TOOLTIP_WIDTH), mouseX, mouseY);
             }
+        }
+
+        /** The label and its description, for a label cut short. */
+        private Component whole() {
+            Component description = tooltip;
+            return description == null
+                    ? label
+                    : Component.empty().append(label).append("\n").append(description);
         }
 
         @Override

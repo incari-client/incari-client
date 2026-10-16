@@ -28,6 +28,7 @@ README. How to write and add one: [`AGENTS.md`](AGENTS.md).
 | [No Hurt Cam](nohurtcam/README.md) | Visual | No camera tilt when hurt |
 | [Old Textures](oldtextures/README.md) | Visual | Programmer Art on and off |
 | [Reach Display](reachdisplay/README.md) | Combat | Your last hit's reach |
+| [Saturation](saturation/README.md) | HUD | Saturation shown on the hunger bar |
 | [Shield & Totem HUD](shieldtotem/README.md) | HUD | Shield durability and totem count |
 | [Short Swords](shortswords/README.md) | Visual | Smaller first-person swords |
 | [Shulker Tooltips](shulkertooltips/README.md) | Utility | Shulker contents as a grid |
@@ -35,5 +36,6 @@ README. How to write and add one: [`AGENTS.md`](AGENTS.md).
 | [Toggle Sprint](togglesprint/README.md) | Movement | Latch sprint and sneak |
 | [Waypoints](waypoints/README.md) | Utility | Marked places over the world |
 | [Weather Changer](weatherchanger/README.md) | Visual | Your own weather and time of day |
+| [Zoom](zoom/README.md) | Visual | Hold C to zoom in, as OptiFine's |
 
 Test one module with `./gradlew :features:<name>:check`.

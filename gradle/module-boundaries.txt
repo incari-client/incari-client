@@ -31,6 +31,8 @@
 :features:cooldownindicator :framework
 :features:crosshair :framework
 :features:freelook :framework
+:features:zoom :framework
+:features:saturation :framework
 :features:weatherchanger :framework
 :features:lowshield :framework
 :features:shortswords :framework
@@ -43,7 +45,7 @@
 :features:glintcolor :framework
 :features:hiteffects :framework
 :features:fullbright :framework
-:client               :platform-api :net :via :mesher :framework :online :features:togglesprint :features:lowfire :features:nohurtcam :features:clearchat :features:armorpotionview :features:customscoreboard :features:waypoints :features:minimap :features:fpsdisplay :features:cps :features:reachdisplay :features:keystrokes :features:coordinates :features:shieldtotem :features:cooldownindicator :features:crosshair :features:freelook :features:weatherchanger :features:lowshield :features:shortswords :features:oldanimations :features:shulkertooltips :features:theme :features:oldtextures :features:blockoutline :features:hitcolor :features:glintcolor :features:hiteffects :features:fullbright
+:client               :platform-api :net :via :mesher :framework :online :features:togglesprint :features:lowfire :features:nohurtcam :features:clearchat :features:armorpotionview :features:customscoreboard :features:waypoints :features:minimap :features:fpsdisplay :features:cps :features:reachdisplay :features:keystrokes :features:coordinates :features:shieldtotem :features:cooldownindicator :features:crosshair :features:freelook :features:zoom :features:saturation :features:weatherchanger :features:lowshield :features:shortswords :features:oldanimations :features:shulkertooltips :features:theme :features:oldtextures :features:blockoutline :features:hitcolor :features:glintcolor :features:hiteffects :features:fullbright
 :render-webgl2        :client
 :app-desktop          :client :platform-api :platform-desktop
 :app-web              :client :platform-api :platform-web :web-classlib :render-webgl2 :tools:webbuild :tools:shaders :tools:sprites

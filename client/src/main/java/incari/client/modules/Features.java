@@ -22,6 +22,7 @@ import incari.features.nohurtcam.NoHurtCam;
 import incari.features.oldanimations.OldAnimations;
 import incari.features.oldtextures.OldTextures;
 import incari.features.reachdisplay.ReachDisplay;
+import incari.features.saturation.Saturation;
 import incari.features.shieldtotem.ShieldTotem;
 import incari.features.shortswords.ShortSwords;
 import incari.features.shulkertooltips.ShulkerTooltips;
@@ -29,6 +30,7 @@ import incari.features.theme.ThemeEditor;
 import incari.features.togglesprint.ToggleSprint;
 import incari.features.waypoints.WaypointsModule;
 import incari.features.weatherchanger.WeatherChanger;
+import incari.features.zoom.Zoom;
 import incari.framework.Module;
 import java.util.List;
 
@@ -52,12 +54,14 @@ final class Features {
                 new Coordinates(),
                 new ArmorPotionView(),
                 new ShieldTotem(),
+                new Saturation(),
                 new CustomScoreboard(),
                 new Minimap(),
                 new CooldownIndicator(),
                 new HitEffects(),
                 new OldAnimations(),
                 new Freelook(),
+                new Zoom(),
                 new CrosshairEditor(),
                 new LowShield(),
                 new ShortSwords(),

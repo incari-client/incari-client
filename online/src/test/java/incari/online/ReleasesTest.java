@@ -31,4 +31,19 @@ class ReleasesTest {
         assertThat(Releases.newer("2.0", "dev")).isFalse();
         assertThat(Releases.newer(null, "1.0")).isFalse();
     }
+
+    @Test
+    void aNoteIsPlainTextThatFits() {
+        assertThat(Releases.note("Faster chunk loading")).isTrue();
+        assertThat(Releases.note("x".repeat(Releases.MAX_NOTE))).isTrue();
+        assertThat(Releases.note("\uD83D\uDE00".repeat(Releases.MAX_NOTE)))
+                .as("counted in characters")
+                .isTrue();
+        assertThat(Releases.note("x".repeat(Releases.MAX_NOTE + 1))).isFalse();
+        assertThat(Releases.note("")).isFalse();
+        assertThat(Releases.note("   ")).isFalse();
+        assertThat(Releases.note("two\nlines")).isFalse();
+        assertThat(Releases.note("hidden\u200Bspace")).isFalse();
+        assertThat(Releases.note("right\u202Eto left")).isFalse();
+    }
 }

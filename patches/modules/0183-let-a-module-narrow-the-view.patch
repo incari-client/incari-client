@@ -1,0 +1,17 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 20:25:12 -0400
+Subject: [PATCH] modules: Let a module narrow the view
+
+Zoom holds the world's field of view at a share of the game's; the hand and the HUD keep theirs.
+
+diff --git a/src/main/java/net/minecraft/client/Camera.java b/src/main/java/net/minecraft/client/Camera.java
+index 76eea5796c84d07a2af7d7ca3b0ef35694b457f8..795241e39fe0eb45bcd2f92f39d2f74bbce198ac 100644
+--- a/src/main/java/net/minecraft/client/Camera.java
++++ b/src/main/java/net/minecraft/client/Camera.java
+@@ -227,2 +227,5 @@
+         float fov = this.minecraft.options.fov().get().intValue() * Mth.lerp(partialTicks, this.oldFovModifier, this.fovModifier);
++        // Incari start: a module may narrow the view (Zoom)
++        fov = incari.client.modules.ModuleCamera.fov(fov);
++        // Incari end
+         return this.modifyFovBasedOnDeathOrFluid(partialTicks, fov);

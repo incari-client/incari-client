@@ -173,6 +173,8 @@ public final class SmokeTest {
                 screenModulesScenario();
             } else if (mode.equals("fit")) {
                 fitScenario();
+            } else if (mode.equals("layout")) {
+                layoutScenario();
             } else if (mode.equals("cosmetics")) {
                 cosmeticsScenario();
             } else if (mode.equals("mesher")) {
@@ -1232,6 +1234,178 @@ public final class SmokeTest {
         // Back to the window the run started with.
         onGameThread(() -> minecraft.getWindow().platformWindow().setWindowed(64, 64, 1366, 768));
         sleep(Duration.ofMillis(500));
+    }
+
+    /**
+     * The GUI sizes players' windows give, each a framebuffer and a GUI scale: the smallest the
+     * game allows (320x240), a Chromebook's browser tab at the largest scale (683x325), and narrow,
+     * short and wide ones between.
+     */
+    private static final int[][] LAYOUT_SIZES = {
+        {640, 480, 2}, {1280, 720, 3}, {1024, 768, 3}, {1366, 650, 2}, {1920, 600, 2}, {1920, 1080, 3},
+    };
+
+    /**
+     * Every screen's layout judged, not looked at ({@link LayoutCheck}): Incari's screens and the
+     * game's that Incari changes, at each of {@link #LAYOUT_SIZES}, in Incari's font and in the
+     * game's pixel font (a theme's choice, and what's drawn if the page can't load Incari's). A
+     * widget off the screen or over another, or text past its box, fails, and the screen's picture
+     * is kept. Every problem is listed in {@code layout.txt}.
+     */
+    private void layoutScenario() throws Exception {
+        waitForTitle();
+        incari.framework.ModuleSystem system = onGameThread(incari.client.modules.IncariModules::system);
+        onGameThread(
+                () -> incari.client.online.IncariOnline.service().wardrobe().saveOutfit("My Practice Server Setup"));
+        java.util.Map<String, Callable<Screen>> screens = new java.util.LinkedHashMap<>();
+        screens.put("title", TitleScreen::new);
+        screens.put(
+                "multiplayer",
+                () -> new net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen(new TitleScreen()));
+        screens.put(
+                "edit-server",
+                () -> new net.minecraft.client.gui.screens.ManageServerScreen(
+                        new TitleScreen(),
+                        net.minecraft.network.chat.Component.literal("Edit Server Info"),
+                        ok -> {},
+                        new ServerData("Test", "ws://127.0.0.1:8801", ServerData.Type.OTHER)));
+        screens.put("modules", () -> {
+            incari.client.modules.IncariModules.openMenu(new TitleScreen());
+            return minecraft.gui.screen();
+        });
+        screens.put("profiles", () -> {
+            incari.client.modules.IncariModules.openProfiles(new TitleScreen());
+            return minecraft.gui.screen();
+        });
+        screens.put("theme", () -> {
+            incari.client.modules.IncariModules.openSettings(
+                    new TitleScreen(), java.util.Objects.requireNonNull(system.module("theme")));
+            return minecraft.gui.screen();
+        });
+        screens.put("text-entry", () -> {
+            system.game().askText("Import theme", "Paste a theme code (Ctrl+V), then press Done.", "", text -> {});
+            return minecraft.gui.screen();
+        });
+        screens.put("settings", () -> new incari.client.settings.IncariSettingsScreen(new TitleScreen()));
+        screens.put("recorder", () -> new incari.client.recorder.RecorderScreen(new TitleScreen()));
+        screens.put("edit-profile", () -> incari.client.profile.ProfileScreen.from(new TitleScreen()));
+        screens.put("wardrobe-outfits", () -> incari.client.cosmetics.WardrobeScreen.showing(new TitleScreen(), null));
+        screens.put(
+                "wardrobe-emotes",
+                () -> incari.client.cosmetics.WardrobeScreen.showing(
+                        new TitleScreen(), incari.online.Cosmetic.Slot.EMOTE));
+        screens.put(
+                "wardrobe-nametags",
+                () -> incari.client.cosmetics.WardrobeScreen.showing(
+                        new TitleScreen(), incari.online.Cosmetic.Slot.NAMETAG));
+        screens.put("credits", () -> new incari.client.credits.CreditsScreen(new TitleScreen()));
+        screens.put("chat-menu", () -> new incari.client.online.ChatMenuScreen(new TitleScreen()));
+        screens.put("account", () -> new incari.client.online.AccountScreen(new TitleScreen()));
+        for (String form : new String[] {
+            "SignInScreen",
+            "CreateAccountScreen",
+            "ForgotPasswordScreen",
+            "ChangePasswordScreen",
+            "BlockedPlayersScreen"
+        }) {
+            screens.put(form, () -> {
+                var constructor = Class.forName("incari.client.online." + form)
+                        .asSubclass(Screen.class)
+                        .getDeclaredConstructor(Screen.class);
+                constructor.setAccessible(true);
+                return constructor.newInstance(new TitleScreen());
+            });
+        }
+        screens.put("release-notes", () -> {
+            var constructor = Class.forName("incari.client.online.ReleaseNotesScreen")
+                    .asSubclass(Screen.class)
+                    .getDeclaredConstructor(Screen.class, String.class, java.util.List.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(
+                    new TitleScreen(),
+                    "0.1.1",
+                    java.util.List.of(
+                            "Buttons and text fit their boxes on small screens and at browser zoom.",
+                            "The default GUI scale is one step smaller, so menus leave room for the game."));
+        });
+        screens.put("relay", () -> new incari.client.relay.RelayScreen(new TitleScreen()));
+        screens.put(
+                "relay-connect",
+                () -> new incari.client.relay.RelayConnectScreen(new TitleScreen(), "ws://127.0.0.1:9", "ABCD"));
+        screens.put(
+                "password",
+                () -> new incari.client.eagler.PasswordScreen(
+                        new TitleScreen(),
+                        new ServerData("Smoke", "localhost", ServerData.Type.OTHER),
+                        ServerAddress.parseString("localhost"),
+                        new incari.client.eagler.EaglerAuth.Request(
+                                "localhost",
+                                incari.net.eagler.EaglerPassword.PLAINTEXT,
+                                "Welcome back to the server. Log in with the password you registered with"
+                                        + " last time. If you forgot it, ask a staff member on Discord to reset"
+                                        + " it for you.")));
+
+        StringBuilder all = new StringBuilder();
+        String[][] fonts = {{"smooth", "red_hat_display.ttf"}, {"pixel", null}};
+        for (String[] font : fonts) {
+            onGameThread(() -> {
+                incari.client.ui.SmoothFont.useFont(font[1], 1.0F);
+                return null;
+            });
+            sleep(Duration.ofSeconds(2));
+            for (int[] size : LAYOUT_SIZES) {
+                if (!windowSize(size[0], size[1])) {
+                    continue;
+                }
+                guiScale(size[2]);
+                String at = onGameThread(() -> minecraft.getWindow().getGuiScaledWidth() + "x"
+                        + minecraft.getWindow().getGuiScaledHeight());
+                for (var entry : screens.entrySet()) {
+                    String name = entry.getKey();
+                    java.util.List<String> problems;
+                    try {
+                        onGameThread(() -> {
+                            Screen screen = entry.getValue().call();
+                            if (!java.util.Objects.equals(minecraft.gui.screen(), screen)) {
+                                minecraft.gui.setScreen(screen);
+                            }
+                            return null;
+                        });
+                        // A frame or two for what a screen lays out after it opens (a caption, a fetch).
+                        sleep(Duration.ofMillis(300));
+                        problems = onGameThread(() -> {
+                            Screen shown = minecraft.gui.screen();
+                            return shown == null
+                                    ? java.util.List.of("no screen open")
+                                    : LayoutCheck.problems(minecraft, shown);
+                        });
+                    } catch (RuntimeException e) {
+                        problems = java.util.List.of("couldn't open: " + e);
+                    }
+                    String label = name + " at " + at + " (" + font[0] + ")";
+                    report.check(
+                            "layout " + label,
+                            problems.isEmpty(),
+                            problems.isEmpty()
+                                    ? ""
+                                    : problems.get(0)
+                                            + (problems.size() > 1 ? " (+" + (problems.size() - 1) + " more)" : ""));
+                    if (!problems.isEmpty()) {
+                        screenshot("layout-" + name + "-" + at + "-" + font[0]);
+                        all.append(label).append('\n');
+                        problems.forEach(
+                                problem -> all.append("  ").append(problem).append('\n'));
+                    }
+                }
+            }
+        }
+        onGameThread(() -> {
+            incari.client.ui.SmoothFont.useFont("red_hat_display.ttf", 1.0F);
+            minecraft.gui.setScreen(new TitleScreen());
+            return null;
+        });
+        Files.createDirectories(directory);
+        Files.writeString(directory.resolve("layout.txt"), all.isEmpty() ? "No problems.\n" : all.toString());
     }
 
     /**

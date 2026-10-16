@@ -17,13 +17,16 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Serves {@code :online}'s fake service on {@code ws://localhost:<port>/v1/ws}, one Netty thread for
  * every connection (the fake is single-threaded). Accounts, sessions and presence live in memory and
  * are gone when it stops. Sign-up's proof of work asks for {@link FakeService#BITS} bits.
- * {@code --release <version>} names a latest release in every {@code hello} answer.
+ * {@code --release <version>} names a latest release in every {@code hello} answer, and each
+ * {@code --note <change>} a line of its changelog.
  */
 // Writes are fire-and-forget: a failed one closes its channel.
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -34,16 +37,19 @@ public final class Main {
     public static void main(String[] args) throws InterruptedException {
         int port = 8090;
         String release = null;
+        List<String> notes = new ArrayList<>();
         for (int i = 0; i + 1 < args.length; i++) {
             if (args[i].equals("--listen")) {
                 port = Integer.parseInt(args[i + 1]);
             } else if (args[i].equals("--release")) {
                 // The latest release hello names, for the title screen's update notice.
                 release = args[i + 1];
+            } else if (args[i].equals("--note")) {
+                notes.add(args[i + 1]);
             }
         }
         FakeService service = new FakeService();
-        service.announceRelease(release);
+        service.announceRelease(release, notes.toArray(String[]::new));
         // One thread: the fake is used by one thread at a time.
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         Channel server = new ServerBootstrap()

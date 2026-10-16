@@ -5,9 +5,14 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Incari's release versions: one to four whole numbers joined by dots ({@code 0.2.0}). The service
- * names the latest in its {@code hello} answer; the client compares it with its own.
+ * names the latest in its {@code hello} answer, with its changelog; the client compares it with its own.
  */
 public final class Releases {
+
+    /** At most this many changelog lines, each at most {@link #MAX_NOTE} characters: all fit the notes screen. */
+    public static final int MAX_NOTES = 12;
+
+    public static final int MAX_NOTE = 120;
 
     private static final Pattern VERSION = Pattern.compile("\\d{1,6}(\\.\\d{1,6}){0,3}");
 
@@ -38,5 +43,17 @@ public final class Releases {
             }
         }
         return false;
+    }
+
+    /**
+     * Whether {@code note} is a changelog line the client shows: 1 to {@link #MAX_NOTE} characters,
+     * no control characters and nothing invisible (zero-width or direction marks), which could make
+     * it read as something other than it is.
+     */
+    public static boolean note(String note) {
+        return !note.isBlank()
+                && note.codePointCount(0, note.length()) <= MAX_NOTE
+                && note.codePoints()
+                        .noneMatch(c -> Character.isISOControl(c) || Character.getType(c) == Character.FORMAT);
     }
 }

@@ -402,6 +402,15 @@ public final class TestGame implements KeyInput, Game {
     /** The glint color a module last asked for; -1 for the game's. */
     public int glintColor = -1;
 
+    /** The field of view a module last asked for, as a share of the game's ({@link Game#overrideFov}). */
+    public float fovScale = 1;
+
+    /** Whether a module holds the cinematic camera on ({@link Game#overrideSmoothCamera}). */
+    public boolean smoothCamera;
+
+    /** The saturation tint a module last asked for ({@link Game#overrideSaturation}); -1 for none. */
+    public int saturationColor = -1;
+
     /** The effects shown on the target, oldest first ({@link Game#effectOnTarget}). */
     public final java.util.List<incari.framework.game.Effect> effects = new java.util.ArrayList<>();
 
@@ -431,6 +440,21 @@ public final class TestGame implements KeyInput, Game {
     @Override
     public void overrideGlintColor(int rgb) {
         glintColor = rgb;
+    }
+
+    @Override
+    public void overrideFov(float scale) {
+        fovScale = scale;
+    }
+
+    @Override
+    public void overrideSmoothCamera(boolean on) {
+        smoothCamera = on;
+    }
+
+    @Override
+    public void overrideSaturation(int rgb) {
+        saturationColor = rgb;
     }
 
     @Override

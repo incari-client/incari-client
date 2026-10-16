@@ -83,7 +83,8 @@ Whole-class deletes or replacements go in `patches/classes.txt`.
 - Platform modules never see game types. `features/*` depend only on `framework`.
 - Use Mojang's official names. Comments explain why, especially browser limits ("must not block",
   "worker-side, no game objects", "hot path, don't allocate").
-- Player-facing text is plain words, fitted to its box (`Ui.fit`, `Ui.wrap`).
+- Player-facing text is plain words, fitted to its box (`Ui.fit`, `Ui.wrap`). Screens fit 320x240
+  GUI units; `./gradlew :app-desktop:smokeLayout` checks.
 
 ## Docs
 

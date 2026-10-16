@@ -5,7 +5,7 @@ Subject: [PATCH] entities: Draw entity models instanced
 
 
 diff --git a/src/main/java/net/minecraft/client/renderer/feature/ModelFeatureRenderer.java b/src/main/java/net/minecraft/client/renderer/feature/ModelFeatureRenderer.java
-index 3e3446626ea959ebb8f9de704a1913ef4b1dd7f8..ba86a77b7da4c5d355864d23b472bfc4411eaec2 100644
+index 3e3446626ea959ebb8f9de704a1913ef4b1dd7f8..b90fee1cdcb7c13cc8396e11769a4159fa1657a4 100644
 --- a/src/main/java/net/minecraft/client/renderer/feature/ModelFeatureRenderer.java
 +++ b/src/main/java/net/minecraft/client/renderer/feature/ModelFeatureRenderer.java
 @@ -16,2 +16,34 @@
@@ -27,8 +27,8 @@ index 3e3446626ea959ebb8f9de704a1913ef4b1dd7f8..ba86a77b7da4c5d355864d23b472bfc4
 +        final List<ModelFeatureRenderer.Submit<?>> submits,
 +        final boolean strictlyOrdered
 +    ) {
-+        super.executeGroup(context, stage, renderPass, groupIndex, submits, strictlyOrdered);
 +        this.instanced.draw(groupIndex, stage, renderPass);
++        super.executeGroup(context, stage, renderPass, groupIndex, submits, strictlyOrdered);
 +    }
 +
 +    @Override
