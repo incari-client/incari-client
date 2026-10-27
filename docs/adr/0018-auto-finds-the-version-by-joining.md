@@ -15,16 +15,20 @@ What servers do say, reliably, is why they refuse, in words: "Outdated server! I
 ## Decision
 
 - **"Auto" joins as**, in order: the player's choice; the version that last reached the world at
-  this address (`incari/server-versions.txt`); the version the server reports; else the game's own.
+  this address (`incari/learned-versions.txt`); the version the server reports; else the game's own.
 - **Refusals are read** (`VersionRetry`, one hook in `DisconnectedScreen.init`): release numbers in
   the text and its translation arguments map to protocols through Via. The newest version below the
   refused one is tried next (older only if nothing older is named), never one already tried. Only
   within a minute of connecting, only for "Auto", at most four joins.
 - **A silent drop is a hint:** EaglerXServer on BungeeCord closes without a word when the proxy
   can't carry the protocol. A close during the Eagler login (`droppedDuringLogin`) makes "Auto" try
-  1.8 next, then 1.12.2; a newer backend refuses 1.8 by name, which the next retry reads.
-- **Only a join that reaches the world is remembered**, so a transient failure never teaches a wrong
-  version. A stale one is refused and corrected.
+  1.8 next, then 1.12.2; a newer backend refuses 1.8 by name, which the next retry reads. Not
+  when the dropped version already reached the world at this address: a rejoin right after a kick
+  is often dropped while the old session lingers, and a multi-version server would accept the 1.8
+  guess and teach it for good (Carrotcraft). Only a refusal in words corrects a learned version.
+- **Only a join that reaches the world is remembered.** A stale one is refused and corrected,
+  except on a server that accepts every version: a wrong one sticks there, so the drop rule above
+  guards it. `server-versions.txt`, which builds up to 0.1.2 could fill that way, is deleted once.
 
 ## Alternatives rejected
 

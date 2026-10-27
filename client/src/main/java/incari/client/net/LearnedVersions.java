@@ -13,13 +13,18 @@ import org.slf4j.Logger;
 /**
  * The versions servers turned out to speak when "Auto" had to find out by joining (ADR 0018): an
  * Eagler server's MOTD doesn't say, and a proxy's status ping reports the client's own version
- * whatever its backend runs. Kept by address in {@code incari/server-versions.txt}, one {@code
+ * whatever its backend runs. Kept by address in {@code incari/learned-versions.txt}, one {@code
  * address=protocol} per line, so the next join goes straight to the right one.
+ *
+ * <p>Builds up to 0.1.2 kept them in {@code server-versions.txt}, where a silent drop after a kick
+ * could teach a multi-version server 1.8 for good. That file is dropped unread: each server is
+ * learned again on its next join.
  */
 final class LearnedVersions {
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String FILE = "server-versions.txt";
+    private static final String FILE = "learned-versions.txt";
+    private static final String OLD_FILE = "server-versions.txt";
 
     private final Path file;
     private final Map<String, Integer> versions = new LinkedHashMap<>();
@@ -31,6 +36,11 @@ final class LearnedVersions {
     /** The store in {@code incariFolder}, read now; a missing or unreadable file is an empty store. */
     static LearnedVersions load(Path incariFolder) {
         LearnedVersions store = new LearnedVersions(incariFolder.resolve(FILE));
+        try {
+            Files.deleteIfExists(incariFolder.resolve(OLD_FILE));
+        } catch (IOException e) {
+            LOGGER.warn("Couldn't delete {}: {}", incariFolder.resolve(OLD_FILE), e.toString());
+        }
         if (!Files.isRegularFile(store.file)) {
             return store;
         }

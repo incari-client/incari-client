@@ -114,7 +114,9 @@ public final class VersionRetry {
                     attempt.tried,
                     IncariVia::protocolNamed,
                     ServerVersions::isCompatible);
-            if (next < 0 && ServerConnections.lastJoinDroppedDuringLogin()) {
+            if (next < 0
+                    && ServerConnections.lastJoinDroppedDuringLogin()
+                    && dropIsAHint(attempt.protocol, learned(attempt.server.ip))) {
                 next = fallback(attempt.tried);
             }
             if (next < 0) {
@@ -149,6 +151,16 @@ public final class VersionRetry {
         if (attempt != null && attempt.server.incariVersion == ServerVersions.AUTO) {
             learnedVersions().put(attempt.server.ip, protocol);
         }
+    }
+
+    /**
+     * Whether a silent drop of a join as {@code joinedAs} hints at the wrong version. Not when this
+     * address already reached the world with it ({@code learned}): then the drop is something else,
+     * such as a rejoin right after a kick that the server turns away while the old session lingers,
+     * and guessing 1.8 there joins a multi-version server as 1.8 and teaches it for good.
+     */
+    static boolean dropIsAHint(int joinedAs, int learned) {
+        return joinedAs != learned;
     }
 
     /**
