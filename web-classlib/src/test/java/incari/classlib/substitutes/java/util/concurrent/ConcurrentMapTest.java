@@ -53,7 +53,7 @@ class ConcurrentMapTest {
 
         @Override
         public int hashCode() {
-            return Objects.hash(map);
+            return Objects.hashCode(map);
         }
     }
 
