@@ -1,6 +1,8 @@
 package incari.framework.game;
 
 import incari.framework.waypoint.Waypoint;
+import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
@@ -119,6 +121,15 @@ public interface Game {
 
         @Override
         public void askText(String title, String prompt, String initial, Consumer<String> entered) {}
+
+        @Override
+        public Blocks blocks() {
+            return Blocks.NONE;
+        }
+
+        @Override
+        public void chooseFile(
+                String title, String folder, List<String> extensions, BiConsumer<String, byte[]> chosen) {}
 
         @Override
         public void openScreenshots() {}
@@ -358,4 +369,15 @@ public interface Game {
      * clipboard text on a paste (Ctrl+V), and {@link #clipboard()} has only the last one.
      */
     void askText(String title, String prompt, String initial, Consumer<String> entered);
+
+    /** The game's block states and the world's blocks. */
+    Blocks blocks();
+
+    /**
+     * Lets the player choose one of the files in the game directory's {@code folder} ending in one of
+     * {@code extensions} ({@code .schem}), on a screen over the game that also shows them the
+     * folder, to add files to it (in the browser: from their computer). {@code chosen} gets the
+     * file's name and contents (game thread, screen closed), and isn't called on cancel.
+     */
+    void chooseFile(String title, String folder, List<String> extensions, BiConsumer<String, byte[]> chosen);
 }

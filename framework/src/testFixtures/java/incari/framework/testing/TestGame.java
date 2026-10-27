@@ -324,6 +324,36 @@ public final class TestGame implements KeyInput, Game {
         messages.add(title + ": " + message);
     }
 
+    /** The world's blocks and the game's states ({@link Game#blocks}). */
+    public final FakeBlocks blocks = new FakeBlocks();
+
+    @Override
+    public FakeBlocks blocks() {
+        return blocks;
+    }
+
+    /**
+     * The file the player chooses when a module asks for one ({@link Game#chooseFile}), by name;
+     * null to cancel.
+     */
+    public @Nullable String chosenName;
+
+    /** The chosen file's contents. */
+    public byte[] chosenBytes = new byte[0];
+
+    @Override
+    public void chooseFile(
+            String title,
+            String folder,
+            List<String> extensions,
+            java.util.function.BiConsumer<String, byte[]> chosen) {
+        screens.add("choose:" + folder + " " + String.join(" ", extensions));
+        String name = chosenName;
+        if (name != null) {
+            chosen.accept(name, chosenBytes);
+        }
+    }
+
     @Override
     public void askText(String title, String prompt, String initial, java.util.function.Consumer<String> entered) {
         screens.add("ask:" + title);
@@ -614,6 +644,27 @@ public final class TestGame implements KeyInput, Game {
             @Override
             public void beam(int x, int y, int z, int rgb) {
                 drawn.add("beam at " + x + "," + y + "," + z + " #" + Integer.toHexString(rgb));
+            }
+
+            @Override
+            public void ghosts(incari.framework.hud.BlockGhosts ghosts, int alpha, int range) {
+                // As the client meshes them: every ghost in the box, one line each.
+                for (int y = ghosts.minY(); y < ghosts.maxY(); y++) {
+                    for (int z = ghosts.minZ(); z < ghosts.maxZ(); z++) {
+                        for (int x = ghosts.minX(); x < ghosts.maxX(); x++) {
+                            int state = ghosts.ghostAt(x, y, z);
+                            if (state != incari.framework.game.Blocks.AIR) {
+                                drawn.add("ghost " + blocks.text(state) + " at " + x + "," + y + "," + z);
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void box(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int argb, int fillArgb) {
+                drawn.add("box " + minX + "," + minY + "," + minZ + " to " + maxX + "," + maxY + "," + maxZ + " #"
+                        + Integer.toHexString(argb));
             }
 
             @Override

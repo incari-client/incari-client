@@ -24,6 +24,7 @@ import incari.features.oldanimations.OldAnimations;
 import incari.features.oldtextures.OldTextures;
 import incari.features.reachdisplay.ReachDisplay;
 import incari.features.saturation.Saturation;
+import incari.features.schematics.SchematicsModule;
 import incari.features.shieldtotem.ShieldTotem;
 import incari.features.shortswords.ShortSwords;
 import incari.features.shulkertooltips.ShulkerTooltips;
@@ -78,6 +79,7 @@ final class Features {
                 new LowFire(),
                 new NoHurtCam(),
                 new WaypointsModule(),
+                new SchematicsModule(),
                 new ShulkerTooltips());
     }
 }

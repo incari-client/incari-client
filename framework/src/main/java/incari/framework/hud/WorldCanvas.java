@@ -13,6 +13,21 @@ public interface WorldCanvas {
      */
     void beam(int x, int y, int z, int rgb);
 
+    /**
+     * {@code ghosts}' blocks as the game draws them, see-through at {@code alpha} (0 to 255) and
+     * fully lit, within {@code range} blocks of the camera. The client keeps each section's mesh
+     * between frames ({@link BlockGhosts#revision}) and meshes a few changed sections a frame, nearest
+     * first; hand it the same object each frame.
+     */
+    void ghosts(BlockGhosts ghosts, int alpha, int range);
+
+    /**
+     * A box's edges in {@code argb}, its faces filled in {@code fillArgb} (0 for none), from block
+     * corner {@code minX, minY, minZ} to {@code maxX, maxY, maxZ} (one past the last block). Behind
+     * blocks it's hidden, as the world's other things.
+     */
+    void box(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, int argb, int fillArgb);
+
     /** The camera's position in the world this frame: x. */
     double cameraX();
 

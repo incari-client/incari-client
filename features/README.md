@@ -30,6 +30,7 @@ README. How to write and add one: [`AGENTS.md`](AGENTS.md).
 | [Old Textures](oldtextures/README.md) | Visual | Programmer Art on and off |
 | [Reach Display](reachdisplay/README.md) | Combat | Your last hit's reach |
 | [Saturation](saturation/README.md) | HUD | Saturation shown on the hunger bar |
+| [Schematics](schematics/README.md) | Utility | Ghost blocks of a schematic to build by |
 | [Shield & Totem HUD](shieldtotem/README.md) | HUD | Shield durability and totem count |
 | [Short Swords](shortswords/README.md) | Visual | Smaller first-person swords |
 | [Shulker Tooltips](shulkertooltips/README.md) | Utility | Shulker contents as a grid |

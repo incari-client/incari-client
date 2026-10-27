@@ -21,6 +21,11 @@ public interface ItemView {
     /** The wear it can take before it breaks; 0 if it isn't damageable. */
     int maxDamage();
 
+    /** The item's name in the player's language ("Oak Planks"); its id where there's no game. */
+    default String name() {
+        return id();
+    }
+
     /** The item's id ({@code minecraft:shield}); empty for an empty stack. */
     default String id() {
         return "";

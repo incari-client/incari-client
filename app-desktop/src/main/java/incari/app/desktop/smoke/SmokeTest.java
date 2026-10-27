@@ -1059,6 +1059,8 @@ public final class SmokeTest {
         report.check("hitboxes off draws none", onGameThread(incari.client.modules.ModuleHitboxes::held) == null, "");
         serverCommands("kill @e[type=villager]", "kill @e[type=cow]");
 
+        schematicsSteps(system);
+
         // Low Shield and 1.7 Animations: the hands without, then with.
         serverCommands("execute as @p at @s run tp @s ~ ~ ~ 180 10");
         sleep(Duration.ofMillis(500));
@@ -3937,6 +3939,120 @@ public final class SmokeTest {
                 Duration.ofSeconds(3), () -> !level().getBlockState(target).isAir());
         report.check(
                 "place a block (right mouse)", placed, onGameThread(() -> blockName(level().getBlockState(target))));
+    }
+
+    /**
+     * Schematics (ADR 0066): the igloo's top, a structure file of the game's own, chosen in the file
+     * chooser and drawn as ghosts where the player stands; then the same structure placed there by
+     * the game, and the ghosts gone.
+     */
+    private void schematicsSteps(incari.framework.ModuleSystem system) throws Exception {
+        byte[] igloo;
+        try (var in = SmokeTest.class.getClassLoader().getResourceAsStream("data/minecraft/structure/igloo/top.nbt")) {
+            igloo = in == null ? null : in.readAllBytes();
+        }
+        report.check("the igloo's structure file is there to load", igloo != null, "");
+        if (igloo == null) {
+            return;
+        }
+        Path folder = minecraft.gameDirectory.toPath().resolve("schematics");
+        Files.createDirectories(folder);
+        Files.write(folder.resolve("igloo_top.nbt"), igloo);
+        serverCommands(
+                "execute as @p at @s run fill ~-8 ~-1 ~-4 ~12 ~-1 ~18 stone",
+                "execute as @p at @s run fill ~-8 ~ ~-4 ~12 ~10 ~18 air",
+                "execute as @p at @s run tp @s ~3 ~ ~14 180 20");
+        sleep(Duration.ofSeconds(1));
+        incari.framework.Module schematics = module(system, "schematics");
+        onGameThread(() -> {
+            schematics.settings().resetAll();
+            schematics.setEnabled(true);
+            // Placed at the player's feet; the player then steps back to see it.
+            ((incari.framework.setting.ActionSetting) java.util.Objects.requireNonNull(
+                            schematics.settings().get("choose")))
+                    .run();
+            return null;
+        });
+        sleep(Duration.ofMillis(500));
+        screenshot("visual-schematics-chooser");
+        // The player stood where it's placed: back there for the load, then away to look.
+        serverCommands("execute as @p at @s run tp @s ~-3 ~ ~-14");
+        sleep(Duration.ofMillis(300));
+        clickNested("Load");
+        boolean closed = waitUntil(Duration.ofSeconds(5), () -> onGameThread(() -> minecraft.gui.screen() == null));
+        report.check("choosing a file closes the chooser", closed, stateDescription());
+        serverCommands("execute as @p at @s run tp @s ~3 ~ ~14 180 20");
+        boolean ghosts =
+                waitUntil(Duration.ofSeconds(5), () -> onGameThread(incari.client.modules.ModuleGhosts::quads) > 0);
+        report.check(
+                "the schematic's ghosts are meshed",
+                ghosts,
+                onGameThread(incari.client.modules.ModuleGhosts::quads) + " quads");
+        sleep(Duration.ofMillis(500));
+        screenshot("visual-schematics-ghosts");
+
+        serverCommands("execute as @p at @s run place template minecraft:igloo/top ~-3 ~ ~-14");
+        boolean built =
+                waitUntil(Duration.ofSeconds(8), () -> onGameThread(incari.client.modules.ModuleGhosts::quads) == 0);
+        report.check(
+                "blocks built where it wants them stop being ghosts",
+                built,
+                onGameThread(incari.client.modules.ModuleGhosts::quads) + " quads");
+        serverCommands("execute as @p at @s run setblock ~-3 ~ ~-14 minecraft:gold_block");
+        sleep(Duration.ofSeconds(1));
+        screenshot("visual-schematics-built");
+        onGameThread(() -> {
+            schematics.setEnabled(false);
+            return null;
+        });
+    }
+
+    /**
+     * Clicks the first widget labelled {@code label} anywhere on the shown screen, in lists too,
+     * with injected pointer events at its centre.
+     */
+    private void clickNested(String label) {
+        float[] centre = onGameThread(() -> {
+            Screen screen = minecraft.gui.screen();
+            AbstractWidget widget = screen == null ? null : findWidget(screen.children(), label);
+            if (widget == null) {
+                return null;
+            }
+            var window = minecraft.getWindow();
+            float toWindowX = (float) window.getScreenWidth() / window.getGuiScaledWidth();
+            float toWindowY = (float) window.getScreenHeight() / window.getGuiScaledHeight();
+            return new float[] {
+                (widget.getX() + widget.getWidth() / 2.0F) * toWindowX,
+                (widget.getY() + widget.getHeight() / 2.0F) * toWindowY
+            };
+        });
+        if (centre == null) {
+            report.fail("click " + label, "no such widget on " + stateDescription());
+            return;
+        }
+        injector().moveTo(centre[0], centre[1]);
+        sleep(Duration.ofMillis(150));
+        injector().mouseButton(1, true);
+        sleep(Duration.ofMillis(80));
+        injector().mouseButton(1, false);
+    }
+
+    private static @Nullable AbstractWidget findWidget(
+            java.util.List<? extends net.minecraft.client.gui.components.events.GuiEventListener> children,
+            String label) {
+        for (var child : children) {
+            if (child instanceof AbstractWidget widget
+                    && widget.getMessage().getString().equals(label)) {
+                return widget;
+            }
+            if (child instanceof net.minecraft.client.gui.components.events.ContainerEventHandler container) {
+                AbstractWidget found = findWidget(container.children(), label);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     /**

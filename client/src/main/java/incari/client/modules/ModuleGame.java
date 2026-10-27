@@ -81,6 +81,8 @@ final class ModuleGame implements Game {
     private static final SystemToast.SystemToastId MESSAGE = new SystemToast.SystemToastId();
 
     private final Player real = new Player();
+
+    private final ModuleBlocks blocks = new ModuleBlocks();
     private @Nullable Player sample;
 
     /** Effect names in the language they were made in. */
@@ -398,6 +400,22 @@ final class ModuleGame implements Game {
     public void askText(String title, String prompt, String initial, Consumer<String> entered) {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.gui.setScreen(new TextEntryScreen(minecraft.gui.screen(), title, prompt, initial, entered));
+    }
+
+    @Override
+    public incari.framework.game.Blocks blocks() {
+        return blocks;
+    }
+
+    @Override
+    public void chooseFile(
+            String title,
+            String folder,
+            List<String> extensions,
+            java.util.function.BiConsumer<String, byte[]> chosen) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Path directory = minecraft.gameDirectory.toPath().resolve(folder);
+        minecraft.gui.setScreen(new FileChooserScreen(minecraft.gui.screen(), title, directory, extensions, chosen));
     }
 
     @Override
@@ -775,6 +793,24 @@ final class ModuleGame implements Game {
         private net.minecraft.world.item.@Nullable Item idOf;
 
         private String id = "";
+
+        /** The stack and language {@link #name} was made for. */
+        private ItemStack nameOf = ItemStack.EMPTY;
+
+        private String nameLanguage = "";
+        private String name = "";
+
+        @Override
+        @SuppressWarnings("ReferenceEquality") // Stacks and the language manager's strings are compared as objects.
+        public String name() {
+            String language = Minecraft.getInstance().getLanguageManager().getSelected();
+            if (stack != nameOf || language != nameLanguage) {
+                nameOf = stack;
+                nameLanguage = language;
+                name = stack.isEmpty() ? "" : stack.getHoverName().getString();
+            }
+            return name;
+        }
 
         @Override
         @SuppressWarnings("ReferenceEquality") // Items are one object each.

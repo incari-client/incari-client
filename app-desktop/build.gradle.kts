@@ -279,10 +279,10 @@ tasks.register<JavaExec>("smokeHudModules") {
     runsGame(repoRoot.dir("run/smoke-hudmodules").asFile, providers.provider { "IncariSmoke" }, "hudmodules")
 }
 
-// ADR 0053: the visual modules (Crosshair, Cooldown, Weather, Freelook, Low Shield, 1.7 Animations), and Hitboxes.
+// ADR 0053: the visual modules (Crosshair, Cooldown, Weather, Freelook, Low Shield, 1.7 Animations), Hitboxes and Schematics.
 tasks.register<JavaExec>("smokeVisualModules") {
     group = "verification"
-    description = "Runs the visual and combat modules of ADR 0053, and Hitboxes, in a world and screenshots them."
+    description = "Runs the visual and combat modules of ADR 0053, Hitboxes and Schematics in a world and screenshots them."
     runsGame(repoRoot.dir("run/smoke-visualmodules").asFile, providers.provider { "IncariSmoke" }, "visualmodules")
 }
 

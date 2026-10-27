@@ -84,3 +84,4 @@ when you make a decision someone would otherwise have to rediscover.
 | [0063](0063-the-modules-first-performance-pass.md) | The modules' first performance pass |
 | [0064](0064-teavm-0-16.md) | TeaVM 0.16.0 |
 | [0065](0065-wispcraft.md) | Wispcraft: Java servers through a Wisp proxy |
+| [0066](0066-schematics-clean-room.md) | Schematics, written clean-room |

@@ -81,6 +81,7 @@ include(":features:glintcolor")
 include(":features:hiteffects")
 include(":features:fullbright")
 include(":features:hitboxes")
+include(":features:schematics")
 
 // Graphics backends under the game's GpuDevice API (the desktop keeps Mojang's own).
 include(":render-webgl2")
