@@ -6,9 +6,12 @@ teavm = "0.16.0"
 # Must match the LWJGL version in Minecraft's version JSON: platform-desktop compiles against
 # these jars, and the game runs with Mojang's copies of the same version.
 lwjgl = "3.4.3"
-# Must match the Netty version in Minecraft's version JSON: :net compiles against these jars, and
-# the game runs with Mojang's copies of the same version.
-netty = "4.2.19.Final"
+# Netty. Mojang's version JSON ships 4.2.16, which the desktop game runs; :net compiles against
+# these jars. The browser build links this version instead (tools/webbuild's class loader sees it
+# through :tools:wsbridge before the game's jars), so it carries 4.2.18's security fixes. Don't go
+# to 4.2.19: its pipeline asserts Thread.holdsLock, which TeaVM can't satisfy, and every web
+# connection failed (probes/EventLoopProbe). Run that probe after any Netty bump.
+netty = "4.2.18.Final"
 asm = "9.11.1"
 # The Via stack the client runs (ADR 0017): ViaVersion translates for older servers,
 # ViaBackwards for newer ones. Pinned together: ViaBackwards is built against this ViaVersion.
