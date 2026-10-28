@@ -16,7 +16,7 @@ The client had no version of its own until now: only the game's (26.3).
 
 ## Decision
 
-- **The client has a version**, `incari.version` in `incari.properties` (`0.1.3` now), raised with
+- **The client has a version**, `incari.version` in `incari.properties` (`0.1.4` now), raised with
   each release, and the public repository's URL, `incari.repository`
   (`https://github.com/incari-client/incari-client`). `:client`'s `buildInfoSource` writes
   both into `incari.client.IncariBuild`, with `RELEASE`: whether the build is a release build
