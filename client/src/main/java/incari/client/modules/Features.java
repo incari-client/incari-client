@@ -26,7 +26,7 @@ import incari.features.reachdisplay.ReachDisplay;
 import incari.features.saturation.Saturation;
 import incari.features.schematics.SchematicsModule;
 import incari.features.shieldtotem.ShieldTotem;
-import incari.features.shortswords.ShortSwords;
+import incari.features.shortitems.ShortItems;
 import incari.features.shulkertooltips.ShulkerTooltips;
 import incari.features.theme.ThemeEditor;
 import incari.features.togglesprint.ToggleSprint;
@@ -67,7 +67,7 @@ final class Features {
                 new Zoom(),
                 new CrosshairEditor(),
                 new LowShield(),
-                new ShortSwords(),
+                new ShortItems(),
                 new WeatherChanger(),
                 new Fullbright(),
                 new BlockOutline(),

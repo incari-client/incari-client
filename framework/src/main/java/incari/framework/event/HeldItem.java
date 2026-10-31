@@ -3,7 +3,7 @@ package incari.framework.event;
 /**
  * An item held in first person, about to be drawn, as {@link Events#HELD_ITEM} hands it to
  * listeners: which hand, whether it's a shield or a sword, whether it's in use. Listeners say how it's
- * drawn: lower (Low Shield), smaller (Short Swords), or in 1.7's poses (1.7 Animations). One object, reused for each hand each
+ * drawn: lower (Low Shield), smaller (Short Items), or in 1.7's poses (1.7 Animations). One object, reused for each hand each
  * frame.
  */
 public final class HeldItem {

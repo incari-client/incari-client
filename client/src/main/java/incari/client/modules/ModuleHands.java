@@ -19,7 +19,7 @@ import org.joml.Vector3fc;
 
 /**
  * The held item event ({@link Events#HELD_ITEM}): how each hand's item is drawn in first person.
- * Low Shield moves a shield down; Short Swords draws swords smaller; 1.7 Animations holds flat items as 1.7 did, flips the fishing rod,
+ * Low Shield moves a shield down; Short Items draws held items smaller; 1.7 Animations holds flat items as 1.7 did, flips the fishing rod,
  * gives a blocking sword 1.7's pose and swings the arm while an item's in use (the block-hit). Render
  * thread, for each hand each frame; nothing here allocates.
  *
@@ -99,7 +99,7 @@ public final class ModuleHands {
 
     /**
      * Hook (just before the item is drawn): 1.7's rod and flat items, if the listeners asked, and
-     * the item's size (Short Swords), scaled toward the hand.
+     * the item's size (Short Items), scaled toward the hand.
      */
     public static void beforeItem(PoseStack pose, ItemStack stack, int invert, ItemTransform display) {
         float scale = ITEM.scale();
