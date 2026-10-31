@@ -178,6 +178,7 @@ dependencies {
     implementation(project(":features:glintcolor"))
     implementation(project(":features:hiteffects"))
     implementation(project(":features:fullbright"))
+    implementation(project(":features:customsky"))
     implementation(project(":features:hitboxes"))
     implementation(project(":features:schematics"))
     implementation(project(":features:oldanimations"))

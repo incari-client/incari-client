@@ -307,6 +307,11 @@ final class ModuleGame implements Game {
     }
 
     @Override
+    public void showPackSkies(float brightness) {
+        ModuleSkyLayers.show(brightness);
+    }
+
+    @Override
     public void overrideBlockOutline(int argb, float width, int fillArgb) {
         ModuleEffects.outline(argb, width, fillArgb);
     }

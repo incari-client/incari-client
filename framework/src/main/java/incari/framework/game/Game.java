@@ -149,6 +149,9 @@ public interface Game {
         public void overrideBrightness(float level) {}
 
         @Override
+        public void showPackSkies(float brightness) {}
+
+        @Override
         public void overrideHitColor(int rgb, int strength) {}
 
         @Override
@@ -307,6 +310,13 @@ public interface Game {
      * stronger. Held until changed.
      */
     void overrideBrightness(float level);
+
+    /**
+     * Draws the custom skies the resource packs bring (OptiFine's {@code optifine/sky/world0}), in
+     * the overworld on this client only, at {@code brightness} from 0 (none: the game's own sky) to
+     * 1 (as the pack made them). The game's sky is drawn under them. Held until changed.
+     */
+    void showPackSkies(float brightness);
 
     /**
      * Tints hurt entities {@code rgb} instead of red, {@code strength} percent of the way from their

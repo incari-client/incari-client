@@ -416,6 +416,9 @@ public final class TestGame implements KeyInput, Game {
     /** The brightness a module last asked for ({@link Game#overrideBrightness}): 0 for the game's. */
     public float brightness;
 
+    /** The pack skies' brightness a module last asked for ({@link Game#showPackSkies}): 0 for none. */
+    public float packSkies;
+
     /** The block outline a module last asked for ({@link Game#overrideBlockOutline}): 0 for the game's. */
     public int outlineColor;
 
@@ -456,6 +459,11 @@ public final class TestGame implements KeyInput, Game {
     @Override
     public void overrideBrightness(float level) {
         brightness = level;
+    }
+
+    @Override
+    public void showPackSkies(float brightness) {
+        packSkies = brightness;
     }
 
     @Override
