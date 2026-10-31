@@ -25,6 +25,8 @@ server on the add and edit server screens, like the version.
 - **Per server, saved with it.** `ServerData.incariWisp` (on/off and the proxy, default Wispcraft's
   `wss://anura.pro/`). The edit-server screen's version button is halved and a Wispcraft button sits
   beside it (a screen edit, no patch); it opens a screen to switch it and set the proxy.
+- **The last proxy is remembered.** Done saves it to `incari/wisp-proxy.txt` at once; a server
+  not yet set up (off, default proxy) starts from it, so it's typed once.
 - **Routing by thread.** The connect screen and the pinger name the server before resolving
   (`WispServers.route`); the resolver hook then hands back a `WispAddress` with no DNS lookup.
   `ServerConnections` gives it the plain pipeline. `ws://` addresses never go through Wisp.
