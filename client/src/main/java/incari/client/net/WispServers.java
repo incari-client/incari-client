@@ -6,6 +6,7 @@ import incari.client.ui.Theme;
 import incari.net.WebSocketUrl;
 import incari.net.wisp.WispAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -153,10 +154,17 @@ public final class WispServers {
                 .build();
     }
 
-    /** The screen that sets {@code server}'s choice, then runs {@code onDone} and goes back to {@code parent}. */
+    /**
+     * The screen that sets {@code server}'s choice, then runs {@code onDone} and goes back to {@code parent}.
+     * The proxy entered is saved at once ({@link SavedWispProxy}), and a server not yet set up starts
+     * from the last one.
+     */
     public static Screen screen(Screen parent, ServerData server, Runnable onDone) {
-        return new WispScreen(parent, server.incariWisp, choice -> {
+        Path folder = Minecraft.getInstance().gameDirectory.toPath().resolve("incari");
+        WispChoice initial = SavedWispProxy.initial(server.incariWisp, SavedWispProxy.load(folder));
+        return new WispScreen(parent, initial, choice -> {
             server.incariWisp = choice;
+            SavedWispProxy.save(folder, choice.proxy());
             onDone.run();
         });
     }

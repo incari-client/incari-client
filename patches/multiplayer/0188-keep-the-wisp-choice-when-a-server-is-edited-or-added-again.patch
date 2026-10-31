@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 10:08:01 -0400
+Subject: [PATCH] multiplayer: Keep the Wisp choice when a server is edited or
+ added again
+
+Signed-off-by: incari-client <335801235+incari-client@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java b/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java
+index 8e2e2db09df0d2ffc721b433afc45c3ac8a7ee4a..21d827ae425297c5bf0b24f4f1303550c22ce79f 100644
+--- a/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java
++++ b/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java
+@@ -197,4 +197,5 @@
+             current.setResourcePackStatus(this.editingServer.getResourcePackStatus());
+-            // Incari start: keep the version chosen on the edit screen
++            // Incari start: keep the version and Wisp choice made on the edit screen
+             current.incariVersion = this.editingServer.incariVersion;
++            current.incariWisp = this.editingServer.incariWisp;
+             // Incari end
+@@ -212,4 +213,5 @@
+                 serverData.copyNameIconFrom(this.editingServer);
+-                // Incari start: a hidden entry that is added again takes the version chosen for it
++                // Incari start: a hidden entry that is added again takes the version and Wisp choice made for it
+                 serverData.incariVersion = this.editingServer.incariVersion;
++                serverData.incariWisp = this.editingServer.incariWisp;
+                 // Incari end
