@@ -2,13 +2,23 @@ package incari.client.net;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import incari.client.testing.TestPlatform;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.nbt.ListTag;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class FeaturedServersTest {
+
+    @BeforeAll
+    static void gameVersion() {
+        // A ServerData asks for the game's version, set once per run: not left to whichever test ran first.
+        TestPlatform.install();
+        SharedConstants.tryDetectVersion();
+    }
 
     @Test
     void readsTheBuiltInList() {
