@@ -171,7 +171,7 @@ dependencies {
     implementation(project(":features:saturation"))
     implementation(project(":features:weatherchanger"))
     implementation(project(":features:lowshield"))
-    implementation(project(":features:shortswords"))
+    implementation(project(":features:shortitems"))
     implementation(project(":features:oldtextures"))
     implementation(project(":features:blockoutline"))
     implementation(project(":features:hitcolor"))

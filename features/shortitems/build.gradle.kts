@@ -2,7 +2,7 @@ plugins {
     `java-library`
 }
 
-// Short Swords (ADR 0062): swords drawn smaller in first person, as 1.8 PvP packs drew them.
+// Short Items (ADR 0062): held items drawn smaller in first person, as 1.8 PvP packs drew swords.
 // A feature module: it sees the module framework and nothing else.
 dependencies {
     api(project(":framework"))

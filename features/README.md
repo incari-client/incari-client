@@ -32,7 +32,7 @@ README. How to write and add one: [`AGENTS.md`](AGENTS.md).
 | [Saturation](saturation/README.md) | HUD | Saturation shown on the hunger bar |
 | [Schematics](schematics/README.md) | Utility | Ghost blocks of a schematic to build by |
 | [Shield & Totem HUD](shieldtotem/README.md) | HUD | Shield durability and totem count |
-| [Short Swords](shortswords/README.md) | Visual | Smaller first-person swords |
+| [Short Items](shortitems/README.md) | Visual | Smaller first-person held items |
 | [Shulker Tooltips](shulkertooltips/README.md) | Utility | Shulker contents as a grid |
 | [Theme Editor](theme/README.md) | Visual | Client colours and font (always on) |
 | [Toggle Sprint](togglesprint/README.md) | Movement | Latch sprint and sneak |
