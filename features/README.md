@@ -15,6 +15,7 @@ README. How to write and add one: [`AGENTS.md`](AGENTS.md).
 | [CPS](cps/README.md) | HUD | Clicks per second |
 | [Crosshair Editor](crosshair/README.md) | Visual | A crosshair of your own design |
 | [Custom Scoreboard](customscoreboard/README.md) | HUD | Place and scale the server's sidebar |
+| [Custom Sky](customsky/README.md) | Visual | Resource packs' skies, OptiFine's format |
 | [Enchant Glint](glintcolor/README.md) | Visual | Enchantment shimmer in your colour |
 | [FPS Display](fpsdisplay/README.md) | HUD | Frames per second |
 | [Freelook](freelook/README.md) | Visual | Look around without turning |

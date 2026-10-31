@@ -80,6 +80,7 @@ include(":features:hitcolor")
 include(":features:glintcolor")
 include(":features:hiteffects")
 include(":features:fullbright")
+include(":features:customsky")
 include(":features:hitboxes")
 include(":features:schematics")
 

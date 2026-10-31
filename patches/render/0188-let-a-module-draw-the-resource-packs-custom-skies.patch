@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 23:21:14 -0400
+Subject: [PATCH] render: Let a module draw the resource packs' custom skies
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/renderer/SkyRenderer.java b/src/main/java/net/minecraft/client/renderer/SkyRenderer.java
+index cd0d13e75d8476be877f635f7387159bfac8a616..c1fa168fcf09964f69968af8b2ab61c7b85f0391 100644
+--- a/src/main/java/net/minecraft/client/renderer/SkyRenderer.java
++++ b/src/main/java/net/minecraft/client/renderer/SkyRenderer.java
+@@ -126,2 +126,5 @@
+                 state.shouldRenderDarkDisc = this.shouldRenderDarkDisc(partialTicks, level);
++                // Incari start: a module may draw the resource packs' custom skies
++                incari.client.modules.ModuleSkyLayers.extract(this, level, partialTicks);
++                // Incari end
+             }
+@@ -152,2 +155,5 @@
+             this.renderSunriseAndSunset(renderPass, poseStack, state.sunAngle, state.sunriseAndSunsetColor);
++            // Incari start: a module may draw the resource packs' custom skies
++            incari.client.modules.ModuleSkyLayers.render(renderPass, state.sunAngle);
++            // Incari end
+             this.renderSunMoonAndStars(

@@ -8,6 +8,7 @@ import incari.features.coordinates.Coordinates;
 import incari.features.cps.Cps;
 import incari.features.crosshair.CrosshairEditor;
 import incari.features.customscoreboard.CustomScoreboard;
+import incari.features.customsky.CustomSky;
 import incari.features.fpsdisplay.FpsDisplay;
 import incari.features.freelook.Freelook;
 import incari.features.fullbright.Fullbright;
@@ -70,6 +71,7 @@ final class Features {
                 new ShortSwords(),
                 new WeatherChanger(),
                 new Fullbright(),
+                new CustomSky(),
                 new BlockOutline(),
                 new HitColor(),
                 new EnchantGlint(),
