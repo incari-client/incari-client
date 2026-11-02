@@ -1,0 +1,27 @@
+# Incari's Hitboxes (features/hitboxes) for the Rust build (ADR 0068, 0069). Hooks by name where
+# Horizon has stamped the hook point (native-hooks.json), by function where it's still pending. Its
+# settings are the client's (rust/mods/incari), shown in the module menu.
+[mod]
+id = "incari_hitboxes"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_hitboxes"
+source = "runtime.rs"
+
+[[injection]]
+id = "lines"
+# Horizon's lines hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_client_hooks.json), so this targets its function. Make it
+# `hook = "lines"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_lines"
+kind = "HEAD"
+helper = "lines.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "partial", ty = "f32", value = "partial" },
+  { name = "lines", ty = "&mut Vec<crate::game::native_hooks::NativeLine>", value = "&mut *lines" },
+]

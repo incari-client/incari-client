@@ -1,0 +1,58 @@
+# Incari's Minimap (features/minimap) for the Rust build (ADR 0068, 0069). Hooks by name where Horizon
+# has stamped the hook point (native-hooks.json), by function where it's still pending. Its
+# settings and HUD element are the client's (rust/mods/incari): the module menu shows them and the HUD editor places it.
+[mod]
+id = "incari_minimap"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_minimap"
+source = "runtime.rs"
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "minimap"
+hook = "minimap"
+hook_version = 1
+kind = "HEAD"
+helper = "minimap.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "minimap", ty = "&mut Option<crate::game::native_hooks::NativeMinimap>", value = "&mut *minimap" },
+]
+
+[[injection]]
+id = "hud"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]

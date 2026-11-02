@@ -23,8 +23,9 @@ import java.util.SequencedMap;
  * ({@code incari.wasm?v=...}), so the service worker keeps it exactly until a build changes it.
  *
  * <p>Run by {@code ./gradlew :app-web:buildManifest}:
- * {@code --out build.json --game 26.3 --file <name>=<path>...}, where each name is where the page
- * finds the file (the dev server serves it there).
+ * {@code --out build.json --game 26.3 [--rust <folder>] --file <name>=<path>...}, where each name is
+ * where the page finds the file (the dev server serves it there), and {@code --rust} is the Rust
+ * build's folder, listed when it has a page.
  */
 public final class BuildManifest {
 
@@ -37,6 +38,13 @@ public final class BuildManifest {
 
     /** TeaVM's loader, one file for both builds. */
     static final String RUNTIME = "incari.wasm-runtime.js";
+
+    /**
+     * The experimental Rust build's page (ADR 0068): Horizon's own page and files in {@code rust/},
+     * which the loader opens instead of loading a module. Horizon's service worker keeps those files,
+     * so they aren't in the file list.
+     */
+    static final String RUST_PAGE = "rust/index.html";
 
     static final String DEOBFUSCATOR = "-deobfuscator.wasm";
     static final String DEBUG_INFO = ".teadbg";
@@ -53,11 +61,13 @@ public final class BuildManifest {
     public static void main(String[] args) throws IOException {
         Path out = null;
         String game = null;
+        boolean rust = false;
         Map<String, Path> files = new LinkedHashMap<>();
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--out" -> out = Path.of(args[++i]);
                 case "--game" -> game = args[++i];
+                case "--rust" -> rust = Files.isRegularFile(Path.of(args[++i]).resolve("index.html"));
                 case "--file" -> {
                     String option = args[++i];
                     int equals = option.indexOf('=');
@@ -74,16 +84,17 @@ public final class BuildManifest {
             }
         }
         if (out == null || game == null) {
-            throw new CliException("Usage: BuildManifest --out <file> --game <version> [--file <name>=<path>]...");
+            throw new CliException(
+                    "Usage: BuildManifest --out <file> --game <version> [--rust <folder>] [--file <name>=<path>]...");
         }
-        JsonObject manifest = manifest(game, files);
+        JsonObject manifest = manifest(game, files, rust);
         Files.createDirectories(out.toAbsolutePath().getParent());
         Files.writeString(out, new GsonBuilder().setPrettyPrinting().create().toJson(manifest) + "\n");
         System.out.println("==> Wrote " + out + " (build "
                 + manifest.get("id").getAsString().substring(0, 12) + ")");
     }
 
-    static JsonObject manifest(String game, Map<String, Path> files) throws IOException {
+    static JsonObject manifest(String game, Map<String, Path> files, boolean rust) throws IOException {
         JsonArray list = new JsonArray();
         MessageDigest id = sha256();
         for (Map.Entry<String, Path> entry : files.entrySet()) {
@@ -115,6 +126,11 @@ public final class BuildManifest {
                 entry.addProperty("debugInfo", module + DEBUG_INFO);
             }
             manifest.add(build.getKey(), entry);
+        }
+        if (rust) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("page", RUST_PAGE);
+            manifest.add("rust", entry);
         }
         // Programs the page's workers run beside the game: each its own module and loader.
         JsonObject programs = new JsonObject();

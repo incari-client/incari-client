@@ -86,3 +86,5 @@ when you make a decision someone would otherwise have to rediscover.
 | [0065](0065-wispcraft.md) | Wispcraft: Java servers through a Wisp proxy |
 | [0066](0066-schematics-clean-room.md) | Schematics, written clean-room |
 | [0067](0067-custom-sky.md) | Custom Sky: resource packs' OptiFine skies |
+| [0068](0068-rust-build.md) | An experimental Rust build on Horizon |
+| [0069](0069-incari-client-on-horizon.md) | Incari Client itself on Horizon |

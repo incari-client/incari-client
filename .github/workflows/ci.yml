@@ -31,6 +31,8 @@ jobs:
         run: tools/ci/check-dco.sh "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
       - name: Patch budget
         run: tools/ci/check-patch-budget.sh
+      - name: Every feature has a Rust status
+        run: tools/ci/check-rust-status.sh
       - name: Install glslang
         run: sudo apt-get install -y --no-install-recommends glslang-tools
       - name: Shaders validate
@@ -48,6 +50,19 @@ jobs:
       - run: npm ci
       - name: Types, lint, format and tests
         run: npm run check
+
+  rust:
+    name: Rust build's mods
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # The mods' own logic, without Horizon: the Rust build itself needs the game's files.
+      - name: Format, lints and tests
+        working-directory: rust
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
 
   java:
     name: Java, patches and vendor build

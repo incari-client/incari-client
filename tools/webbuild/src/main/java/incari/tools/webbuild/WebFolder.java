@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import incari.tools.build.CliException;
+import incari.tools.build.FileTrees;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -73,6 +74,7 @@ public final class WebFolder {
             String game,
             @Nullable Path compatible,
             @Nullable Path fast,
+            @Nullable Path rust,
             Path mesher,
             Path page,
             Path scripts,
@@ -119,6 +121,7 @@ public final class WebFolder {
                 "game",
                 "compatible",
                 "fast",
+                "rust",
                 "mesher",
                 "page",
                 "scripts",
@@ -132,8 +135,8 @@ public final class WebFolder {
                 throw new CliException("Unknown option '--" + name + "'");
             }
         }
-        if (values.get("compatible") == null && values.get("fast") == null) {
-            throw new CliException("Give --fast, --compatible or both: the builds to put in the folder");
+        if (values.get("compatible") == null && values.get("fast") == null && values.get("rust") == null) {
+            throw new CliException("Give --fast, --compatible, --rust or more: the builds to put in the folder");
         }
         if ((values.get("asset-index") == null) != (values.get("asset-objects") == null)) {
             throw new CliException("--asset-index and --asset-objects go together");
@@ -151,6 +154,7 @@ public final class WebFolder {
                 required(values, "game"),
                 optionalPath(values, "compatible"),
                 optionalPath(values, "fast"),
+                optionalPath(values, "rust"),
                 Path.of(required(values, "mesher")),
                 Path.of(required(values, "page")),
                 Path.of(required(values, "scripts")),
@@ -213,7 +217,14 @@ public final class WebFolder {
         for (Map.Entry<String, Path> entry : build.entrySet()) {
             copied.put(entry.getKey(), copy(entry.getValue(), out.resolve(entry.getKey())));
         }
-        JsonObject manifest = BuildManifest.manifest(options.game(), copied);
+        // Rust is its own page and files, in rust/ (ADR 0068).
+        Path rust = options.rust();
+        if (rust != null) {
+            requireFile(rust.resolve("index.html"), "Build it first: ./incari build --only rust");
+            FileTrees.copyTree(rust, out.resolve("rust"), "");
+            builds.add("Rust");
+        }
+        JsonObject manifest = BuildManifest.manifest(options.game(), copied, rust != null);
         Files.writeString(
                 out.resolve("build.json"),
                 new GsonBuilder().setPrettyPrinting().create().toJson(manifest) + "\n");

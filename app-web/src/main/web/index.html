@@ -32,7 +32,7 @@
     #incari-status { font-size: 15px; color: #fff; text-shadow: 0 1px 6px rgba(12, 19, 27, 0.6); }
     #incari-detail { min-height: 1.4em; max-width: min(560px, 90vw); text-align: center; opacity: 0.8;
       text-shadow: 0 1px 6px rgba(12, 19, 27, 0.6); }
-    #incari-track[hidden], #incari-choose[hidden] { display: none; }
+    #incari-track[hidden], #incari-choose[hidden], .incari-pick[hidden] { display: none; }
     #incari-choose { display: flex; flex-direction: column; gap: 10px; width: min(480px, calc(100vw - 32px)); }
     .incari-pick { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; text-align: left;
       font: inherit; color: #dde6ee; background: rgba(16, 24, 34, 0.72); border: 1px solid rgba(255, 255, 255, 0.16);
@@ -59,8 +59,9 @@
     <div id="incari-track"><div id="incari-bar"></div></div>
     <div id="incari-status">Loading</div>
     <div id="incari-detail"></div>
-    <!-- Where both builds can run, the player picks one (boot.ts, ADR 0036); `?build=fast|compatible`
-         skips this. Fast is the JSPI build, Compatible the coroutine build. -->
+    <!-- Where more than one build can run, the player picks one (boot.ts, ADR 0036);
+         `?build=fast|compatible|rust` skips this. Fast is the JSPI build, Compatible the coroutine
+         build, Rust the experimental Horizon build (ADR 0068), shown only when the copy has it. -->
     <div id="incari-choose" role="group" aria-labelledby="incari-status" hidden>
       <button id="incari-pick-fast" class="incari-pick" type="button" aria-describedby="incari-why-fast">
         <span class="incari-pick-title">Fast <span class="incari-badge">Recommended</span></span>
@@ -72,6 +73,12 @@
         <span class="incari-pick-title">Compatible <span class="incari-badge quiet">For older browsers</span></span>
         <span class="incari-pick-text">Works in Safari and older versions of Chrome and Firefox, but runs slower.</span>
         <span class="incari-pick-why" id="incari-why-compatible"></span>
+      </button>
+      <button id="incari-pick-rust" class="incari-pick" type="button" aria-describedby="incari-why-rust" hidden>
+        <span class="incari-pick-title">Rust <span class="incari-badge quiet">Experimental</span></span>
+        <span class="incari-pick-text">The game rewritten in Rust, drawn with WebGPU. Few Incari modules yet, and
+          some things may not work.</span>
+        <span class="incari-pick-why" id="incari-why-rust"></span>
       </button>
       <p class="incari-pick-hint">Choose Compatible only if Fast won't start in your browser.</p>
     </div>

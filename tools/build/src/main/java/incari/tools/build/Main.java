@@ -28,12 +28,14 @@ public final class Main {
                                  (--force discards unsaved commits and edits in work/client)
               rebuild [--check]  regenerate patches/ from the commits in work/client
                                  (--check writes nothing, fails if patches/ is out of date)
-              build [--out <dir>] [--only fast|compatible] [--no-sounds] [--html]
-                                 compile the release browser builds, Fast and Compatible (or just
-                                 one with --only), into one folder for a static web server
-                                 (default dist/web), or with --html into one HTML file that
-                                 plays from the disk, without music (smaller sounds need ffmpeg)
-                                 (default dist/incari.html).
+              build [--out <dir>] [--only fast|compatible|rust] [--no-sounds] [--html]
+                                 compile the release browser builds, Fast, Compatible and the
+                                 experimental Rust (or just one with --only), into one folder for
+                                 a static web server (default dist/web), or with --html into one
+                                 HTML file that plays from the disk, without music or Rust
+                                 (smaller sounds need ffmpeg) (default dist/incari.html).
+                                 Rust is skipped, saying why, without its tools or work/horizon;
+                                 INCARI_HORIZON_DIR builds another Horizon checkout.
                                  It holds Minecraft's code and files: for your own use, never
                                  shared or published
               survey             TeaVM compile survey, see tools/survey/README.md
@@ -73,6 +75,12 @@ public final class Main {
                 Decompiler.decompile(ws, game);
                 new ClientTree(ws).apply(ws.decompiledDir(config.minecraftVersion()), config.minecraftVersion(), false);
                 GitHooks.install(ws);
+                // The Rust build's source (ADR 0068). Optional: Fast and Compatible build without it.
+                try {
+                    Horizon.fetch(ws, Horizon.Pin.load(ws.repoRoot()));
+                } catch (CliException e) {
+                    Log.warn("Horizon not fetched, so ./incari build will skip the Rust build: " + e.getMessage());
+                }
                 Log.step("Done. The patched tree is in work/client");
             }
             case "fetch" -> {
@@ -112,13 +120,19 @@ public final class Main {
             case "build" -> {
                 boolean sounds = !flags.remove("--no-sounds");
                 boolean html = flags.remove("--html");
-                List<String> builds = List.of("fast", "compatible");
+                // The single file holds TeaVM's builds only; Rust is its own page (ADR 0068).
+                List<String> builds = html ? List.of("fast", "compatible") : List.of("fast", "compatible", "rust");
+                boolean only = false;
                 int onlyFlag = flags.indexOf("--only");
                 if (onlyFlag >= 0) {
                     if (onlyFlag + 1 >= flags.size() || !builds.contains(flags.get(onlyFlag + 1))) {
-                        throw new CliException("--only takes fast or compatible");
+                        throw new CliException(
+                                html
+                                        ? "--only takes fast or compatible with --html"
+                                        : "--only takes fast, compatible or rust");
                     }
                     builds = List.of(flags.get(onlyFlag + 1));
+                    only = true;
                     flags.subList(onlyFlag, onlyFlag + 2).clear();
                 }
                 Path out = ws.repoRoot().resolve("dist").resolve(html ? "incari.html" : "web");
@@ -131,7 +145,7 @@ public final class Main {
                     flags.subList(outFlag, outFlag + 2).clear();
                 }
                 noFlags(command, flags);
-                WebBuild.build(ws, config, out, builds, sounds, html);
+                WebBuild.build(ws, config, out, builds, only, sounds, html);
             }
             case "survey", "copycheck" ->
                 throw new CliException(

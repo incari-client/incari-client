@@ -54,6 +54,8 @@ tools/ci/check-patch-budget.sh # patch size against patches/budget.properties
 ./gradlew :app-web:teavm       # browser build, ~10 minutes, ~20 GB memory
 ./gradlew :app-web:serve       # serve it on localhost
 ./gradlew :app-web:browserCheck    # run it headless until the game loop ticks
+./incari build --only rust     # the experimental Rust build on Horizon (ADR 0068, rust/README.md)
+cargo test --manifest-path rust/Cargo.toml   # the Rust build's mods
 ```
 
 - Smoke tasks can say `BUILD SUCCESSFUL` with failures inside. Read the report they write.

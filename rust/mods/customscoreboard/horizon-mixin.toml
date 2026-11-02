@@ -1,0 +1,41 @@
+# Incari's Custom Scoreboard (features/customscoreboard) for the Rust build (ADR 0068, 0069). Hooks by name where Horizon
+# has stamped the hook point (native-hooks.json), by function where it's still pending. Its
+# settings and HUD element are the client's (rust/mods/incari): the module menu shows them and the HUD editor places it.
+[mod]
+id = "incari_customscoreboard"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_customscoreboard"
+source = "runtime.rs"
+
+[[injection]]
+id = "place"
+# Horizon's sidebar_place hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_client_hooks.json), so this targets its function. Make it
+# `hook = "sidebar_place"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_sidebar_place"
+kind = "HEAD"
+helper = "place.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "screen", ty = "[f32; 2]", value = "screen" },
+  { name = "bounds", ty = "[f32; 4]", value = "bounds" },
+  { name = "offset", ty = "&mut [f32; 2]", value = "&mut *offset" },
+  { name = "scale", ty = "&mut f32", value = "&mut *scale" },
+]
+
+[[injection]]
+id = "hud"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]

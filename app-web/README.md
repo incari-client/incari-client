@@ -7,9 +7,12 @@ game's own `Main`. `tools/webbuild` compiles it with TeaVM into two builds (ADR 
 | --- | --- | --- | --- |
 | Fast (`-Pteavm.fast`) | `build/teavm-fast/` | JSPI | Chrome/Edge 137+, Firefox 153+ |
 | Compatible (default) | `build/teavm/` | TeaVM coroutines: slower, twice the size | anything with WebAssembly GC, Safari too |
+| Rust (experimental) | `build/rust/` | Web Workers (Horizon's own) | WebGPU: Chrome and Edge 113+ ([`rust/`](../rust/README.md), ADR 0068) |
 
 `-Pteavm.fast` also makes `browserCheck`, `screenshotDiff` and `benchmark` use Fast. The page offers
-the builds that are compiled; delete a build's folder to leave it out.
+the builds that are compiled; delete a build's folder to leave it out. Rust isn't a TeaVM build:
+`./incari build --only rust` writes it, and the page opens its own page, `rust/index.html`, with its
+own files and service worker.
 
 ## Tasks
 
@@ -31,7 +34,7 @@ and serve the page's files directly.
 
 | Option | Effect |
 | --- | --- |
-| `?build=fast` / `compatible` | Pick a build, skipping the loading screen's choice |
+| `?build=fast` / `compatible` / `rust` | Pick a build, skipping the loading screen's choice. Rust's page gets the other options (Horizon reads `?args=`) |
 | `?server=ws://host:port` | Join that server once the game starts |
 | `?name=` | Offline player name; skips Edit Profile |
 | `?world=&seed=` | Create or open a singleplayer world |

@@ -1,0 +1,36 @@
+# Incari's Block Outline (features/blockoutline) for the Rust build (ADR 0068, 0069). Hooks by name
+# only (native-hooks.json). Its settings are the client's (rust/mods/incari), shown in the module
+# menu.
+[mod]
+id = "incari_blockoutline"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_blockoutline"
+source = "runtime.rs"
+
+[[injection]]
+id = "highlight"
+hook = "block_highlight"
+hook_version = 1
+kind = "HEAD"
+helper = "highlight.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "pos", ty = "[i32; 3]", value = "pos" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "visuals"
+hook = "visuals"
+hook_version = 1
+kind = "HEAD"
+helper = "visuals.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "rims", ty = "&mut Vec<crate::game::native_hooks::NativeBlockRim>", value = "&mut *rims" },
+]

@@ -1,0 +1,79 @@
+# Incari's Waypoints (features/waypoints) for the Rust build (ADR 0051, 0068, 0069). Hooks by name
+# (native-hooks.json). Its settings are the client's (rust/mods/incari): the module menu shows them.
+# The waypoints themselves are the client's (`incari_core::waypoint`), in the Java client's files,
+# so the minimap and the screens share them; this mod opens the world's, watches for deaths, draws
+# them over the HUD and binds the module's keys.
+#
+# The world map's land is what Horizon's minimap scanned (the fork's pending hook
+# `native_map_tile`, targeted by function), remembered in the Java client's region files.
+[mod]
+id = "incari_waypoints"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_waypoints"
+source = "runtime.rs"
+
+[[module]]
+id = "world"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_waypoints_world"
+source = "world.rs"
+
+[[injection]]
+id = "tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "hud"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]
+
+[[injection]]
+id = "map_tile"
+target = "horizon_client::game::native_hooks::Game<'_>::native_map_tile"
+kind = "HEAD"
+helper = "map_tile.rs"
+bindings = [
+  { name = "dimension", ty = "&str", value = "dimension" },
+  { name = "chunk", ty = "[i32; 2]", value = "chunk" },
+  { name = "colors", ty = "&[u32; 256]", value = "colors" },
+]

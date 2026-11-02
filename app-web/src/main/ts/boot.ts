@@ -21,6 +21,7 @@ import {
   missingWebgl2,
   parseManifest,
   requestedBuild,
+  rustPage,
   sizeOf,
   versioned,
   type BuildKind,
@@ -136,8 +137,8 @@ function rememberBuild(kind: BuildKind): void {
 }
 
 /**
- * Shows the choice between Fast and Compatible and waits for the player's pick. A build that can't
- * run here is shown disabled, with the reason. Fast is marked as the one to use wherever it works.
+ * Shows the choice between the builds and waits for the player's pick. A build that can't run here
+ * is shown disabled, with the reason. Fast is marked as the one to use wherever it works.
  */
 function askForBuild(builds: readonly BuildOption[], initial: BuildKind): Promise<BuildKind> {
   show("Choose a version", "");
@@ -146,6 +147,8 @@ function askForBuild(builds: readonly BuildOption[], initial: BuildKind): Promis
   return new Promise((resolve) => {
     for (const build of builds) {
       const button = element(`incari-pick-${build.kind}`) as HTMLButtonElement;
+      // Rust's button is hidden unless this copy has it.
+      button.hidden = false;
       button.disabled = !build.available;
       element(`incari-why-${build.kind}`).textContent = build.reason ?? "";
       button.addEventListener("click", () => {
@@ -355,15 +358,16 @@ async function boot(): Promise<void> {
 
   show("Checking your browser");
   progress(null);
-  const features = detectFeatures();
+  const features = await detectFeatures();
   const manifest = await readManifest();
+  const builds = buildOptions(features, manifest);
+  // Rust needs neither (it draws through WebGPU); where it can run, the choice says what can't.
   const missing = missingWebgl2(features) ?? missingWasmGc(features);
-  if (missing !== null) {
+  if (missing !== null && !builds.some((build) => build.kind === "rust" && build.available)) {
     throw new Error(missing);
   }
-  // The player picks where both builds can run; `?build=fast` or `?build=compatible` picks in the
-  // address (the checks and the benchmark do), and a browser that can run only one runs it.
-  const builds = buildOptions(features, manifest);
+  // The player picks where more than one build can run; `?build=fast`, `compatible` or `rust`
+  // picks in the address (the checks and the benchmark do), and a browser that can run only one runs it.
   const runnable = builds.filter((build) => build.available);
   if (runnable.length === 0) {
     throw new Error(builds.map((build) => build.reason).join(" "));
@@ -374,6 +378,12 @@ async function boot(): Promise<void> {
   const choice = buildFor(picked, builds, manifest);
   if (choice.kind === "unsupported") {
     throw new Error(choice.reason);
+  }
+  if (choice.kind === "rust") {
+    // Its own page, files and service worker (ADR 0068).
+    console.log("[Incari] Loader: opening the Rust build");
+    location.assign(rustPage(choice.target, location.href));
+    return;
   }
   page.incariBuild = {
     id: manifest.id,

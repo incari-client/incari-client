@@ -1,0 +1,51 @@
+# Incari's Hit & Kill Effects (features/hiteffects) for the Rust build (ADR 0068, 0069). Hooks by
+# name where Horizon has stamped the hook point (native-hooks.json), by function where it's still
+# pending. Its settings are the client's (rust/mods/incari), shown in the module menu.
+[mod]
+id = "incari_hiteffects"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_hiteffects"
+source = "runtime.rs"
+
+[[injection]]
+id = "attacked"
+# Horizon's player_attacked hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_client_hooks.json), so this targets its function. Make it
+# `hook = "player_attacked"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_player_attacked"
+kind = "HEAD"
+helper = "attacked.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "entity", ty = "u32", value = "entity" },
+  { name = "pos", ty = "[f64; 3]", value = "pos" },
+]
+
+[[injection]]
+id = "died"
+# Horizon's mob_died hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_client_hooks.json), so this targets its function. Make it
+# `hook = "mob_died"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_mob_died"
+kind = "HEAD"
+helper = "died.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "entity", ty = "u32", value = "entity" },
+  { name = "pos", ty = "[f64; 3]", value = "pos" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "elapsed", ty = "std::time::Duration", value = "elapsed" },
+]

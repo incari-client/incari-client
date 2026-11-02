@@ -1,0 +1,128 @@
+# Incari's cosmetics in the world for the Rust build (ADR 0061, 0069): worn capes, hats, wings and
+# back items on players, name tag styles and Incari's badge (name tags, the tab list, chat),
+# trails, and emotes with the emote wheel (G). What's worn and how it looks is the client's
+# (`incari_core::cosmetics`, rust/mods/incari); the Wardrobe is its screen. Hooks by name where
+# Horizon has stamped the hook point (native-hooks.json), by function where it's still pending:
+# the fork's `incari_shell_hooks.json` (player_look, name_tag, tab_list_name, chat_message).
+[mod]
+id = "incari_cosmetics"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_cosmetics"
+source = "runtime.rs"
+
+[[injection]]
+id = "listened"
+hook = "player_render_listened"
+hook_version = 1
+kind = "HEAD"
+helper = "listened.rs"
+bindings = [
+  { name = "listened", ty = "&mut bool", value = "&mut *listened" },
+]
+
+[[injection]]
+id = "look"
+# Pending in the fork's incari_shell_hooks.json: make it `hook = "player_look"` and
+# `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_player_look"
+kind = "HEAD"
+helper = "look.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "player", ty = "&crate::game::native_mob_draw::NativeMobRender<'_>", value = "player" },
+  { name = "look", ty = "&mut crate::game::native_mob_draw::NativePlayerLook<'_>", value = "&mut *look" },
+]
+
+[[injection]]
+id = "layer"
+hook = "mob_layer"
+hook_version = 1
+kind = "HEAD"
+helper = "layer.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "mob", ty = "&crate::game::native_mob_draw::NativeMobRender<'_>", value = "mob" },
+  { name = "who", ty = "Option<&crate::game::native_mob_draw::NativePlayerRender<'_>>", value = "who" },
+  { name = "draw", ty = "&mut crate::game::native_block_entity_draw::BlockEntityDraw", value = "&mut *draw" },
+]
+
+[[injection]]
+id = "name_tag"
+# Pending (incari_shell_hooks.json): `hook = "name_tag"`, `hook_version = 1` once stamped.
+target = "horizon_client::game::native_hooks::Game<'_>::native_name_tag"
+kind = "HEAD"
+helper = "name_tag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "who", ty = "&crate::game::native_mob_draw::NativeNameTag<'_>", value = "who" },
+  { name = "tag", ty = "&mut horizon_client::text::Text", value = "&mut *tag" },
+]
+
+[[injection]]
+id = "tab_list_name"
+# Pending (incari_shell_hooks.json): `hook = "tab_list_name"`, `hook_version = 1` once stamped.
+target = "horizon_client::game::native_hooks::Game<'_>::native_tab_list_name"
+kind = "HEAD"
+helper = "tab_list_name.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "uuid", ty = "u128", value = "uuid" },
+  { name = "local", ty = "bool", value = "local" },
+  { name = "name", ty = "&mut horizon_client::text::Text", value = "&mut *name" },
+]
+
+[[injection]]
+id = "chat_message"
+# Pending (incari_shell_hooks.json): `hook = "chat_message"`, `hook_version = 1` once stamped.
+target = "horizon_client::game::native_hooks::Game<'_>::native_chat_message"
+kind = "HEAD"
+helper = "chat_message.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "message", ty = "&mut horizon_client::text::Text", value = "&mut *message" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "reloaded"
+hook = "client_resources_reloaded"
+hook_version = 1
+kind = "HEAD"
+helper = "reloaded.rs"
+bindings = []

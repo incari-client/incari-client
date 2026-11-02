@@ -84,11 +84,22 @@ class WebFolderTest {
 
     private WebFolder.Options options(
             Path out, boolean sounds, WebFolder.SoundFiles soundFiles, @Nullable Path compatible, @Nullable Path fast) {
+        return options(out, sounds, soundFiles, compatible, fast, null);
+    }
+
+    private WebFolder.Options options(
+            Path out,
+            boolean sounds,
+            WebFolder.SoundFiles soundFiles,
+            @Nullable Path compatible,
+            @Nullable Path fast,
+            @Nullable Path rust) {
         return new WebFolder.Options(
                 out,
                 "26.3",
                 compatible,
                 fast,
+                rust,
                 in.resolve("mesher"),
                 in.resolve("page/index.html"),
                 in.resolve("page/scripts"),
@@ -134,6 +145,30 @@ class WebFolderTest {
         assertThat(manifest.getAsJsonObject("compatible").get("module").getAsString())
                 .isEqualTo("incari.wasm");
         assertThat(manifest.getAsJsonObject("programs").keySet()).containsExactly("mesher");
+        assertThat(manifest.getAsJsonArray("files")).hasSize(6);
+        assertThat(manifest.has("rust")).isFalse();
+    }
+
+    @Test
+    void putsTheRustBuildInItsOwnFolderAndListsItsPage() throws Exception {
+        write("rust/index.html", "<html>horizon");
+        write("rust/pkg/horizon-client_bg.wasm", "rust module");
+        Path out = dir.resolve("web");
+        WebFolder.Summary summary = WebFolder.write(options(
+                out,
+                false,
+                WebFolder.SoundFiles.ALL,
+                in.resolve("teavm"),
+                in.resolve("teavm-fast"),
+                in.resolve("rust")));
+
+        assertThat(out.resolve("rust/index.html")).hasContent("<html>horizon");
+        assertThat(out.resolve("rust/pkg/horizon-client_bg.wasm")).hasContent("rust module");
+        assertThat(summary.builds()).containsExactly("Fast", "Compatible", "Rust");
+        JsonObject manifest = JsonParser.parseString(Files.readString(out.resolve("build.json")))
+                .getAsJsonObject();
+        assertThat(manifest.getAsJsonObject("rust").get("page").getAsString()).isEqualTo("rust/index.html");
+        // Horizon's service worker keeps its files, so Incari's list leaves them out.
         assertThat(manifest.getAsJsonArray("files")).hasSize(6);
     }
 

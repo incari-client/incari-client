@@ -1,7 +1,7 @@
 /**
  * What the browser supports, checked once before anything is downloaded. The loader uses it to
- * offer the builds that can run here (Fast needs JSPI, both need WebAssembly GC), and to explain a
- * failure before the player waits through a download that can't run.
+ * offer the builds that can run here (Fast needs JSPI, both need WebAssembly GC, Rust needs WebGPU),
+ * and to explain a failure before the player waits through a download that can't run.
  */
 import { supportsJspi } from "./jspi.ts";
 
@@ -15,8 +15,10 @@ export interface BrowserFeatures {
    * it; without it, workers fall back to transferring buffers.
    */
   readonly crossOriginIsolated: boolean;
-  /** A WebGL2 context can be created: the graphics floor for every build. */
+  /** A WebGL2 context can be created: the graphics floor for Fast and Compatible. */
   readonly webgl2: boolean;
+  /** WebGPU gives an adapter: what the experimental Rust build draws with (ADR 0068). */
+  readonly webgpu: boolean;
 }
 
 /**
@@ -38,15 +40,51 @@ export interface FeatureScope {
   readonly crossOriginIsolated?: boolean;
   readonly SharedArrayBuffer?: unknown;
   readonly document?: Pick<Document, "createElement">;
+  readonly navigator?: { readonly gpu?: GpuLike };
 }
 
-export function detectFeatures(scope: FeatureScope = globalThis): BrowserFeatures {
+/** The part of `navigator.gpu` detection calls; TypeScript's DOM types don't have WebGPU yet. */
+export interface GpuLike {
+  requestAdapter(): Promise<unknown>;
+}
+
+/**
+ * Async because only asking for an adapter tells: a browser can have `navigator.gpu` and no GPU it
+ * will use (blocklisted drivers, software rendering off).
+ */
+export async function detectFeatures(scope: FeatureScope = globalThis): Promise<BrowserFeatures> {
   return {
     wasmGc: supportsWasmGc(scope),
     jspi: supportsWasmGc(scope) && supportsJspi(scope),
     crossOriginIsolated: scope.crossOriginIsolated === true && scope.SharedArrayBuffer !== undefined,
     webgl2: supportsWebgl2(scope),
+    webgpu: await supportsWebgpu(scope),
   };
+}
+
+async function supportsWebgpu(scope: FeatureScope): Promise<boolean> {
+  const gpu = scope.navigator?.gpu;
+  if (gpu === undefined) {
+    return false;
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    // Bounded: an adapter request on a wedged GPU process can take seconds, and this is before the
+    // player sees anything.
+    const adapter = await Promise.race([
+      gpu.requestAdapter(),
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => {
+          resolve(null);
+        }, 2000);
+      }),
+    ]);
+    return adapter !== null && adapter !== undefined;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function supportsWasmGc(scope: FeatureScope): boolean {

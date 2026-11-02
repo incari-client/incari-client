@@ -14,12 +14,19 @@ import {
   missingWebgl2,
   parseManifest,
   requestedBuild,
+  rustPage,
   sizeOf,
   versioned,
   type BuildManifest,
 } from "../../main/ts/loader.ts";
 
-const everything: BrowserFeatures = { wasmGc: true, jspi: true, crossOriginIsolated: true, webgl2: true };
+const everything: BrowserFeatures = {
+  wasmGc: true,
+  jspi: true,
+  crossOriginIsolated: true,
+  webgl2: true,
+  webgpu: true,
+};
 /** Safari 18.2+ and Chrome 119-136: WebAssembly GC, no JSPI. */
 const noJspi: BrowserFeatures = { ...everything, jspi: false };
 
@@ -55,6 +62,14 @@ describe("buildOptions", () => {
     ]);
   });
 
+  it("offers Rust last, only when the copy has it, and says when WebGPU is missing", () => {
+    const withRust: BuildManifest = { ...manifest, rust: { page: "rust/index.html" } };
+    assert.deepEqual(buildOptions(everything, withRust)[2], { kind: "rust", available: true });
+    const noWebgpu = buildOptions({ ...everything, webgpu: false }, withRust).find((o) => o.kind === "rust");
+    assert.equal(noWebgpu?.available, false);
+    assert.match(noWebgpu.reason ?? "", /WebGPU/);
+  });
+
   it("marks a build this copy doesn't include", () => {
     const fastOnly = { ...manifest, compatible: undefined } as unknown as BuildManifest;
     assert.deepEqual(buildOptions(everything, fastOnly), [
@@ -68,6 +83,7 @@ describe("requestedBuild", () => {
   it("reads ?build=fast and ?build=compatible, and nothing else", () => {
     assert.equal(requestedBuild("fast"), "fast");
     assert.equal(requestedBuild("compatible"), "compatible");
+    assert.equal(requestedBuild("rust"), "rust");
     assert.equal(requestedBuild("wasm"), null);
     assert.equal(requestedBuild(null), null);
   });
@@ -78,6 +94,14 @@ describe("initialBuild", () => {
 
   it("starts on Fast, the recommended build", () => {
     assert.equal(initialBuild(both, null), "fast");
+  });
+
+  it("never starts on Rust unless it was the last pick or nothing else runs", () => {
+    const withRust = buildOptions(everything, { ...manifest, rust: { page: "rust/index.html" } });
+    assert.equal(initialBuild(withRust, null), "fast");
+    assert.equal(initialBuild(withRust, "rust"), "rust");
+    const rustOnly = withRust.map((option) => (option.kind === "rust" ? option : { ...option, available: false }));
+    assert.equal(initialBuild(rustOnly, null), "rust");
   });
 
   it("starts on the player's last pick while it can still run", () => {
@@ -94,6 +118,14 @@ describe("buildFor", () => {
     });
   });
 
+  it("gives the Rust build's page", () => {
+    const withRust: BuildManifest = { ...manifest, rust: { page: "rust/index.html" } };
+    assert.deepEqual(buildFor("rust", buildOptions(everything, withRust), withRust), {
+      kind: "rust",
+      target: { page: "rust/index.html" },
+    });
+  });
+
   it("refuses a build that can't run here, with the reason", () => {
     const choice = buildFor("fast", buildOptions(noJspi, manifest), manifest);
     assert.ok(choice.kind === "unsupported");
@@ -105,6 +137,20 @@ describe("buildName", () => {
   it("names the builds as the player sees them", () => {
     assert.equal(buildName("fast"), "Fast");
     assert.equal(buildName("compatible"), "Compatible");
+    assert.equal(buildName("rust"), "Rust");
+  });
+});
+
+describe("rustPage", () => {
+  it("opens Rust's page beside this one, keeping the address options but ?build", () => {
+    assert.equal(
+      rustPage({ page: "rust/index.html" }, "https://example.test/incari/?build=rust&args=--world%20T"),
+      "https://example.test/incari/rust/index.html?args=--world+T",
+    );
+    assert.equal(
+      rustPage({ page: "rust/index.html" }, "https://example.test/"),
+      "https://example.test/rust/index.html",
+    );
   });
 });
 

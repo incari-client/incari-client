@@ -1,0 +1,103 @@
+# Incari's Schematics (features/schematics, ADR 0066) for the Rust build (ADR 0068, 0069). A
+# structure from a .litematic, .schem or .nbt placed in the world as see-through ghost blocks to
+# build by. The readers, placement, checking, material list and HUD are the client's
+# (`incari_core::schematic`, no game types); the chooser is its screen (`file_chooser`). This mod is
+# their game side: the game's blocks, the module's keys, its HUD elements, and the ghosts and boxes
+# drawn in the world.
+#
+# The hook points `lines`, `ghosts`, `ghost_revision` and `ghost_section` are still pending
+# fragments (tools/native-hook-fragments/incari_client_hooks.json and incari_shell_hooks.json), so
+# they're targeted by function. Make each `hook = "<name>"` and `hook_version = 1` once Horizon
+# stamps them.
+[mod]
+id = "incari_schematics"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_schematics"
+source = "runtime.rs"
+
+[[module]]
+id = "world"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_schematics_world"
+source = "world.rs"
+
+[[injection]]
+id = "tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "hud"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]
+
+[[injection]]
+id = "lines"
+target = "horizon_client::game::native_hooks::Game<'_>::native_lines"
+kind = "HEAD"
+helper = "lines.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "partial", ty = "f32", value = "partial" },
+  { name = "lines", ty = "&mut Vec<crate::game::native_hooks::NativeLine>", value = "&mut *lines" },
+]
+
+[[injection]]
+id = "ghosts"
+target = "horizon_client::game::native_hooks::Game<'_>::native_ghosts"
+kind = "HEAD"
+helper = "ghosts.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "ghosts", ty = "&mut crate::game::native_hooks::NativeGhosts", value = "&mut *ghosts" },
+]
+
+[[injection]]
+id = "ghost_revision"
+target = "horizon_client::game::native_hooks::Game<'_>::native_ghost_revision"
+kind = "HEAD"
+helper = "ghost_revision.rs"
+bindings = [
+  { name = "section", ty = "[i32; 3]", value = "section" },
+  { name = "revision", ty = "&mut u64", value = "&mut *revision" },
+]
+
+[[injection]]
+id = "ghost_section"
+target = "horizon_client::game::native_hooks::Game<'_>::native_ghost_section"
+kind = "HEAD"
+helper = "ghost_section.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "section", ty = "[i32; 3]", value = "section" },
+  { name = "ghosts", ty = "&mut Vec<crate::game::native_hooks::NativeGhost>", value = "&mut *ghosts" },
+]

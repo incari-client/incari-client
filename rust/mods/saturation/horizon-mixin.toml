@@ -1,0 +1,36 @@
+# Incari's Saturation (features/saturation) for the Rust build (ADR 0068, 0069). Hooks by name only
+# (native-hooks.json). Its settings are the client's (rust/mods/incari): the module menu shows them.
+[mod]
+id = "incari_saturation"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_saturation"
+source = "runtime.rs"
+
+[[injection]]
+id = "health"
+hook = "health_hud"
+hook_version = 1
+kind = "HEAD"
+helper = "health.rs"
+bindings = [
+  { name = "inputs", ty = "&horizon_client::hud_layout::HealthInputs", value = "inputs" },
+  { name = "wi", ty = "i32", value = "wi" },
+  { name = "hi", ty = "i32", value = "hi" },
+]
+
+[[injection]]
+id = "hud"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]

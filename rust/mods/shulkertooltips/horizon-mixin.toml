@@ -1,0 +1,62 @@
+# Incari's Shulker Tooltips (features/shulkertooltips) for the Rust build (ADR 0068, 0069). Hooks by name where Horizon
+# has stamped the hook point (native-hooks.json), by function where it's still pending. Its
+# settings are the client's (rust/mods/incari): the module menu shows them.
+[mod]
+id = "incari_shulkertooltips"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_shulkertooltips"
+source = "runtime.rs"
+
+[[injection]]
+id = "size"
+hook = "tooltip_component"
+hook_version = 1
+kind = "HEAD"
+helper = "size.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "size", ty = "&mut Option<[f32; 2]>", value = "&mut *size" },
+]
+
+[[injection]]
+id = "draw"
+hook = "tooltip_component_draw"
+hook_version = 1
+kind = "HEAD"
+helper = "draw.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "origin", ty = "[f32; 2]", value = "origin" },
+  { name = "size", ty = "[f32; 2]", value = "size" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "lines"
+hook = "tooltip"
+hook_version = 1
+kind = "HEAD"
+helper = "lines.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "lines", ty = "&mut Vec<(horizon_client::text::Text, u32)>", value = "&mut *lines" },
+]

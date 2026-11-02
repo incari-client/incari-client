@@ -1,0 +1,14 @@
+# The Rust build's mods' own logic, for `cargo test` (ADR 0068). Each mod's runtime.rs is the module
+# horizon-mixins adds to the game, and uses no game types, so it compiles here alone.
+[package]
+name = "incari-rust-mods"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[workspace]
+members = [".", "mods/incari/core"]

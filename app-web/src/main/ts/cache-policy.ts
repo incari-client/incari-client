@@ -40,6 +40,10 @@ export function strategyFor(url: URL, scope: URL, method = "GET"): Strategy {
     return "pass";
   }
   const path = url.pathname.slice(scope.pathname.length);
+  if (path.startsWith("rust/")) {
+    // The Rust build's own service worker keeps its files (ADR 0068).
+    return "pass";
+  }
   if (path === "client.jar") {
     // Kept by the storage worker (OPFS or IndexedDB, ADR 0011): caching it here would store it twice.
     return "pass";

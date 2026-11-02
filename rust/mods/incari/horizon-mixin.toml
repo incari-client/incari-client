@@ -1,0 +1,106 @@
+# Incari Client itself on Horizon (ADR 0069): its look over the game's screens, its title and pause
+# menus, the module menu, the HUD editor, Incari Settings and the profiles. The client is the
+# `core` crate (no game types); these helpers are its game side. The hook points are the fork's
+# pending fragment `incari_shell_hooks.json`, targeted by function until they're stamped.
+[mod]
+id = "incari_client"
+version = "0.1.0"
+priority = 90
+
+[[crate]]
+id = "core"
+path = "core"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_client"
+source = "glue.rs"
+
+[[injection]]
+id = "claim"
+target = "horizon_client::game::native_hooks::Game<'_>::native_screen_claim"
+kind = "HEAD"
+helper = "claim.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "screen", ty = "&str", value = "screen" },
+  { name = "claimed", ty = "&mut bool", value = "&mut *claimed" },
+]
+
+[[injection]]
+id = "backdrop_claim"
+target = "horizon_client::game::native_hooks::Game<'_>::native_backdrop_claim"
+kind = "HEAD"
+helper = "backdrop_claim.rs"
+bindings = [
+  { name = "claimed", ty = "&mut bool", value = "&mut *claimed" },
+]
+
+[[injection]]
+id = "startup_claim"
+target = "horizon_client::game::native_hooks::Game<'_>::native_startup_title_claim"
+kind = "HEAD"
+helper = "startup_claim.rs"
+bindings = [
+  { name = "claimed", ty = "&mut bool", value = "&mut *claimed" },
+]
+
+[[injection]]
+id = "backdrop"
+target = "horizon_client::game::native_hooks::Game<'_>::native_backdrop"
+kind = "HEAD"
+helper = "backdrop.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+[[injection]]
+id = "overlay"
+target = "horizon_client::game::native_hooks::Game<'_>::native_overlay"
+kind = "HEAD"
+helper = "overlay.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+[[injection]]
+id = "input"
+target = "horizon_client::game::native_hooks::Game<'_>::native_overlay_input"
+kind = "HEAD"
+helper = "input.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "input", ty = "&crate::game::native_hooks::NativeInput<'_>", value = "input" },
+  { name = "consumed", ty = "&mut bool", value = "&mut *consumed" },
+]
+
+[[injection]]
+id = "tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "reloaded"
+hook = "client_resources_reloaded"
+hook_version = 1
+kind = "HEAD"
+helper = "reloaded.rs"
+bindings = []
+
+[[injection]]
+id = "screenshot"
+target = "horizon_client::game::native_hooks::Game<'_>::native_screenshot_saved"
+kind = "HEAD"
+helper = "screenshot.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "path", ty = "&std::path::Path", value = "path" },
+]

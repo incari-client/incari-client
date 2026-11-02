@@ -1,0 +1,25 @@
+# Incari's Armor & Potion View (features/armorpotionview) for the Rust build (ADR 0068, 0069). Hooks by name only
+# (native-hooks.json). Its settings and HUD elements are the client's (rust/mods/incari): the module
+# menu shows them and the HUD editor places them.
+[mod]
+id = "incari_armorpotionview"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_armorpotionview"
+source = "runtime.rs"
+
+[[injection]]
+id = "hud"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "corners", ty = "&mut horizon_client::extras_hud::Corners", value = "&mut *corners" },
+]

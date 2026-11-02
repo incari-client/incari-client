@@ -1,0 +1,28 @@
+# Incari's Low Shield (features/lowshield) for the Rust build (ADR 0068, 0069).
+# Hooks by name where Horizon has stamped the hook point (native-hooks.json), by function where
+# it's still pending. Its settings are the client's (rust/mods/incari): the module menu shows them.
+[mod]
+id = "incari_lowshield"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_lowshield"
+source = "runtime.rs"
+
+[[injection]]
+id = "pose"
+# Horizon's hand_pose hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_client_hooks.json), so this targets its function. Make it
+# `hook = "hand_pose"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_hand_pose"
+kind = "HEAD"
+helper = "pose.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "using", ty = "bool", value = "using" },
+  { name = "pose", ty = "&mut glam::Mat4", value = "&mut *pose" },
+]

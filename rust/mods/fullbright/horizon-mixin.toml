@@ -1,0 +1,22 @@
+# Incari's Fullbright (features/fullbright) for the Rust build (ADR 0068, 0069). Hooks by name only
+# (native-hooks.json). Its settings are the client's (rust/mods/incari), shown in the module menu.
+[mod]
+id = "incari_fullbright"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_fullbright"
+source = "runtime.rs"
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]

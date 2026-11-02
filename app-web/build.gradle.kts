@@ -354,6 +354,10 @@ val buildFiles: List<String> = run {
         "incari.pack=${pageDir.get().file("incari.pack").asFile}"
 }
 
+// The experimental Rust build (ADR 0068): Horizon's browser port, its own page and files, which
+// `./incari build` writes here (tools/build Horizon). Offered when it's there.
+val rustDir = layout.buildDirectory.dir("rust").get().asFile
+
 tasks.register<JavaExec>("buildManifest") {
     group = "build"
     description = "Writes build/page/build.json: the build's files with their sizes and hashes."
@@ -367,11 +371,12 @@ tasks.register<JavaExec>("buildManifest") {
     val out = pageDir.get().file("build.json").asFile
     val version = minecraftVersion.get()
     val files = buildFiles
+    val rust = rustDir
     // Always: it hashes whatever build is there, which Gradle doesn't track between the tasks.
     outputs.upToDateWhen { false }
     outputs.file(out)
     argumentProviders.add(CommandLineArgumentProvider {
-        listOf("--out", out.path, "--game", version) + files.flatMap { listOf("--file", it) }
+        listOf("--out", out.path, "--game", version, "--rust", rust.path) + files.flatMap { listOf("--file", it) }
     })
 }
 
@@ -389,7 +394,8 @@ fun pageServerArgs(experiment: Boolean): List<String> {
             "--file", "mesher.wasm-runtime.js=${mesherOutput.get().file("mesher.wasm-runtime.js").asFile}",
             "--file", "build.json=${pageDir.get().file("build.json").asFile}",
             "--file", "incari.pack=${pageDir.get().file("incari.pack").asFile}") +
-            gameModuleFiles.flatMap { listOf("--file", it) })
+            gameModuleFiles.flatMap { listOf("--file", it) } +
+            listOf("--dir", "rust=${rustDir.path}"))
 }
 
 tasks.register<JavaExec>("serve") {
@@ -417,7 +423,8 @@ tasks.register<JavaExec>("serve") {
 // web server can serve (tools/webbuild WebFolder, ADR 0028), with its own build.json, an .htaccess and
 // a README.txt that says it must not be shared. `./incari build` runs it. Options: `-Pweb.out=<dir>`
 // (default build/web/), `-Pweb.builds=fast,compatible` (the builds to put in, both by default; ADR
-// 0036: each must be compiled, Fast with -Pteavm.fast, and both release builds), `-Pweb.noSounds`
+// 0036: each must be compiled, Fast with -Pteavm.fast, and both release builds; `rust` adds
+// build/rust/, ADR 0068), `-Pweb.noSounds`
 // (leave the asset index out: ~460 MB of sounds, languages and the Unicode font), `-Pweb.skipBuild` (compile nothing first; otherwise the one
 // build -Pteavm.fast picks is compiled). It holds Mojang's code and files: never published.
 tasks.register<JavaExec>("webFolder") {
@@ -434,7 +441,11 @@ tasks.register<JavaExec>("webFolder") {
         .orElse(layout.buildDirectory.dir("web").get().asFile.path)
     val builds = providers.gradleProperty("web.builds").orElse("fast,compatible").get()
         .split(",").map { it.trim() }.filter { it.isNotEmpty() }
-    builds.forEach { require(it == "fast" || it == "compatible") { "-Pweb.builds takes fast, compatible or both, not '$it'" } }
+    builds.forEach {
+        require(it == "fast" || it == "compatible" || it == "rust") {
+            "-Pweb.builds takes fast, compatible and rust, not '$it'"
+        }
+    }
     val sounds = !providers.gradleProperty("web.noSounds").isPresent
     val soundFiles = when {
         providers.gradleProperty("web.noSoundFiles").isPresent -> "no"
@@ -450,6 +461,7 @@ tasks.register<JavaExec>("webFolder") {
     val compatible = layout.buildDirectory.dir("teavm").get().asFile
     val fast = layout.buildDirectory.dir("teavm-fast").get().asFile
     val mesher = mesherOutput.get().asFile
+    val rust = rustDir
     val page = layout.projectDirectory.file("src/main/web/index.html").asFile
     val scripts = pageDir.get().dir("scripts").asFile
     val pack = pageDir.get().file("incari.pack").asFile
@@ -466,6 +478,7 @@ tasks.register<JavaExec>("webFolder") {
             "--client-jar", jar,
         ) + (if ("fast" in builds) listOf("--fast", fast.path) else emptyList()) +
             (if ("compatible" in builds) listOf("--compatible", compatible.path) else emptyList()) +
+            (if ("rust" in builds) listOf("--rust", rust.path) else emptyList()) +
             (if (sounds && assets.size == 2) listOf("--asset-index", assets[0], "--asset-objects", assets[1])
                 else emptyList()) +
             listOf("--sound-files", soundFiles)

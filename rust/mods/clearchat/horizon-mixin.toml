@@ -1,0 +1,23 @@
+# Incari's Clear Chat (features/clearchat) for the Rust build (ADR 0068, 0069). Hooks by name where Horizon
+# has stamped the hook point (native-hooks.json), by function where it's still pending. Its
+# settings are the client's (rust/mods/incari): the module menu shows them.
+[mod]
+id = "incari_clearchat"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_clearchat"
+source = "runtime.rs"
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]

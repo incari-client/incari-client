@@ -1,0 +1,24 @@
+//! Incari's screens, each a port of the Java client's.
+pub mod account;
+pub mod chat_menu;
+pub mod confirm_link;
+pub mod credits;
+pub mod emote_wheel;
+pub mod file_chooser;
+pub mod form;
+pub mod grid;
+pub mod hud_editor;
+pub mod incari_settings;
+pub mod list;
+pub mod module_settings;
+pub mod modules;
+pub mod pause;
+pub mod profiles;
+pub mod recorder;
+pub mod release_notes;
+pub mod screenshots;
+pub mod title;
+pub mod wardrobe;
+pub mod waypoint_edit;
+pub mod waypoint_list;
+pub mod world_map;

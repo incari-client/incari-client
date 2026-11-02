@@ -28,15 +28,25 @@ export interface ProgramTarget {
 }
 
 /**
- * The two builds of the game, both WebAssembly GC (ADR 0036). What a player sees them called, and
- * what they are:
+ * The Rust build (ADR 0068): Horizon's browser port with Incari's mods, a page of its own that the
+ * loader opens instead of loading a module.
+ */
+export interface RustTarget {
+  /** Its page, relative to this one. */
+  readonly page: string;
+}
+
+/**
+ * The builds of the game. What a player sees them called, and what they are:
  *
  * - **Fast**: suspends Java's threads through JSPI (JavaScript Promise Integration), so its code runs
- *   at full speed. It needs a browser with JSPI.
+ *   at full speed. It needs a browser with JSPI. WebAssembly GC, like Compatible (ADR 0036).
  * - **Compatible**: emulates the threads with TeaVM's coroutines, which slows all of its code and
  *   doubles its size, but runs wherever WebAssembly GC does (Safari, older Chrome and Firefox).
+ * - **Rust**: experimental, a rewrite of the game in Rust drawing through WebGPU (ADR 0068). Never
+ *   recommended; offered where WebGPU works and the copy includes it.
  */
-export type BuildKind = "fast" | "compatible";
+export type BuildKind = "fast" | "compatible" | "rust";
 
 /**
  * `build.json`, which `:app-web:buildManifest` writes beside the builds: what there is to load, and
@@ -52,6 +62,7 @@ export interface BuildManifest {
   readonly release: boolean;
   readonly fast?: WasmTarget;
   readonly compatible?: WasmTarget;
+  readonly rust?: RustTarget;
   /** The asset pack (build-time data the game mounts read-only), if the build has one. */
   readonly pack?: string;
   /** Programs for the page's workers, by name (`mesher`). */
@@ -90,7 +101,7 @@ export function parseManifest(value: unknown): BuildManifest {
   if (typeof manifest.id !== "string" || !Array.isArray(manifest.files)) {
     throw new Error("build.json has no id or file list");
   }
-  if (manifest.fast === undefined && manifest.compatible === undefined) {
+  if (manifest.fast === undefined && manifest.compatible === undefined && manifest.rust === undefined) {
     throw new Error("build.json lists no build to run");
   }
   return manifest as BuildManifest;
@@ -98,7 +109,9 @@ export function parseManifest(value: unknown): BuildManifest {
 
 /** The build to run, or why it can't run. */
 export type Choice =
-  { readonly kind: BuildKind; readonly target: WasmTarget } | { readonly kind: "unsupported"; readonly reason: string };
+  | { readonly kind: "fast" | "compatible"; readonly target: WasmTarget }
+  | { readonly kind: "rust"; readonly target: RustTarget }
+  | { readonly kind: "unsupported"; readonly reason: string };
 
 /** Why neither build can run without WebGL 2, the graphics floor for both; null if it's there. */
 export function missingWebgl2(features: BrowserFeatures): string | null {
@@ -124,7 +137,7 @@ export interface BuildOption {
 
 /**
  * The builds to offer, Fast first: it's the one to run wherever it works (far quicker, and a smaller
- * download). Compatible is for browsers without JSPI.
+ * download). Compatible is for browsers without JSPI. Rust comes last, and only when the copy has it.
  */
 export function buildOptions(features: BrowserFeatures, manifest: BuildManifest): readonly BuildOption[] {
   const fast: BuildOption =
@@ -141,17 +154,27 @@ export function buildOptions(features: BrowserFeatures, manifest: BuildManifest)
     manifest.compatible === undefined
       ? { kind: "compatible", available: false, reason: "This copy of the game doesn't include Compatible." }
       : { kind: "compatible", available: true };
-  return [fast, compatible];
+  if (manifest.rust === undefined) {
+    return [fast, compatible];
+  }
+  const rust: BuildOption = features.webgpu
+    ? { kind: "rust", available: true }
+    : {
+        kind: "rust",
+        available: false,
+        reason: "Rust needs WebGPU: Chrome or Edge 113 or newer, with a graphics card it supports.",
+      };
+  return [fast, compatible, rust];
 }
 
-/** `?build=fast` or `?build=compatible`: a build asked for in the address, skipping the choice. */
+/** `?build=fast`, `compatible` or `rust`: a build asked for in the address, skipping the choice. */
 export function requestedBuild(value: string | null): BuildKind | null {
-  return value === "fast" || value === "compatible" ? value : null;
+  return value === "fast" || value === "compatible" || value === "rust" ? value : null;
 }
 
 /**
  * The option the choice starts on: the player's last pick if it can still run, else Fast if it can,
- * else Compatible.
+ * else Compatible, and Rust only when nothing else runs.
  */
 export function initialBuild(options: readonly BuildOption[], remembered: string | null): BuildKind {
   const available = options.filter((option) => option.available).map((option) => option.kind);
@@ -159,22 +182,38 @@ export function initialBuild(options: readonly BuildOption[], remembered: string
   if (last !== null && available.includes(last)) {
     return last;
   }
-  return available.includes("fast") ? "fast" : "compatible";
+  return available.includes("fast") ? "fast" : available.includes("compatible") ? "compatible" : "rust";
 }
 
 /** The manifest's entry for a picked build, or why it can't run. */
 export function buildFor(kind: BuildKind, options: readonly BuildOption[], manifest: BuildManifest): Choice {
   const option = options.find((o) => o.kind === kind);
-  const target = kind === "fast" ? manifest.fast : manifest.compatible;
-  if (option?.available !== true || target === undefined) {
-    return { kind: "unsupported", reason: option?.reason ?? `No ${kind} build to run.` };
+  const unsupported: Choice = { kind: "unsupported", reason: option?.reason ?? `No ${kind} build to run.` };
+  if (option?.available !== true) {
+    return unsupported;
   }
-  return { kind, target };
+  if (kind === "rust") {
+    return manifest.rust === undefined ? unsupported : { kind, target: manifest.rust };
+  }
+  const target = kind === "fast" ? manifest.fast : manifest.compatible;
+  return target === undefined ? unsupported : { kind, target };
 }
 
 /** What the player calls a build. */
 export function buildName(kind: BuildKind): string {
-  return kind === "fast" ? "Fast" : "Compatible";
+  return kind === "fast" ? "Fast" : kind === "compatible" ? "Compatible" : "Rust";
+}
+
+/**
+ * The Rust build's page with this page's address options, but `?build`: Horizon reads its own
+ * (`?args=`, its command line), and the rest it ignores.
+ */
+export function rustPage(target: RustTarget, here: string): string {
+  const url = new URL(target.page, here);
+  const search = new URL(here).searchParams;
+  search.delete("build");
+  url.search = search.toString();
+  return url.href;
 }
 
 /** A file's URL with its hash as the version, so a cache keeps it exactly until it changes. */

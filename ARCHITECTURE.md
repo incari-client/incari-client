@@ -50,6 +50,7 @@ platform layer).
 | `app-desktop` | Desktop runtime: installs `platform-desktop`, starts the game | `client`, `platform-desktop` |
 | `app-web` | Browser build: entry point, mesher worker, loader page | `client`, `platform-web`, `web-classlib`, `render-webgl2` |
 | `tools/*` | Build CLI, TeaVM compile, shader and sprite translation, dev servers ([`tools/README.md`](tools/README.md)) | see `module-boundaries.txt` |
+| `rust/` | Not a Gradle module: Incari on Horizon, the experimental Rust build: the client (`incari_core`, its look, screens and framework) and its feature mods ([`rust/README.md`](rust/README.md), ADR 0068, 0069) | Horizon's hook points only |
 
 **Why `client` is one compilation:** patches call Incari code that uses game types, so the two can't
 be compiled separately. The vendor half is compiled without lint, and `strictCompile` rechecks

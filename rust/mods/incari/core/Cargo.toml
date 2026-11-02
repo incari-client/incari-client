@@ -1,0 +1,17 @@
+# Incari Client on Horizon (ADR 0068, 0069): the client's look, screens, module framework and
+# profiles, with no game types. The bundle's helpers (rust/mods/incari/*.rs) are its game side.
+[package]
+name = "incari-core"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+[lib]
+name = "incari_core"
+path = "src/lib.rs"
+
+[dependencies]
+ab_glyph = "0.2"
+png = "0.18"
+serde_json = "1"

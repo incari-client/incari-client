@@ -30,6 +30,11 @@ describe("strategyFor", () => {
     assert.equal(strategyFor(new URL("https://example.test/other/boot.js"), scope), "pass");
     assert.equal(strategyFor(at("build.json"), scope, "POST"), "pass");
   });
+
+  it("leaves the Rust build to its own worker, versioned files and page included", () => {
+    assert.equal(strategyFor(at("rust/pkg/horizon-client_bg.wasm?v=0123456789abcdef"), scope), "pass");
+    assert.equal(strategyFor(at("rust/index.html"), scope), "pass");
+  });
 });
 
 describe("staleBuildEntries", () => {

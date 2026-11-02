@@ -1,0 +1,36 @@
+# Incari's Zoom (features/zoom) for the Rust build (ADR 0068, 0069). Hooks by name only
+# (native-hooks.json), so it builds on any Horizon with these hook points. Its settings are the
+# client's (rust/mods/incari): the module menu shows them.
+[mod]
+id = "incari_zoom"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_zoom"
+source = "runtime.rs"
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "zoom"
+hook = "zoom"
+hook_version = 1
+kind = "HEAD"
+helper = "zoom.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "zoom", ty = "&mut Option<crate::game::native_hooks::NativeZoom>", value = "&mut *zoom" },
+]
