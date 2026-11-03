@@ -8,7 +8,7 @@ fn incari_hiteffects_attacked(game: &mut crate::game::Game<'_>, entity: u32, pos
     };
     // Its size, from Horizon's list (a hit is rare: walking it is fine).
     let size = (0..game.native_entity_count())
-        .filter_map(|n| game.native_entity(n, 1.0))
+        .filter_map(|n| game.native_entity_at(n, 1.0))
         .find(|e| e.id == entity)
         .map_or(m::SIZE, |e| [e.max[0] - e.min[0], e.max[1] - e.min[1]]);
     m::with(|s| s.hit(entity, size));

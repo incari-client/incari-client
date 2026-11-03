@@ -41,7 +41,7 @@ fn incari_hitboxes_lines(
         width,
     };
     for n in 0..game.native_entity_count() {
-        let Some(e) = game.native_entity(n, partial) else {
+        let Some(e) = game.native_entity_at(n, partial) else {
             continue;
         };
         let near = (e.min[0] - p.x).powi(2) + (e.min[1] - p.y).powi(2) + (e.min[2] - p.z).powi(2);
