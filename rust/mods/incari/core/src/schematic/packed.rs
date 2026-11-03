@@ -32,7 +32,12 @@ impl Packed {
         if !(1..=32).contains(&bits) || data.len() < words_for(bits, len) {
             return None;
         }
-        Some(Self { bits, mask: (1u64 << bits) - 1, len, data })
+        Some(Self {
+            bits,
+            mask: (1u64 << bits) - 1,
+            len,
+            data,
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -97,7 +102,10 @@ mod tests {
             assert_eq!(p.get(i), (i as u32 * 7) & 31, "{i}");
         }
         let w = p.widened(9);
-        assert_eq!((0..40).map(|i| w.get(i)).collect::<Vec<_>>(), (0..40).map(|i| p.get(i)).collect::<Vec<_>>());
+        assert_eq!(
+            (0..40).map(|i| w.get(i)).collect::<Vec<_>>(),
+            (0..40).map(|i| p.get(i)).collect::<Vec<_>>()
+        );
     }
 
     #[test]

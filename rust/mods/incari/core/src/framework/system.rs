@@ -161,7 +161,12 @@ impl ModuleSystem {
     }
 
     pub fn switch_profile(&mut self, name: &str, storage: &mut dyn Storage) -> bool {
-        let Some(found) = self.names.iter().find(|n| n.eq_ignore_ascii_case(name)).cloned() else {
+        let Some(found) = self
+            .names
+            .iter()
+            .find(|n| n.eq_ignore_ascii_case(name))
+            .cloned()
+        else {
             return false;
         };
         self.save(storage);
@@ -279,7 +284,12 @@ pub(crate) mod tests {
         let mut files = Files::default();
         let mut sys = system();
         sys.load(&files);
-        sys.module_mut("zoom").unwrap().settings.get_mut("toggle").unwrap().set(s::Val::Key(Key::Keyboard(6)));
+        sys.module_mut("zoom")
+            .unwrap()
+            .settings
+            .get_mut("toggle")
+            .unwrap()
+            .set(s::Val::Key(Key::Keyboard(6)));
         assert!(sys.key_pressed(Key::Keyboard(6), &mut files));
         assert!(sys.on("zoom"));
         assert!(files.0["profiles/Default.json"].contains("keyboard:6"));

@@ -164,13 +164,16 @@ impl HudElement {
     pub fn text(id: &'static str, name: &'static str, anchor: Anchor, x: i32, y: i32) -> Self {
         let mut e = Self::new(id, name, anchor, x, y);
         e.look = Look::Text;
-        e.settings.add(s::bool("background", "Background", true).described("Draws a panel behind the text."));
+        e.settings.add(
+            s::bool("background", "Background", true).described("Draws a panel behind the text."),
+        );
         e.settings.add(
             s::bool("custom-color", "Custom color", false)
                 .described("Off: the text takes the theme's colors."),
         );
         e.settings.add(
-            s::color("color", "Text color", 0xFFFFFF, false).shown(s::Shown::When("custom-color", true)),
+            s::color("color", "Text color", 0xFFFFFF, false)
+                .shown(s::Shown::When("custom-color", true)),
         );
         e
     }
@@ -234,7 +237,11 @@ mod tests {
         assert_eq!(Anchor::TopRight.x(4, 50, 320), 266);
         assert_eq!(Anchor::Center.x(10, 50, 320), 145);
         assert_eq!(Anchor::Left.y(-48, 15, 240), 64);
-        assert_eq!(Anchor::BottomRight.x(0, 500, 320), 0, "too big stays at its start");
+        assert_eq!(
+            Anchor::BottomRight.x(0, 500, 320),
+            0,
+            "too big stays at its start"
+        );
         assert_eq!(Anchor::nearest(300, 5, 10, 10, 320, 240), Anchor::TopRight);
         assert_eq!(Anchor::Right.offset_x(266, 50, 320), 4);
     }
@@ -242,10 +249,16 @@ mod tests {
     #[test]
     fn moving_an_element_picks_its_nearest_anchor() {
         let mut e = HudElement::text("fps", "FPS", Anchor::Left, 2, -64);
-        assert_eq!(e.bounds([40.0, 14.0], [320.0, 240.0]), [2.0, 49.0, 40.0, 14.0]);
+        assert_eq!(
+            e.bounds([40.0, 14.0], [320.0, 240.0]),
+            [2.0, 49.0, 40.0, 14.0]
+        );
         e.place(270, 220, 40, 14, [320.0, 240.0]);
         assert_eq!(e.anchor(), Anchor::BottomRight);
-        assert_eq!(e.bounds([40.0, 14.0], [320.0, 240.0]), [270.0, 220.0, 40.0, 14.0]);
+        assert_eq!(
+            e.bounds([40.0, 14.0], [320.0, 240.0]),
+            [270.0, 220.0, 40.0, 14.0]
+        );
         e.reset_placement();
         assert_eq!(e.anchor(), Anchor::Left);
         assert_eq!(format_scale(1.5), "1.5x");

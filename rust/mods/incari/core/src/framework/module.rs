@@ -65,7 +65,9 @@ impl Module {
         category: Category,
     ) -> Self {
         let mut settings = Settings::default();
-        settings.add(s::key("toggle", "Toggle key", Key::None).described("Turns the module on and off."));
+        settings.add(
+            s::key("toggle", "Toggle key", Key::None).described("Turns the module on and off."),
+        );
         Self {
             id,
             name,
@@ -105,7 +107,12 @@ impl Module {
         self
     }
 
-    pub fn menu_button(mut self, id: &'static str, label: &'static str, icon: &'static str) -> Self {
+    pub fn menu_button(
+        mut self,
+        id: &'static str,
+        label: &'static str,
+        icon: &'static str,
+    ) -> Self {
         self.menu_buttons.push(MenuButton { id, label, icon });
         self
     }

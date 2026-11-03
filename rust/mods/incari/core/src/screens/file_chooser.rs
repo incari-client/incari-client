@@ -98,9 +98,16 @@ impl FileChooser {
         let Some(extras) = &self.extras else {
             return;
         };
-        let mut files: Vec<FileEntry> =
-            extras.list_files(&self.folder).into_iter().filter(|f| self.accepted(&f.name)).collect();
-        files.sort_by(|a, b| b.modified_ms.total_cmp(&a.modified_ms).then_with(|| a.name.cmp(&b.name)));
+        let mut files: Vec<FileEntry> = extras
+            .list_files(&self.folder)
+            .into_iter()
+            .filter(|f| self.accepted(&f.name))
+            .collect();
+        files.sort_by(|a, b| {
+            b.modified_ms
+                .total_cmp(&a.modified_ms)
+                .then_with(|| a.name.cmp(&b.name))
+        });
         self.files = files;
     }
 
@@ -119,7 +126,10 @@ impl FileChooser {
 
     /// File `name` read and handed on; false (and the caption says why) if it couldn't be.
     fn choose(&mut self, name: &str) -> bool {
-        let bytes = self.extras.as_ref().and_then(|e| e.read_file(&format!("{}/{name}", self.folder)));
+        let bytes = self
+            .extras
+            .as_ref()
+            .and_then(|e| e.read_file(&format!("{}/{name}", self.folder)));
         match bytes {
             None => {
                 self.caption = Some(format!("Couldn't read {name}"));
@@ -142,7 +152,8 @@ impl FileChooser {
         let ok = self.accepted(name)
             && crate::host_extras::safe_path(name)
             && platform().is_some_and(|p| (p.write)(&format!("{}/{name}", self.folder), data));
-        self.caption = (!ok).then(|| format!("{name} wasn't added: only {}", self.extensions.join(", ")));
+        self.caption =
+            (!ok).then(|| format!("{name} wasn't added: only {}", self.extensions.join(", ")));
         self.list_files();
     }
 }
@@ -156,8 +167,15 @@ impl Screen for FileChooser {
         if let Some((name, data)) = platform().and_then(|p| (p.take_picked)()) {
             self.picked(&name, &data);
         }
-        let caption = self.caption.clone().unwrap_or_else(|| self.default_caption());
-        let open = if self.shows_folders() { "Open folder" } else { "Add files" };
+        let caption = self
+            .caption
+            .clone()
+            .unwrap_or_else(|| self.default_caption());
+        let open = if self.shows_folders() {
+            "Open folder"
+        } else {
+            "Add files"
+        };
         let cancel = cx.host.translate("gui.cancel");
         let files = &self.files;
         let mut load = None;
@@ -231,7 +249,13 @@ mod tests {
     impl HostExtras for Folder {
         fn list_files(&self, folder: &str) -> Vec<FileEntry> {
             assert_eq!(folder, "schematics");
-            self.0.iter().map(|(n, t)| FileEntry { name: (*n).into(), modified_ms: *t }).collect()
+            self.0
+                .iter()
+                .map(|(n, t)| FileEntry {
+                    name: (*n).into(),
+                    modified_ms: *t,
+                })
+                .collect()
         }
         fn read_file(&self, path: &str) -> Option<Vec<u8>> {
             (path == "schematics/castle.litematic").then(|| vec![1, 2, 3])
@@ -259,35 +283,58 @@ mod tests {
     }
 
     fn chooser(files: Vec<(&'static str, f64)>) -> FileChooser {
-        FileChooser::new("Choose a schematic", "schematics", &[".litematic", ".schem", ".nbt"], chosen)
-            .with_extras(Box::new(Folder(files)))
+        FileChooser::new(
+            "Choose a schematic",
+            "schematics",
+            &[".litematic", ".schem", ".nbt"],
+            chosen,
+        )
+        .with_extras(Box::new(Folder(files)))
     }
 
     #[test]
     fn lists_the_kinds_newest_first() {
-        let c = chooser(vec![("old.schem", 1.0), ("notes.txt", 9.0), ("castle.litematic", 5.0), ("B.NBT", 5.0)]);
+        let c = chooser(vec![
+            ("old.schem", 1.0),
+            ("notes.txt", 9.0),
+            ("castle.litematic", 5.0),
+            ("B.NBT", 5.0),
+        ]);
         let names: Vec<&str> = c.files.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(names, ["B.NBT", "castle.litematic", "old.schem"]);
-        assert_eq!(c.default_caption(), "Put .litematic, .schem, .nbt files in the folder to see them here.");
+        assert_eq!(
+            c.default_caption(),
+            "Put .litematic, .schem, .nbt files in the folder to see them here."
+        );
     }
 
     #[test]
     fn loading_hands_the_bytes_on_or_says_why_not() {
         let mut c = chooser(vec![("castle.litematic", 1.0), ("gone.schem", 2.0)]);
         assert!(c.choose("castle.litematic"));
-        assert_eq!(CHOSEN.with(|x| x.borrow().clone()), [("castle.litematic".to_owned(), 3)]);
+        assert_eq!(
+            CHOSEN.with(|x| x.borrow().clone()),
+            [("castle.litematic".to_owned(), 3)]
+        );
         assert!(!c.choose("gone.schem"));
         assert_eq!(c.caption.as_deref(), Some("Couldn't read gone.schem"));
         // Picked with no platform to write it: not added.
         c.picked("dir/hut.schem", &[1]);
-        assert_eq!(c.caption.as_deref(), Some("hut.schem wasn't added: only .litematic, .schem, .nbt"));
+        assert_eq!(
+            c.caption.as_deref(),
+            Some("hut.schem wasn't added: only .litematic, .schem, .nbt")
+        );
     }
 
     #[test]
     fn the_browser_adds_files_and_only_schematics_choose_opens_it() {
-        let c = FileChooser::new("T", "schematics", &[".nbt"], chosen).with_extras(Box::new(NoExtras));
+        let c =
+            FileChooser::new("T", "schematics", &[".nbt"], chosen).with_extras(Box::new(NoExtras));
         assert_eq!(c.default_caption(), "Add .nbt files from your computer.");
         assert!(for_action("schematics", "choose").is_some());
-        assert!(for_action("schematics", "turn").is_none() && for_action("waypoints", "choose").is_none());
+        assert!(
+            for_action("schematics", "turn").is_none()
+                && for_action("waypoints", "choose").is_none()
+        );
     }
 }

@@ -242,7 +242,11 @@ impl ChatMenu {
     fn relation(&self, peer: &Peer) -> Relation {
         online::with(|o| {
             if peer.friend {
-                if o.social().friend(&peer.id).is_some() { Relation::Friend } else { Relation::Gone }
+                if o.social().friend(&peer.id).is_some() {
+                    Relation::Friend
+                } else {
+                    Relation::Gone
+                }
             } else if o.world_players().contains_key(&peer.label) {
                 Relation::Player
             } else {
@@ -262,7 +266,10 @@ impl ChatMenu {
     }
 
     fn list_height(&self) -> f32 {
-        self.rows.iter().map(|r| if r.header { SECTION } else { ROW }).sum()
+        self.rows
+            .iter()
+            .map(|r| if r.header { SECTION } else { ROW })
+            .sum()
     }
 
     /// Takes the outcomes that came in, and says what they came to.
@@ -296,16 +303,26 @@ impl ChatMenu {
                     if self.friend_draft == username {
                         self.friend_draft.clear();
                     }
-                    self.say(&format!("Friend request sent to {username}."), th.positive, now);
+                    self.say(
+                        &format!("Friend request sent to {username}."),
+                        th.positive,
+                        now,
+                    );
                 }
-                Some(Failure::Rejected) => self.say("No Incari account has that username.", th.negative, now),
+                Some(Failure::Rejected) => {
+                    self.say("No Incari account has that username.", th.negative, now)
+                }
                 Some(f) => self.say(f.message(), th.negative, now),
             },
             Then::Unfriend(username) => match failure {
                 None => {
                     self.select(None);
                     self.view = View::Home;
-                    self.say(&format!("Removed {username} from your friends."), th.muted, now);
+                    self.say(
+                        &format!("Removed {username} from your friends."),
+                        th.muted,
+                        now,
+                    );
                 }
                 f => self.say(&message(f), th.negative, now),
             },
@@ -313,7 +330,11 @@ impl ChatMenu {
                 None => {
                     self.select(None);
                     self.view = View::Home;
-                    self.say(&format!("Blocked {label}. Unblock them in Chat Settings."), th.muted, now);
+                    self.say(
+                        &format!("Blocked {label}. Unblock them in Chat Settings."),
+                        th.muted,
+                        now,
+                    );
                 }
                 f => self.say(&message(f), th.negative, now),
             },
@@ -342,7 +363,11 @@ impl ChatMenu {
     fn befriend_by_name(&mut self, now: f64, th: crate::theme::Theme) {
         let username = self.friend_draft.clone();
         if rules::username_problem(&username).is_some() {
-            self.say("Type an Incari username: 3 to 16 letters, digits or _.", th.negative, now);
+            self.say(
+                "Type an Incari username: 3 to 16 letters, digits or _.",
+                th.negative,
+                now,
+            );
             return;
         }
         let t = online::with(|o| o.befriend(&username));
@@ -394,13 +419,17 @@ impl ChatMenu {
                 }
             }
             ActionKind::AddFriend => {
-                let pid = online::with(|o| o.world_players().get(&peer.label).map(|p| p.pid.clone()));
+                let pid =
+                    online::with(|o| o.world_players().get(&peer.label).map(|p| p.pid.clone()));
                 let Some(pid) = pid else {
                     self.say("They've left this server.", th.negative, now);
                     return;
                 };
                 let t = online::with(|o| o.befriend_player(&peer.label, &pid));
-                self.pending.push((t, Then::Say(format!("Friend request sent to {}.", peer.label))));
+                self.pending.push((
+                    t,
+                    Then::Say(format!("Friend request sent to {}.", peer.label)),
+                ));
             }
             ActionKind::CancelRequest => {
                 if let Some(sent) = online::with(|o| o.social().sent_to(&peer).cloned()) {
@@ -412,12 +441,19 @@ impl ChatMenu {
 
     fn accept(&mut self, request: &Request) {
         let t = online::with(|o| o.accept(&request.rid));
-        self.pending.push((t, Then::Say(format!("You and {} are friends now.", request.label))));
+        self.pending.push((
+            t,
+            Then::Say(format!("You and {} are friends now.", request.label)),
+        ));
     }
 
     fn decline(&mut self, request: &Request) {
         let t = online::with(|o| o.decline(&request.rid));
-        let said = if request.incoming { "Request declined." } else { "Request cancelled." };
+        let said = if request.incoming {
+            "Request declined."
+        } else {
+            "Request cancelled."
+        };
         self.pending.push((t, Then::Say(said.into())));
     }
 }
@@ -432,14 +468,21 @@ fn rows(o: &online::Online) -> Vec<Row> {
     let header = |label: &str, count: usize| Row {
         header: true,
         label: label.into(),
-        detail: if count == 0 { String::new() } else { count.to_string() },
+        detail: if count == 0 {
+            String::new()
+        } else {
+            count.to_string()
+        },
         peer: None,
         request: None,
         friend: false,
         online: false,
         unread: 0,
     };
-    let note = |label: &str| Row { unread: -1, ..header(label, 0) };
+    let note = |label: &str| Row {
+        unread: -1,
+        ..header(label, 0)
+    };
     let requests = social.requests();
     if !requests.is_empty() {
         rows.push(header("Friend Requests", requests.len()));
@@ -447,7 +490,12 @@ fn rows(o: &online::Online) -> Vec<Row> {
             rows.push(Row {
                 header: false,
                 label: request.label.clone(),
-                detail: if request.incoming { "Wants to be friends" } else { "Request sent" }.into(),
+                detail: if request.incoming {
+                    "Wants to be friends"
+                } else {
+                    "Request sent"
+                }
+                .into(),
                 peer: None,
                 request: Some(request),
                 friend: false,
@@ -460,7 +508,11 @@ fn rows(o: &online::Online) -> Vec<Row> {
     let on = friends.iter().filter(|f| f.online).count();
     rows.push(Row {
         friend: true,
-        detail: if friends.is_empty() { String::new() } else { format!("{on}/{}", friends.len()) },
+        detail: if friends.is_empty() {
+            String::new()
+        } else {
+            format!("{on}/{}", friends.len())
+        },
         ..header("Friends", 0)
     });
     if friends.is_empty() {
@@ -487,7 +539,11 @@ fn rows(o: &online::Online) -> Vec<Row> {
     }
     // Everyone else here who's an Incari player, below every friend.
     let here = o.world_players();
-    let mut names: Vec<String> = here.iter().filter(|(_, p)| !p.friend).map(|(n, _)| n.clone()).collect();
+    let mut names: Vec<String> = here
+        .iter()
+        .filter(|(_, p)| !p.friend)
+        .map(|(n, _)| n.clone())
+        .collect();
     let messaged = social.players_messaged();
     for (_, name) in messaged {
         if !here.contains_key(name) && !names.contains(name) {
@@ -504,14 +560,23 @@ fn rows(o: &online::Online) -> Vec<Row> {
     for name in names {
         let player = here.get(&name);
         let pid = player.map(|p| p.pid.clone()).unwrap_or_else(|| {
-            messaged.iter().find(|(_, n)| *n == name).map(|(pid, _)| pid.clone()).unwrap_or_default()
+            messaged
+                .iter()
+                .find(|(_, n)| *n == name)
+                .map(|(pid, _)| pid.clone())
+                .unwrap_or_default()
         });
         let peer = Peer::new(false, pid, &name);
         let unread = social.existing(&peer).map_or(0, |c| c.unread());
         rows.push(Row {
             header: false,
             label: name,
-            detail: if player.is_some() { "Incari player" } else { "Left the server" }.into(),
+            detail: if player.is_some() {
+                "Incari player"
+            } else {
+                "Left the server"
+            }
+            .into(),
             peer: Some(peer),
             request: None,
             friend: false,
@@ -528,7 +593,14 @@ fn icon_button(cx: &mut Cx, x: f32, y: f32, icon: Icon, name: &str, tint: Option
     let hot = cx.ui.over(r);
     let th = cx.p.theme;
     if hot {
-        cx.p.round(x, y, ICON_BUTTON, ICON_BUTTON, ICON_BUTTON / 2.0, th.button_hot);
+        cx.p.round(
+            x,
+            y,
+            ICON_BUTTON,
+            ICON_BUTTON,
+            ICON_BUTTON / 2.0,
+            th.button_hot,
+        );
         cx.ui.tooltip(name);
     }
     let color = tint.unwrap_or(if hot { th.text } else { th.muted });
@@ -561,24 +633,59 @@ impl Screen for ChatMenu {
         let signed_in = online::with(|o| o.signed_in());
 
         panels::panel(cx.p, l.px, l.py, l.pw, l.ph, 1.0);
-        cx.p.round(l.px + 1.0, l.py + 1.0, l.side - 1.0, l.ph - 2.0, th.panel_radius, SIDEBAR_SHADE);
+        cx.p.round(
+            l.px + 1.0,
+            l.py + 1.0,
+            l.side - 1.0,
+            l.ph - 2.0,
+            th.panel_radius,
+            SIDEBAR_SHADE,
+        );
         cx.p.fill(l.px + l.side, l.py + 6.0, 1.0, l.ph - 12.0, LINE);
-        cx.p.fill(l.main_x + 6.0, l.py + HEADER, l.pw - l.side - 12.0, 1.0, LINE);
+        cx.p.fill(
+            l.main_x + 6.0,
+            l.py + HEADER,
+            l.pw - l.side - 12.0,
+            1.0,
+            LINE,
+        );
         cx.p.fill(l.px + 6.0, l.list_bottom, l.side - 12.0, 1.0, LINE);
 
         // The sidebar: Add Friend on top, the player's strip with its gear at the bottom.
         if signed_in {
             let r = [l.px + PAD, l.py + PAD, l.side - 2.0 * PAD, CONTROL_HEIGHT];
-            if ui::menu_button(cx.p, cx.ui, r, "Add Friend", Some(Icon::PersonAdd), "", true) {
+            if ui::menu_button(
+                cx.p,
+                cx.ui,
+                r,
+                "Add Friend",
+                Some(Icon::PersonAdd),
+                "",
+                true,
+            ) {
                 self.show(View::AddFriend);
             }
             let gy = l.py + l.ph - STRIP + ((STRIP - ICON_BUTTON) / 2.0).floor();
-            if icon_button(cx, l.px + l.side - PAD - ICON_BUTTON, gy, Icon::Gear, "Chat settings", None) {
+            if icon_button(
+                cx,
+                l.px + l.side - PAD - ICON_BUTTON,
+                gy,
+                Icon::Gear,
+                "Chat settings",
+                None,
+            ) {
                 self.show(View::Settings);
             }
         }
         let close_y = l.py + ((HEADER - ICON_BUTTON) / 2.0).floor();
-        if icon_button(cx, l.px + l.pw - PAD - ICON_BUTTON, close_y, Icon::Close, "Close", None) {
+        if icon_button(
+            cx,
+            l.px + l.pw - PAD - ICON_BUTTON,
+            close_y,
+            Icon::Close,
+            "Close",
+            None,
+        ) {
             cx.go(Go::Back);
         }
         self.draw_list(cx, &l);
@@ -596,7 +703,11 @@ impl Screen for ChatMenu {
         if !self.status.is_empty() && now < self.status_until {
             let tw = cx.p.width(&self.status);
             let x = (l.main_x + (l.main_width - tw) / 2.0).floor();
-            let y = if self.view == View::Chat { l.chat_bottom - 14.0 } else { l.py + l.ph - PAD - 12.0 };
+            let y = if self.view == View::Chat {
+                l.chat_bottom - 14.0
+            } else {
+                l.py + l.ph - PAD - 12.0
+            };
             cx.p.round(x - 6.0, y - 3.0, tw + 12.0, 13.0, 6.0, th.floating);
             let status = self.status.clone();
             cx.p.text(&status, x, y, self.status_color, false);
@@ -634,16 +745,34 @@ impl ChatMenu {
         for row in &self.rows {
             if row.header && row.unread < 0 {
                 // An empty section's note, a section's height.
-                cx.p.text(&row.label, l.px + PAD + 2.0, y + 4.0, alpha(th.muted, 0.6), false);
+                cx.p.text(
+                    &row.label,
+                    l.px + PAD + 2.0,
+                    y + 4.0,
+                    alpha(th.muted, 0.6),
+                    false,
+                );
                 y += SECTION;
                 continue;
             }
             if row.header {
                 if y + SECTION > l.list_top && y < l.list_bottom {
-                    cx.p.text(&row.label.to_uppercase(), l.px + PAD + 2.0, y + 6.0, th.muted, false);
+                    cx.p.text(
+                        &row.label.to_uppercase(),
+                        l.px + PAD + 2.0,
+                        y + 6.0,
+                        th.muted,
+                        false,
+                    );
                     if !row.detail.is_empty() {
                         let w = cx.p.width(&row.detail);
-                        cx.p.text(&row.detail, l.px + l.side - PAD - w, y + 6.0, alpha(th.muted, 0.7), false);
+                        cx.p.text(
+                            &row.detail,
+                            l.px + l.side - PAD - w,
+                            y + 6.0,
+                            alpha(th.muted, 0.7),
+                            false,
+                        );
                     }
                 }
                 y += SECTION;
@@ -651,7 +780,12 @@ impl ChatMenu {
             }
             if y + ROW > l.list_top && y < l.list_bottom {
                 draw_row(cx, l, row, y, chosen.as_ref());
-                let hit = [l.px, y.max(l.list_top), l.side, (y + ROW).min(l.list_bottom) - y.max(l.list_top)];
+                let hit = [
+                    l.px,
+                    y.max(l.list_top),
+                    l.side,
+                    (y + ROW).min(l.list_bottom) - y.max(l.list_top),
+                ];
                 if hit[3] > 0.0 && cx.ui.clicked(hit) {
                     clicked = Some((row.clone(), cx.ui.mouse[0]));
                 }
@@ -677,16 +811,24 @@ impl ChatMenu {
         let th = cx.p.theme;
         let status = online::with(|o| o.status());
         let (title, text) = match status {
-            Status::Off => ("Chat isn't available", "Incari accounts aren't available in this version."),
+            Status::Off => (
+                "Chat isn't available",
+                "Incari accounts aren't available in this version.",
+            ),
             Status::UpdateNeeded => ("Update required", "Update Incari Client to use chat."),
-            Status::Connecting => {
-                ("Connecting...", "Your network may be blocking Incari. The game works the same without it.")
-            }
-            _ => ("Incari Chat", "Sign in to add friends and message them on any server."),
+            Status::Connecting => (
+                "Connecting...",
+                "Your network may be blocking Incari. The game works the same without it.",
+            ),
+            _ => (
+                "Incari Chat",
+                "Sign in to add friends and message them on any server.",
+            ),
         };
         let lines = cx.p.wrap(text, (l.main_width - 40.0).min(260.0), 64);
         let button = matches!(status, Status::SignedOut | Status::Connecting);
-        let height = 46.0 + lines.len() as f32 * 10.0 + if button { 6.0 + CONTROL_HEIGHT } else { 0.0 };
+        let height =
+            46.0 + lines.len() as f32 * 10.0 + if button { 6.0 + CONTROL_HEIGHT } else { 0.0 };
         let top = l.py + ((l.ph - height) / 2.0).floor().max(4.0);
         let center = l.main_x + l.main_width / 2.0;
         cx.p.icon(Icon::Chat, center - 12.0, top, 24.0, alpha(th.accent, 0.9));
@@ -698,21 +840,35 @@ impl ChatMenu {
         }
         let r = [(center - 60.0).floor(), y + 6.0, 120.0, CONTROL_HEIGHT];
         match status {
-            Status::SignedOut if ui::button(cx.p, cx.ui, r, "Sign In", true) => cx.open(Account::default()),
-            Status::Connecting if ui::button(cx.p, cx.ui, r, "Try Again", true) => online::with(|o| o.retry()),
+            Status::SignedOut if ui::button(cx.p, cx.ui, r, "Sign In", true) => {
+                cx.open(Account::default())
+            }
+            Status::Connecting if ui::button(cx.p, cx.ui, r, "Try Again", true) => {
+                online::with(|o| o.retry())
+            }
             _ => {}
         }
     }
 
     fn draw_home(&self, p: &mut Painter, l: &Layout) {
         let th = p.theme;
-        p.text("Incari Chat", l.main_x + PAD + 4.0, l.py + ((HEADER - 8.0) / 2.0).floor(), th.text, false);
+        p.text(
+            "Incari Chat",
+            l.main_x + PAD + 4.0,
+            l.py + ((HEADER - 8.0) / 2.0).floor(),
+            th.text,
+            false,
+        );
         let center = l.main_x + l.main_width / 2.0;
         let y = l.py + HEADER + ((l.ph - HEADER) / 2.0).floor() - 40.0;
         p.icon(Icon::Chat, center - 14.0, y, 28.0, alpha(th.accent, 0.9));
         let (available, empty, nobody) = online::with(|o| {
             let s = o.social();
-            (s.available(), s.friends().is_empty() && s.requests().is_empty(), s.messages_from() == MessagesFrom::Nobody)
+            (
+                s.available(),
+                s.friends().is_empty() && s.requests().is_empty(),
+                s.messages_from() == MessagesFrom::Nobody,
+            )
         });
         let body = if available == Some(false) {
             "Friends and messages aren't available yet. You can still block and report players."
@@ -727,13 +883,25 @@ impl ChatMenu {
             line_y += 10.0;
         }
         if nobody {
-            p.centered("Messages are off. Turn them on in Chat Settings.", center, line_y + 8.0, th.warning, false);
+            p.centered(
+                "Messages are off. Turn them on in Chat Settings.",
+                center,
+                line_y + 8.0,
+                th.warning,
+                false,
+            );
         }
     }
 
     fn draw_add_friend(&mut self, cx: &mut Cx, l: &Layout, now: f64) {
         let th = cx.p.theme;
-        cx.p.text("Add Friend", l.main_x + PAD + 4.0, l.py + ((HEADER - 8.0) / 2.0).floor(), th.text, false);
+        cx.p.text(
+            "Add Friend",
+            l.main_x + PAD + 4.0,
+            l.py + ((HEADER - 8.0) / 2.0).floor(),
+            th.text,
+            false,
+        );
         let form_width = (l.main_width - 4.0 * PAD).min(260.0);
         let x = (l.main_x + (l.main_width - form_width) / 2.0).floor();
         let mut y = l.py + HEADER + 16.0;
@@ -752,10 +920,32 @@ impl ChatMenu {
         }
         let field_y = l.py + HEADER + 54.0;
         let r = [x, field_y, form_width, CONTROL_HEIGHT];
-        form::field(cx.p, cx.ui, INPUT_ID, r, &mut self.friend_draft, "Their Incari username", rules::MAX_USERNAME, FieldKind::Username);
+        form::field(
+            cx.p,
+            cx.ui,
+            INPUT_ID,
+            r,
+            &mut self.friend_draft,
+            "Their Incari username",
+            rules::MAX_USERNAME,
+            FieldKind::Username,
+        );
         let enter = cx.ui.key(keys::ENTER) || cx.ui.key(keys::KEYPAD_ENTER);
-        let button = [x, field_y + CONTROL_HEIGHT + 6.0, form_width, CONTROL_HEIGHT];
-        let pressed = ui::menu_button(cx.p, cx.ui, button, "Send Friend Request", Some(Icon::PersonAdd), "", true);
+        let button = [
+            x,
+            field_y + CONTROL_HEIGHT + 6.0,
+            form_width,
+            CONTROL_HEIGHT,
+        ];
+        let pressed = ui::menu_button(
+            cx.p,
+            cx.ui,
+            button,
+            "Send Friend Request",
+            Some(Icon::PersonAdd),
+            "",
+            true,
+        );
         if pressed || enter {
             cx.ui.focus = Some(INPUT_ID);
             self.befriend_by_name(now, th);
@@ -764,13 +954,25 @@ impl ChatMenu {
 
     fn draw_settings(&mut self, cx: &mut Cx, l: &Layout) {
         let th = cx.p.theme;
-        cx.p.text("Chat Settings", l.main_x + PAD + 4.0, l.py + ((HEADER - 8.0) / 2.0).floor(), th.text, false);
+        cx.p.text(
+            "Chat Settings",
+            l.main_x + PAD + 4.0,
+            l.py + ((HEADER - 8.0) / 2.0).floor(),
+            th.text,
+            false,
+        );
         let x = l.main_x + 2.0 * PAD;
         let y = l.py + HEADER + 30.0;
         let settings = [
             ("Who can message you", "Choose who can send you messages."),
-            ("Friend requests", "Off: nobody can send you one. You can still send them."),
-            ("Show friends your server", "Friends can see which server you're on."),
+            (
+                "Friend requests",
+                "Off: nobody can send you one. You can still send them.",
+            ),
+            (
+                "Show friends your server",
+                "Friends can see which server you're on.",
+            ),
         ];
         let column = l.main_x + l.main_width - PAD * 2.0 - SETTING_CONTROL_WIDTH - 6.0 - x;
         for (i, (name, help)) in settings.iter().enumerate() {
@@ -778,11 +980,23 @@ impl ChatMenu {
             let shown = cx.p.fit(name, column).into_owned();
             cx.p.text(&shown, x, sy + 2.0, th.text, false);
             for (j, line) in cx.p.wrap(help, column / 0.75, 2).iter().enumerate() {
-                cx.p.text_scaled(line, x, sy + 13.0 + j as f32 * 10.0 * 0.75, th.muted, false, 0.75);
+                cx.p.text_scaled(
+                    line,
+                    x,
+                    sy + 13.0 + j as f32 * 10.0 * 0.75,
+                    th.muted,
+                    false,
+                    0.75,
+                );
             }
         }
-        let (from, requests, shares) =
-            online::with(|o| (o.social().messages_from(), o.social().friend_requests(), o.shares_server()));
+        let (from, requests, shares) = online::with(|o| {
+            (
+                o.social().messages_from(),
+                o.social().friend_requests(),
+                o.shares_server(),
+            )
+        });
         let cxr = l.main_x + l.main_width - PAD * 2.0 - SETTING_CONTROL_WIDTH;
         let control = |dy: f32| -> Rect { [cxr, y + dy, SETTING_CONTROL_WIDTH, CONTROL_HEIGHT] };
         let back = cx.ui.shift;
@@ -797,7 +1011,11 @@ impl ChatMenu {
         if let Some(back) = stepped {
             let all = MessagesFrom::ALL;
             let at = all.iter().position(|m| *m == from).unwrap_or(1);
-            let next = all[if back { (at + all.len() - 1) % all.len() } else { (at + 1) % all.len() }];
+            let next = all[if back {
+                (at + all.len() - 1) % all.len()
+            } else {
+                (at + 1) % all.len()
+            }];
             let t = online::with(|o| o.set_messages_from(next));
             self.pending.push((t, Then::Saved));
         }
@@ -811,11 +1029,32 @@ impl ChatMenu {
         }
         let half = ((l.main_width - 4.0 * PAD - 6.0) / 2.0).floor();
         let blocked = [l.main_x + 2.0 * PAD, y + 128.0, half, CONTROL_HEIGHT];
-        if ui::menu_button(cx.p, cx.ui, blocked, "Blocked Players", Some(Icon::Block), "", true) {
+        if ui::menu_button(
+            cx.p,
+            cx.ui,
+            blocked,
+            "Blocked Players",
+            Some(Icon::Block),
+            "",
+            true,
+        ) {
             cx.open(BlockedPlayers::default());
         }
-        let account = [l.main_x + 2.0 * PAD + half + 6.0, y + 128.0, half, CONTROL_HEIGHT];
-        if ui::menu_button(cx.p, cx.ui, account, "Account", Some(Icon::Person), "", true) {
+        let account = [
+            l.main_x + 2.0 * PAD + half + 6.0,
+            y + 128.0,
+            half,
+            CONTROL_HEIGHT,
+        ];
+        if ui::menu_button(
+            cx.p,
+            cx.ui,
+            account,
+            "Account",
+            Some(Icon::Person),
+            "",
+            true,
+        ) {
             cx.open(Account::default());
         }
     }
@@ -827,7 +1066,11 @@ impl ChatMenu {
         let th = cx.p.theme;
         let relation = self.relation(&peer);
         let (friend, sent) = online::with(|o| {
-            let friend = if peer.friend { o.social().friend(&peer.id).cloned() } else { None };
+            let friend = if peer.friend {
+                o.social().friend(&peer.id).cloned()
+            } else {
+                None
+            };
             (friend, o.social().sent_to(&peer).is_some())
         });
 
@@ -835,7 +1078,12 @@ impl ChatMenu {
         // friendship's.
         let armed = self.block_armed_until > 0.0;
         let mut actions = vec![
-            Action { icon: Icon::Flag, label: "Report", kind: ActionKind::Report, warn: false },
+            Action {
+                icon: Icon::Flag,
+                label: "Report",
+                kind: ActionKind::Report,
+                warn: false,
+            },
             Action {
                 icon: Icon::Block,
                 label: if armed { "Click to Block" } else { "Block" },
@@ -845,13 +1093,23 @@ impl ChatMenu {
         ];
         match relation {
             Relation::Friend => {
-                actions.push(Action { icon: Icon::Close, label: "Unfriend", kind: ActionKind::Unfriend, warn: false });
+                actions.push(Action {
+                    icon: Icon::Close,
+                    label: "Unfriend",
+                    kind: ActionKind::Unfriend,
+                    warn: false,
+                });
             }
             // Only a sent request: a received one is answered on its row, since its sender's
             // username can't be tied to a player here. Add Friend to someone who already asked
             // makes them friends at once.
             Relation::Player if !sent => {
-                actions.push(Action { icon: Icon::PersonAdd, label: "Add Friend", kind: ActionKind::AddFriend, warn: false });
+                actions.push(Action {
+                    icon: Icon::PersonAdd,
+                    label: "Add Friend",
+                    kind: ActionKind::AddFriend,
+                    warn: false,
+                });
             }
             Relation::Player => actions.push(Action {
                 icon: Icon::Close,
@@ -877,7 +1135,12 @@ impl ChatMenu {
                 right -= ICON_BUTTON + 4.0;
             } else {
                 let w = width(cx.p, a.label);
-                let r = [right - w, l.py + ((HEADER - CONTROL_HEIGHT) / 2.0).floor(), w, CONTROL_HEIGHT];
+                let r = [
+                    right - w,
+                    l.py + ((HEADER - CONTROL_HEIGHT) / 2.0).floor(),
+                    w,
+                    CONTROL_HEIGHT,
+                ];
                 if ui::menu_button(cx.p, cx.ui, r, a.label, Some(a.icon), "", true) {
                     acted = Some(a.kind);
                 }
@@ -890,7 +1153,14 @@ impl ChatMenu {
         let avatar_y = l.py + ((HEADER - AVATAR) / 2.0).floor();
         avatars::draw(cx.p, l.main_x + PAD + 2.0, avatar_y, AVATAR, &peer.label);
         if let Some(f) = &friend {
-            avatars::status(cx.p, l.main_x + PAD + 2.0, avatar_y, AVATAR, f.online, 0xFF26_2E37);
+            avatars::status(
+                cx.p,
+                l.main_x + PAD + 2.0,
+                avatar_y,
+                AVATAR,
+                f.online,
+                0xFF26_2E37,
+            );
         }
         let text_x = l.main_x + PAD + 2.0 + AVATAR + 7.0;
         let text_width = (actions_left - 4.0 - text_x).max(0.0);
@@ -899,7 +1169,12 @@ impl ChatMenu {
         let about = match relation {
             Relation::Friend => match &friend {
                 Some(f) if f.online => {
-                    format!("Friend · {}", f.server.as_ref().map_or("online".to_owned(), |s| format!("on {s}")))
+                    format!(
+                        "Friend · {}",
+                        f.server
+                            .as_ref()
+                            .map_or("online".to_owned(), |s| format!("on {s}"))
+                    )
                 }
                 _ => "Friend · offline".to_owned(),
             },
@@ -908,19 +1183,30 @@ impl ChatMenu {
             Relation::Gone => "Left the server".into(),
         };
         let about = cx.p.fit(&about, text_width / 0.75).into_owned();
-        let about_color = if relation == Relation::Friend { alpha(th.accent, 0.9) } else { th.muted };
+        let about_color = if relation == Relation::Friend {
+            alpha(th.accent, 0.9)
+        } else {
+            th.muted
+        };
         cx.p.text_scaled(&about, text_x, avatar_y + 10.0, about_color, false, 0.75);
 
         // The conversation, newest at the bottom.
         self.lay_out_lines(cx.p, l, &peer);
         let (has_more, loading) = online::with(|o| {
-            o.social().existing(&peer).map_or((peer.friend, false), |c| (c.has_more(), c.loading()))
+            o.social()
+                .existing(&peer)
+                .map_or((peer.friend, false), |c| (c.has_more(), c.loading()))
         });
         let area_top = l.chat_top + 4.0;
         let area_bottom = l.chat_bottom - 2.0;
         let area = [l.main_x, area_top, l.pw - l.side, area_bottom - area_top];
         let max = (self.lines_height - (l.chat_bottom - l.chat_top - 8.0)).max(0.0);
-        let steps = cx.ui.scrolled([l.main_x, l.chat_top, l.main_width, l.chat_bottom - l.chat_top]);
+        let steps = cx.ui.scrolled([
+            l.main_x,
+            l.chat_top,
+            l.main_width,
+            l.chat_bottom - l.chat_top,
+        ]);
         if steps != 0.0 {
             self.chat_scroll = (self.chat_scroll + steps * 20.0).clamp(0.0, max);
             if self.chat_scroll >= max - 4.0 {
@@ -938,17 +1224,35 @@ impl ChatMenu {
             let start_y = base - 44.0;
             if start_y > area_top - 44.0 {
                 avatars::draw(cx.p, l.main_x + PAD + 4.0, start_y, 22.0, &peer.label);
-                cx.p.text(&peer.label, l.main_x + PAD + 32.0, start_y + 2.0, th.text, false);
+                cx.p.text(
+                    &peer.label,
+                    l.main_x + PAD + 32.0,
+                    start_y + 2.0,
+                    th.text,
+                    false,
+                );
                 let start = if peer.friend {
                     format!("This is the start of your messages with {}.", peer.label)
                 } else {
                     "Messages with players here end when one of you leaves.".to_owned()
                 };
                 let start = cx.p.fit(&start, l.main_width - 50.0).into_owned();
-                cx.p.text(&start, l.main_x + PAD + 32.0, start_y + 13.0, th.muted, false);
+                cx.p.text(
+                    &start,
+                    l.main_x + PAD + 32.0,
+                    start_y + 13.0,
+                    th.muted,
+                    false,
+                );
             }
         } else if loading {
-            cx.p.centered("Loading...", l.main_x + l.main_width / 2.0, base - 14.0, th.muted, false);
+            cx.p.centered(
+                "Loading...",
+                l.main_x + l.main_width / 2.0,
+                base - 14.0,
+                th.muted,
+                false,
+            );
         }
         let text_x0 = l.main_x + PAD + 4.0;
         for line in &self.lines {
@@ -958,10 +1262,21 @@ impl ChatMenu {
             }
             if line.head {
                 avatars::draw(cx.p, text_x0, y + 1.0, AVATAR, &line.name);
-                let color = if line.mine { 0xFFE6_EBF0 } else { avatars::lighter(&line.name) };
+                let color = if line.mine {
+                    0xFFE6_EBF0
+                } else {
+                    avatars::lighter(&line.name)
+                };
                 cx.p.text(&line.name, text_x0 + AVATAR + 7.0, y, color, false);
                 let name_end = text_x0 + AVATAR + 7.0 + cx.p.width(&line.name) + 6.0;
-                cx.p.text_scaled(&line.time, name_end, y + 2.0, alpha(th.muted, 0.7), false, 0.75);
+                cx.p.text_scaled(
+                    &line.time,
+                    name_end,
+                    y + 2.0,
+                    alpha(th.muted, 0.7),
+                    false,
+                    0.75,
+                );
             } else {
                 cx.p.text(&line.text, text_x0 + AVATAR + 7.0, y, line.color, false);
             }
@@ -970,19 +1285,46 @@ impl ChatMenu {
 
         // The input in its rounded well, as Discord's.
         let well_y = l.py + l.ph - PAD - INPUT;
-        cx.p.round(l.main_x + PAD - 3.0, well_y - 3.0, l.main_width - 2.0 * PAD + 6.0, INPUT + 6.0, 6.0, 0x2400_0000);
+        cx.p.round(
+            l.main_x + PAD - 3.0,
+            well_y - 3.0,
+            l.main_width - 2.0 * PAD + 6.0,
+            INPUT + 6.0,
+            6.0,
+            0x2400_0000,
+        );
         if std::mem::take(&mut self.focus_next) {
             cx.ui.focus = Some(INPUT_ID);
-            cx.ui.caret = self.drafts.get(&peer.key()).map_or(0, |d| d.chars().count());
+            cx.ui.caret = self
+                .drafts
+                .get(&peer.key())
+                .map_or(0, |d| d.chars().count());
         }
         let field_width = l.main_width - 2.0 * PAD - ICON_BUTTON - 6.0;
         let draft = self.drafts.entry(peer.key()).or_default();
         let hint = format!("Message @{}", peer.label);
         let r = [l.main_x + PAD, well_y, field_width, INPUT];
-        form::field(cx.p, cx.ui, INPUT_ID, r, draft, &hint, online::service::MAX_TEXT, FieldKind::Plain);
-        let enter = cx.ui.focus == Some(INPUT_ID) && (cx.ui.key(keys::ENTER) || cx.ui.key(keys::KEYPAD_ENTER));
+        form::field(
+            cx.p,
+            cx.ui,
+            INPUT_ID,
+            r,
+            draft,
+            &hint,
+            online::service::MAX_TEXT,
+            FieldKind::Plain,
+        );
+        let enter = cx.ui.focus == Some(INPUT_ID)
+            && (cx.ui.key(keys::ENTER) || cx.ui.key(keys::KEYPAD_ENTER));
         let send_y = well_y + ((INPUT - ICON_BUTTON) / 2.0).floor();
-        let send = icon_button(cx, l.main_x + l.main_width - PAD - ICON_BUTTON, send_y, Icon::Send, "Send", None);
+        let send = icon_button(
+            cx,
+            l.main_x + l.main_width - PAD - ICON_BUTTON,
+            send_y,
+            Icon::Send,
+            "Send",
+            None,
+        );
         if send || acted.is_some() {
             // A click on a button gives the field its focus back: with none, the Friends key would
             // close the menu as the player went on typing.
@@ -1009,18 +1351,27 @@ impl ChatMenu {
         let th = p.theme;
         let (me, messages, now, offset) = online::with(|o| {
             let me = o.account_name().unwrap_or("You").to_owned();
-            let messages = o.social().existing(peer).map(|c| c.messages().to_vec()).unwrap_or_default();
+            let messages = o
+                .social()
+                .existing(peer)
+                .map(|c| c.messages().to_vec())
+                .unwrap_or_default();
             (me, messages, o.epoch(), online::utc_offset())
         });
         let mut y = 0.0;
         let mut last: Option<&online::social::Message> = None;
         for message in &messages {
-            let grouped = last.is_some_and(|l| l.mine == message.mine && message.at - l.at < GROUP_MILLIS);
+            let grouped =
+                last.is_some_and(|l| l.mine == message.mine && message.at - l.at < GROUP_MILLIS);
             if !grouped {
                 if last.is_some() {
                     y += 6.0;
                 }
-                let name = if message.mine { me.clone() } else { peer.label.clone() };
+                let name = if message.mine {
+                    me.clone()
+                } else {
+                    peer.label.clone()
+                };
                 self.lines.push(ChatLine {
                     head: true,
                     name,
@@ -1038,7 +1389,15 @@ impl ChatMenu {
                 Delivery::Failed => th.negative,
             };
             for text in p.wrap(&message.text, text_width, 1000) {
-                self.lines.push(ChatLine { head: false, name: String::new(), mine: message.mine, time: String::new(), text, color, y });
+                self.lines.push(ChatLine {
+                    head: false,
+                    name: String::new(),
+                    mine: message.mine,
+                    time: String::new(),
+                    text,
+                    color,
+                    y,
+                });
                 y += 10.0;
             }
             if message.delivery == Delivery::Failed {
@@ -1070,14 +1429,32 @@ fn draw_row(cx: &mut Cx, l: &Layout, row: &Row, y: f32, chosen: Option<&Peer>) {
         && mouse[1] < y + ROW
         && mouse[1] >= l.list_top
         && mouse[1] < l.list_bottom;
-    let on = row.peer.as_ref().zip(chosen).is_some_and(|(a, b)| a.key() == b.key());
+    let on = row
+        .peer
+        .as_ref()
+        .zip(chosen)
+        .is_some_and(|(a, b)| a.key() == b.key());
     if on || hot {
-        cx.p.round(x, y + 1.0, w, ROW - 2.0, th.radius, if on { th.button_hot } else { th.button });
+        cx.p.round(
+            x,
+            y + 1.0,
+            w,
+            ROW - 2.0,
+            th.radius,
+            if on { th.button_hot } else { th.button },
+        );
     }
     let avatar_y = y + ((ROW - AVATAR) / 2.0).floor();
     avatars::draw(cx.p, x + 3.0, avatar_y, AVATAR, &row.label);
     if row.friend {
-        avatars::status(cx.p, x + 3.0, avatar_y, AVATAR, row.online, if on || hot { 0xFF2A_333D } else { 0xFF20_272F });
+        avatars::status(
+            cx.p,
+            x + 3.0,
+            avatar_y,
+            AVATAR,
+            row.online,
+            if on || hot { 0xFF2A_333D } else { 0xFF20_272F },
+        );
     }
     let text_x = x + 3.0 + AVATAR + 6.0;
     let mut right_edge = x + w - 4.0;
@@ -1092,12 +1469,22 @@ fn draw_row(cx: &mut Cx, l: &Layout, row: &Row, y: f32, chosen: Option<&Peer>) {
             right_edge -= 14.0;
         }
     } else if row.unread > 0 {
-        let count = if row.unread > 99 { "99+".to_owned() } else { row.unread.to_string() };
+        let count = if row.unread > 99 {
+            "99+".to_owned()
+        } else {
+            row.unread.to_string()
+        };
         let cw = cx.p.width(&count);
         let badge = (cw + 6.0).max(12.0);
         let by = y + ((ROW - 11.0) / 2.0).floor();
         cx.p.round(right_edge - badge, by, badge, 11.0, 5.0, BADGE_RED);
-        cx.p.text(&count, right_edge - badge + ((badge - cw) / 2.0).floor() + 1.0, by + 2.0, th.text, false);
+        cx.p.text(
+            &count,
+            right_edge - badge + ((badge - cw) / 2.0).floor() + 1.0,
+            by + 2.0,
+            th.text,
+            false,
+        );
         right_edge -= badge + 4.0;
     }
     let name_width = right_edge - text_x;
@@ -1127,8 +1514,25 @@ fn draw_row(cx: &mut Cx, l: &Layout, row: &Row, y: f32, chosen: Option<&Peer>) {
 fn row_button(cx: &mut Cx, icon: Icon, x: f32, y: f32, hot_color: u32) {
     let th = cx.p.theme;
     let hot = cx.ui.over([x, y, 12.0, 12.0]);
-    cx.p.round(x, y, 12.0, 12.0, 6.0, if hot { alpha(hot_color, 0.35) } else { 0x2EFF_FFFF });
-    cx.p.icon(icon, x + 2.0, y + 2.0, 8.0, if hot { hot_color } else { th.text });
+    cx.p.round(
+        x,
+        y,
+        12.0,
+        12.0,
+        6.0,
+        if hot {
+            alpha(hot_color, 0.35)
+        } else {
+            0x2EFF_FFFF
+        },
+    );
+    cx.p.icon(
+        icon,
+        x + 2.0,
+        y + 2.0,
+        8.0,
+        if hot { hot_color } else { th.text },
+    );
 }
 
 /// The player's own strip at the sidebar's foot: their account and whether they're connected.
@@ -1139,7 +1543,9 @@ fn draw_strip(p: &mut Painter, l: &Layout) {
     let (label, signed_in, state) = online::with(|o| {
         let label = o.account_name().unwrap_or("Not signed in").to_owned();
         let state = match o.status() {
-            Status::SignedIn if o.social().messages_from() == MessagesFrom::Nobody => "Messages off",
+            Status::SignedIn if o.social().messages_from() == MessagesFrom::Nobody => {
+                "Messages off"
+            }
             Status::SignedIn => "Online",
             Status::Connecting => "Connecting...",
             Status::SignedOut => "Signed out",
@@ -1153,7 +1559,14 @@ fn draw_strip(p: &mut Painter, l: &Layout) {
     let text_width = l.side - 2.0 * PAD - AVATAR - 6.0 - ICON_BUTTON - 4.0;
     let shown = p.fit(&label, text_width).into_owned();
     p.text(&shown, x + AVATAR + 6.0, y - 1.0, th.text, false);
-    p.text_scaled(state, x + AVATAR + 6.0, y + 10.0, alpha(th.muted, 0.85), false, 0.75);
+    p.text_scaled(
+        state,
+        x + AVATAR + 6.0,
+        y + 10.0,
+        alpha(th.muted, 0.85),
+        false,
+        0.75,
+    );
 }
 
 /// "Today at 14:02", "Yesterday at ...", or the date: in the player's time zone (`offset` ms
@@ -1198,7 +1611,11 @@ mod tests {
         assert_eq!(time(at, at + 60_000, 0), "Today at 14:02");
         assert_eq!(time(at, at + 86_400_000, 0), "Yesterday at 14:02");
         assert_eq!(time(at, at + 3 * 86_400_000, 0), "11/1/2026 14:02");
-        assert_eq!(time(at, at, 3_600_000), "Today at 15:02", "an hour ahead of UTC");
+        assert_eq!(
+            time(at, at, 3_600_000),
+            "Today at 15:02",
+            "an hour ahead of UTC"
+        );
         assert_eq!(civil(0), (1970, 1, 1));
         assert_eq!(civil(-1), (1969, 12, 31));
     }

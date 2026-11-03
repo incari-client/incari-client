@@ -46,7 +46,9 @@ impl Tag {
     pub fn text(&self) -> Option<String> {
         match self {
             Tag::String(s) => Some(s.clone()),
-            Tag::Byte(_) | Tag::Short(_) | Tag::Int(_) | Tag::Long(_) => self.number().map(|n| n.to_string()),
+            Tag::Byte(_) | Tag::Short(_) | Tag::Int(_) | Tag::Long(_) => {
+                self.number().map(|n| n.to_string())
+            }
             _ => None,
         }
     }
@@ -160,13 +162,19 @@ fn gunzip(file: &[u8], inflate: Inflate) -> Result<Vec<u8>, String> {
     let mut at = 10;
     if flags & 4 != 0 {
         // FEXTRA: a length, then that much.
-        let n = usize::from(*file.get(at).ok_or(BAD)?) | usize::from(*file.get(at + 1).ok_or(BAD)?) << 8;
+        let n = usize::from(*file.get(at).ok_or(BAD)?)
+            | usize::from(*file.get(at + 1).ok_or(BAD)?) << 8;
         at += 2 + n;
     }
     for flag in [8, 16] {
         // FNAME, FCOMMENT: zero-terminated.
         if flags & flag != 0 {
-            let end = file.get(at..).ok_or(BAD)?.iter().position(|&b| b == 0).ok_or(BAD)?;
+            let end = file
+                .get(at..)
+                .ok_or(BAD)?
+                .iter()
+                .position(|&b| b == 0)
+                .ok_or(BAD)?;
             at += end + 1;
         }
     }
@@ -174,7 +182,8 @@ fn gunzip(file: &[u8], inflate: Inflate) -> Result<Vec<u8>, String> {
         at += 2;
     }
     let body = file.get(at..file.len().saturating_sub(8)).ok_or(BAD)?;
-    inflate(body, MAX_BYTES).ok_or_else(|| format!("Broken, or over {} MB unpacked", MAX_BYTES >> 20))
+    inflate(body, MAX_BYTES)
+        .ok_or_else(|| format!("Broken, or over {} MB unpacked", MAX_BYTES >> 20))
 }
 
 struct Reader<'a> {
@@ -186,7 +195,12 @@ impl Reader<'_> {
     fn value(&mut self, kind: u8, depth: usize) -> Result<Tag, String> {
         Ok(match kind {
             1 => Tag::Byte(self.u8()? as i8),
-            2 => Tag::Short(self.take(2)?.try_into().map(i16::from_be_bytes).unwrap_or(0)),
+            2 => Tag::Short(
+                self.take(2)?
+                    .try_into()
+                    .map(i16::from_be_bytes)
+                    .unwrap_or(0),
+            ),
             3 => Tag::Int(self.s32()?),
             4 => Tag::Long(self.s64()?),
             5 => Tag::Float(f32::from_bits(self.s32()? as u32)),
@@ -200,11 +214,25 @@ impl Reader<'_> {
             10 => Tag::Compound(self.compound(depth)?),
             11 => {
                 let n = self.count(4)?;
-                Tag::Ints(self.take(n * 4)?.as_chunks::<4>().0.iter().map(|c| i32::from_be_bytes(*c)).collect())
+                Tag::Ints(
+                    self.take(n * 4)?
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .map(|c| i32::from_be_bytes(*c))
+                        .collect(),
+                )
             }
             12 => {
                 let n = self.count(8)?;
-                Tag::Longs(self.take(n * 8)?.as_chunks::<8>().0.iter().map(|c| i64::from_be_bytes(*c)).collect())
+                Tag::Longs(
+                    self.take(n * 8)?
+                        .as_chunks::<8>()
+                        .0
+                        .iter()
+                        .map(|c| i64::from_be_bytes(*c))
+                        .collect(),
+                )
             }
             _ => return Err(format!("Bad NBT: tag type {kind}")),
         })
@@ -365,7 +393,11 @@ pub mod write {
         // FNAME set, to test the header's skipping.
         let mut out = vec![0x1F, 0x8B, 8, 8, 0, 0, 0, 0, 0, 255];
         out.extend(b"castle.nbt\0");
-        let chunks: Vec<&[u8]> = if data.is_empty() { vec![&[]] } else { data.chunks(65535).collect() };
+        let chunks: Vec<&[u8]> = if data.is_empty() {
+            vec![&[]]
+        } else {
+            data.chunks(65535).collect()
+        };
         for (i, chunk) in chunks.iter().enumerate() {
             out.push(u8::from(i == chunks.len() - 1));
             let n = chunk.len() as u16;
@@ -401,7 +433,9 @@ pub mod write {
 
     /// Shorthands for building compounds.
     pub fn c(fields: Vec<(&str, Tag)>) -> Tag {
-        Tag::Compound(Compound(fields.into_iter().map(|(n, t)| (n.to_owned(), t)).collect()))
+        Tag::Compound(Compound(
+            fields.into_iter().map(|(n, t)| (n.to_owned(), t)).collect(),
+        ))
     }
 
     pub fn s(text: &str) -> Tag {

@@ -79,7 +79,11 @@ pub fn rows(spot: Spot, shown: Shown) -> Vec<Row> {
     if shown.one_line {
         rows.push(("", format!("X {x}  Y {y}  Z {z}")));
     } else {
-        rows.extend([("X", x.to_string()), ("Y", y.to_string()), ("Z", z.to_string())]);
+        rows.extend([
+            ("X", x.to_string()),
+            ("Y", y.to_string()),
+            ("Z", z.to_string()),
+        ]);
     }
     if shown.facing {
         rows.push(("", facing(spot.sector).to_owned()));
@@ -87,7 +91,10 @@ pub fn rows(spot: Spot, shown: Shown) -> Vec<Row> {
     if shown.other && spot.nether {
         rows.push(("Overworld", format!("{}, {}", x * 8, z * 8)));
     } else if shown.other && spot.overworld {
-        rows.push(("Nether", format!("{}, {}", x.div_euclid(8), z.div_euclid(8))));
+        rows.push((
+            "Nether",
+            format!("{}, {}", x.div_euclid(8), z.div_euclid(8)),
+        ));
     }
     rows
 }
@@ -163,7 +170,10 @@ mod tests {
         };
         assert_eq!(
             super::rows(spot([3, 70, -1], true), line),
-            [("", "X 3  Y 70  Z -1".to_owned()), ("Overworld", "24, -8".to_owned())]
+            [
+                ("", "X 3  Y 70  Z -1".to_owned()),
+                ("Overworld", "24, -8".to_owned())
+            ]
         );
         let end = Spot {
             overworld: false,

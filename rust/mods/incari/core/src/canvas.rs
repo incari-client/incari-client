@@ -82,7 +82,10 @@ impl Image {
     /// This image scaled to `width` by `height`, each pixel the average of what it covers.
     pub fn scaled(&self, width: u32, height: u32) -> Self {
         let mut out = Self::new(width, height);
-        let (sx, sy) = (self.width as f32 / width as f32, self.height as f32 / height as f32);
+        let (sx, sy) = (
+            self.width as f32 / width as f32,
+            self.height as f32 / height as f32,
+        );
         for y in 0..height {
             for x in 0..width {
                 let (x0, y0) = ((x as f32 * sx) as u32, (y as f32 * sy) as u32);
@@ -287,7 +290,9 @@ mod tests {
     fn paints_each_image_once_and_uploads_it() {
         let mut canvas = Canvas::default();
         let a = canvas.get(Key::Fill(3), || Image::new(7, 7)).unwrap();
-        let again = canvas.get(Key::Fill(3), || panic!("painted twice")).unwrap();
+        let again = canvas
+            .get(Key::Fill(3), || panic!("painted twice"))
+            .unwrap();
         assert_eq!(a, again);
         assert_eq!((a.x, a.y), (1, 1));
         let b = canvas.get(Key::Ring(3), || Image::new(7, 7)).unwrap();
@@ -301,7 +306,9 @@ mod tests {
         let mut canvas = Canvas::default();
         let generation = canvas.generation;
         for i in 0..3 {
-            canvas.get(Key::Shadow(i, 0), || Image::new(1500, 400)).unwrap();
+            canvas
+                .get(Key::Shadow(i, 0), || Image::new(1500, 400))
+                .unwrap();
         }
         assert_ne!(canvas.generation, generation);
         assert!(canvas.has(Key::Shadow(2, 0)));

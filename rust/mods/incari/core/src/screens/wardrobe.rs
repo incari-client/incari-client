@@ -98,7 +98,14 @@ impl Wardrobe {
     /// The Wardrobe open on the tab shown last.
     pub fn new() -> Self {
         let tab = TABS[LAST_TAB.with(Cell::get).min(TABS.len() - 1)];
-        Self { tab, scroll: 0.0, preview: PlayerPreview::default(), outfit_name: String::new(), notice: None, faced: None }
+        Self {
+            tab,
+            scroll: 0.0,
+            preview: PlayerPreview::default(),
+            outfit_name: String::new(),
+            notice: None,
+            faced: None,
+        }
     }
 
     /// The Wardrobe open on `slot`'s kind, or on Outfits for None.
@@ -130,10 +137,14 @@ impl Wardrobe {
 
     fn cards(&self, outfits: usize) -> Vec<Card> {
         match self.tab {
-            Tab::Outfits => std::iter::once(Card::TakeOffAll).chain((0..outfits).map(Card::Outfit)).collect(),
+            Tab::Outfits => std::iter::once(Card::TakeOffAll)
+                .chain((0..outfits).map(Card::Outfit))
+                .collect(),
             Tab::Kind(slot) => {
                 let none = slot.worn().then_some(Card::None(slot));
-                none.into_iter().chain(catalog::in_slot(slot).map(Card::Cosmetic)).collect()
+                none.into_iter()
+                    .chain(catalog::in_slot(slot).map(Card::Cosmetic))
+                    .collect()
             }
         }
     }
@@ -151,7 +162,10 @@ fn label(card: Card, seen: &Seen) -> String {
     match card {
         Card::Cosmetic(c) => c.name.to_owned(),
         Card::None(_) => "None".into(),
-        Card::Outfit(i) => seen.outfits.get(i).map_or_else(String::new, |o| o.0.clone()),
+        Card::Outfit(i) => seen
+            .outfits
+            .get(i)
+            .map_or_else(String::new, |o| o.0.clone()),
         Card::TakeOffAll => "Take Off All".into(),
     }
 }
@@ -188,7 +202,11 @@ impl Screen for Wardrobe {
         let status = online::with(|o| o.status());
         let seen = wardrobe_file::with(|w| Seen {
             worn: w.worn(),
-            outfits: w.outfits().iter().map(|o| (o.name.clone(), o.loadout)).collect(),
+            outfits: w
+                .outfits()
+                .iter()
+                .map(|o| (o.name.clone(), o.loadout))
+                .collect(),
             shared: w.shared(),
             show_others: w.show_others(),
         });
@@ -207,7 +225,8 @@ impl Screen for Wardrobe {
             cx.p.text(letter, lx, py + 14.0, th.text, false);
             lx += cx.p.width(letter) + 2.0;
         }
-        let preview_w = (panel_w - SIDEBAR - 2.0 * PADDING - 2.0 * CARD_WIDTH - CARD_GAP).clamp(88.0, PREVIEW);
+        let preview_w =
+            (panel_w - SIDEBAR - 2.0 * PADDING - 2.0 * CARD_WIDTH - CARD_GAP).clamp(88.0, PREVIEW);
         let preview_x = px + panel_w - PADDING - preview_w;
         cx.p.fill(px + SIDEBAR, py + 8.0, 1.0, panel_h - 16.0, 0x1AFF_FFFF);
         cx.p.fill(preview_x - 5.0, py + 8.0, 1.0, panel_h - 16.0, 0x1AFF_FFFF);
@@ -221,13 +240,31 @@ impl Screen for Wardrobe {
                 Tab::Outfits => seen.outfits.len(),
                 Tab::Kind(slot) => catalog::in_slot(slot).filter(|c| owns(c)).count(),
             };
-            if ui::entry(cx.p, cx.ui, [x, y, entry_w, ENTRY], tab.label(), &count.to_string(), self.tab == tab) {
+            if ui::entry(
+                cx.p,
+                cx.ui,
+                [x, y, entry_w, ENTRY],
+                tab.label(),
+                &count.to_string(),
+                self.tab == tab,
+            ) {
                 self.choose(tab);
             }
             y += ENTRY + 2.0;
         }
         let done = cx.host.translate("gui.done");
-        if ui::button(cx.p, cx.ui, [x, py + panel_h - 8.0 - CONTROL_HEIGHT, entry_w, CONTROL_HEIGHT], &done, true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [
+                x,
+                py + panel_h - 8.0 - CONTROL_HEIGHT,
+                entry_w,
+                CONTROL_HEIGHT,
+            ],
+            &done,
+            true,
+        ) {
             cx.go(Go::Back);
             return;
         }
@@ -246,7 +283,11 @@ impl Screen for Wardrobe {
             let save_w = 70.0;
             // A grid too narrow for both side by side puts Save under the name.
             let stacked = grid_w < save_w + GAP + 80.0;
-            let name_w = if stacked { grid_w } else { grid_w - save_w - GAP };
+            let name_w = if stacked {
+                grid_w
+            } else {
+                grid_w - save_w - GAP
+            };
             let hint = cx.p.fit("Name this outfit", name_w - 8.0).into_owned();
             ui::text_field(
                 cx.p,
@@ -260,7 +301,16 @@ impl Screen for Wardrobe {
             if stacked {
                 grid_y += CONTROL_HEIGHT + GAP;
             }
-            let save_r = [if stacked { grid_x } else { grid_x + grid_w - save_w }, grid_y, if stacked { grid_w } else { save_w }, CONTROL_HEIGHT];
+            let save_r = [
+                if stacked {
+                    grid_x
+                } else {
+                    grid_x + grid_w - save_w
+                },
+                grid_y,
+                if stacked { grid_w } else { save_w },
+                CONTROL_HEIGHT,
+            ];
             if cx.ui.over(save_r) {
                 cx.ui.tooltip("Save what you're wearing as an outfit");
             }
@@ -279,7 +329,9 @@ impl Screen for Wardrobe {
             cx.p.text(label, grid_x, py + PADDING, th.text, false);
             // Cut on a narrow grid rather than run into the label.
             let hint = self.hint();
-            let hint = cx.p.fit(&hint, grid_w - cx.p.width(label) - 8.0).into_owned();
+            let hint =
+                cx.p.fit(&hint, grid_w - cx.p.width(label) - 8.0)
+                    .into_owned();
             let hw = cx.p.width(&hint);
             cx.p.text(&hint, grid_x + grid_w - hw, py + PADDING, th.muted, false);
         }
@@ -288,14 +340,21 @@ impl Screen for Wardrobe {
 
         // Lay the cards out, and try on what the pointer's on.
         let cards = self.cards(seen.outfits.len());
-        let columns = ((grid_w + CARD_GAP) / (CARD_WIDTH + CARD_GAP)).floor().max(1.0);
+        let columns = ((grid_w + CARD_GAP) / (CARD_WIDTH + CARD_GAP))
+            .floor()
+            .max(1.0);
         let card_w = ((grid_w - (columns - 1.0) * CARD_GAP) / columns).floor();
         let rows = (cards.len() as f32 / columns).ceil();
         let content = (rows * (CARD_HEIGHT + CARD_GAP) - CARD_GAP).max(0.0);
         ui::scroll(cx.ui, area, &mut self.scroll, content, SCROLL_STEP);
         let rect_of = |n: usize, scroll: f32| {
             let (col, row) = ((n as f32 % columns).floor(), (n as f32 / columns).floor());
-            [grid_x + col * (card_w + CARD_GAP), grid_y + row * (CARD_HEIGHT + CARD_GAP) - scroll.floor(), card_w, CARD_HEIGHT]
+            [
+                grid_x + col * (card_w + CARD_GAP),
+                grid_y + row * (CARD_HEIGHT + CARD_GAP) - scroll.floor(),
+                card_w,
+                CARD_HEIGHT,
+            ]
         };
         let mut tried = None;
         for (n, card) in cards.iter().enumerate() {
@@ -312,27 +371,49 @@ impl Screen for Wardrobe {
         let label_w = cx.p.width(&name);
         let label_x = (preview_x + (preview_w - label_w) / 2.0).floor();
         let label_y = py + PADDING;
-        cx.p.fill(label_x - 3.0, label_y - 2.0, label_w + 5.0, 11.0, 0x4000_0000);
+        cx.p.fill(
+            label_x - 3.0,
+            label_y - 2.0,
+            label_w + 5.0,
+            11.0,
+            0x4000_0000,
+        );
         draw_name(cx, &name, shown.in_slot(Slot::Nametag), label_x, label_y);
 
         // The player, wearing what's tried on or worn.
         let preview_top = py + PADDING + 14.0;
         let preview_h = panel_h - PADDING - 14.0 - 64.0;
-        self.preview.draw(cx.p, cx.ui, [preview_x + 8.0, preview_top, preview_w - 16.0, preview_h], shown);
+        self.preview.draw(
+            cx.p,
+            cx.ui,
+            [preview_x + 8.0, preview_top, preview_w - 16.0, preview_h],
+            shown,
+        );
 
         // Who sees what's worn, and Sign In when only the player does.
         let status_y = preview_top + preview_h + 4.0;
-        let text = if seen.shared { "Incari players see these" } else { "Only you see these" };
+        let text = if seen.shared {
+            "Incari players see these"
+        } else {
+            "Only you see these"
+        };
         let text = cx.p.fit(text, preview_w - 12.0).into_owned();
         let status_w = cx.p.width(&text) + 12.0;
         let status_x = (preview_x + (preview_w - status_w) / 2.0).floor();
         let color = if seen.shared { th.positive } else { th.muted };
-        cx.p.icon(if seen.shared { Icon::Check } else { Icon::Eye }, status_x, status_y, 9.0, color);
+        cx.p.icon(
+            if seen.shared { Icon::Check } else { Icon::Eye },
+            status_x,
+            status_y,
+            9.0,
+            color,
+        );
         cx.p.text(&text, status_x + 12.0, status_y + 1.0, color, false);
         if !seen.shared && status == Status::SignedOut {
             let r = [preview_x, status_y + 12.0, preview_w, CONTROL_HEIGHT];
             if cx.ui.over(r) {
-                cx.ui.tooltip("Sign in so other Incari players can see your cosmetics");
+                cx.ui
+                    .tooltip("Sign in so other Incari players can see your cosmetics");
             }
             if ui::button(cx.p, cx.ui, r, "Sign In", true) {
                 cx.open(super::account::Account::default());
@@ -344,12 +425,28 @@ impl Screen for Wardrobe {
         let switch_r = [preview_x, py + panel_h - 8.0 - 14.0, preview_w, 12.0];
         let hot = cx.ui.over(switch_r);
         if hot {
-            cx.ui.tooltip("Off hides other players' capes, hats, wings, trails and emotes. Yours still show.");
+            cx.ui.tooltip(
+                "Off hides other players' capes, hats, wings, trails and emotes. Yours still show.",
+            );
         }
         // Cut short of the switch beside a narrow preview; the tooltip says what it does.
-        let switch_label = cx.p.fit("Show others' cosmetics", preview_w - SWITCH_WIDTH - 4.0).into_owned();
-        cx.p.text(&switch_label, switch_r[0], switch_r[1] + 2.0, if hot { th.text } else { th.muted }, false);
-        panels::toggle(cx.p, switch_r[0] + switch_r[2] - SWITCH_WIDTH, switch_r[1] + 1.0, seen.show_others, 1.0);
+        let switch_label =
+            cx.p.fit("Show others' cosmetics", preview_w - SWITCH_WIDTH - 4.0)
+                .into_owned();
+        cx.p.text(
+            &switch_label,
+            switch_r[0],
+            switch_r[1] + 2.0,
+            if hot { th.text } else { th.muted },
+            false,
+        );
+        panels::toggle(
+            cx.p,
+            switch_r[0] + switch_r[2] - SWITCH_WIDTH,
+            switch_r[1] + 1.0,
+            seen.show_others,
+            1.0,
+        );
         if cx.ui.clicked(switch_r) {
             wardrobe_file::with(|w| w.set_show_others(!seen.show_others));
         }
@@ -368,14 +465,24 @@ impl Screen for Wardrobe {
         cx.p.clip_end();
         if self.tab == Tab::Outfits && cards.len() <= 1 {
             let mut line_y = grid_y + CARD_HEIGHT + 16.0;
-            for line in cx.p.wrap("Put on what you like, name it above and press Save.", grid_w, 3) {
+            for line in cx.p.wrap(
+                "Put on what you like, name it above and press Save.",
+                grid_w,
+                3,
+            ) {
                 cx.p.centered(&line, grid_x + grid_w / 2.0, line_y, th.muted, false);
                 line_y += 10.0;
             }
         }
         if let Some((text, warning)) = &self.notice {
             let text = cx.p.fit(text, grid_w).into_owned();
-            cx.p.text(&text, grid_x, py + panel_h - PADDING + 1.0, if *warning { th.warning } else { th.muted }, false);
+            cx.p.text(
+                &text,
+                grid_x,
+                py + panel_h - PADDING + 1.0,
+                if *warning { th.warning } else { th.muted },
+                false,
+            );
         }
         ui::scrollbar(cx.p, area, content, self.scroll);
         wardrobe_file::load_and_save(cx.host);
@@ -407,21 +514,47 @@ impl Wardrobe {
             Card::Cosmetic(c) => owns(c),
             _ => true,
         };
-        panels::card(cx.p, r[0], r[1], r[2], r[3], hot, on, if owned { 1.0 } else { 0.5 });
+        panels::card(
+            cx.p,
+            r[0],
+            r[1],
+            r[2],
+            r[3],
+            hot,
+            on,
+            if owned { 1.0 } else { 0.5 },
+        );
         self.picture(cx, card, r, seen);
         // An outfit's name can be 24 characters: cut to the card, not into the next one.
         let text = label(card, seen);
         let text = cx.p.fit(&text, r[2] - 8.0).into_owned();
         let tw = cx.p.width(&text);
         let tx = r[0] + (((r[2] - tw) / 2.0).floor()).max(4.0);
-        cx.p.text(&text, tx, r[1] + r[3] - 14.0, if owned { th.text } else { th.muted }, false);
+        cx.p.text(
+            &text,
+            tx,
+            r[1] + r[3] - 14.0,
+            if owned { th.text } else { th.muted },
+            false,
+        );
         if on {
             cx.p.icon(Icon::Check, r[0] + r[2] - 13.0, r[1] + 5.0, 8.0, th.accent);
         }
-        let trash = [r[0] + r[2] - 5.0 - TRASH - 2.0, r[1], TRASH + 7.0, 5.0 + TRASH + 2.0];
+        let trash = [
+            r[0] + r[2] - 5.0 - TRASH - 2.0,
+            r[1],
+            TRASH + 7.0,
+            5.0 + TRASH + 2.0,
+        ];
         let over_trash = matches!(card, Card::Outfit(_)) && hot && cx.ui.over(trash);
         if matches!(card, Card::Outfit(_)) && hot {
-            cx.p.icon(Icon::Trash, r[0] + r[2] - 5.0 - TRASH, r[1] + 5.0, TRASH, if over_trash { th.negative } else { th.muted });
+            cx.p.icon(
+                Icon::Trash,
+                r[0] + r[2] - 5.0 - TRASH,
+                r[1] + 5.0,
+                TRASH,
+                if over_trash { th.negative } else { th.muted },
+            );
         }
         if !owned {
             cx.p.text("Locked", r[0] + 5.0, r[1] + 5.0, th.muted, false);
@@ -432,7 +565,10 @@ impl Wardrobe {
         match card {
             Card::Outfit(i) => {
                 if over_trash {
-                    let name = seen.outfits.get(i).map_or_else(String::new, |o| o.0.clone());
+                    let name = seen
+                        .outfits
+                        .get(i)
+                        .map_or_else(String::new, |o| o.0.clone());
                     wardrobe_file::with(|w| w.delete_outfit(i));
                     self.notice = Some((format!("Deleted {name}."), false));
                     return true;
@@ -481,7 +617,13 @@ impl Wardrobe {
             Slot::Nametag => {
                 let name = cx.host.player_name();
                 let name_w = (r[2] - 8.0).min(cx.p.width(&name));
-                cx.p.fill(x - (name_w / 2.0).floor() - 3.0, y + 15.0, name_w + 6.0, 12.0, 0x6000_0000);
+                cx.p.fill(
+                    x - (name_w / 2.0).floor() - 3.0,
+                    y + 15.0,
+                    name_w + 6.0,
+                    12.0,
+                    0x6000_0000,
+                );
                 cx.p.clip_start([r[0] + 3.0, y, r[2] - 6.0, 40.0]);
                 let nx = x - (cx.p.width(&name) / 2.0).floor();
                 draw_name(cx, &name, Some(shown), nx, y + 17.0);
@@ -499,7 +641,14 @@ impl Wardrobe {
                     let dot_x = x - 16.0 + i as f32 * 5.0;
                     let dot_y = y + 34.0 - i as f32 * 4.0 - (i % 2) as f32 * 3.0;
                     let size = (6 - i / 2).max(2) as f32;
-                    cx.p.round(dot_x, dot_y, size, size, (size / 2.0).floor(), colors[i % colors.len()]);
+                    cx.p.round(
+                        dot_x,
+                        dot_y,
+                        size,
+                        size,
+                        (size / 2.0).floor(),
+                        colors[i % colors.len()],
+                    );
                 }
             }
             Slot::Emote => cx.p.icon(Icon::Person, x - 12.0, y + 8.0, 24.0, th.text),
@@ -544,18 +693,35 @@ mod tests {
         assert_eq!(cards[0], Card::None(Slot::Hat));
         assert_eq!(cards.len(), 7);
         let emotes = Wardrobe::showing(Some(Slot::Emote)).cards(0);
-        assert!(matches!(emotes[0], Card::Cosmetic(_)), "emotes aren't worn: no None");
+        assert!(
+            matches!(emotes[0], Card::Cosmetic(_)),
+            "emotes aren't worn: no None"
+        );
         let outfits = Wardrobe::showing(None).cards(2);
-        assert_eq!(outfits, [Card::TakeOffAll, Card::Outfit(0), Card::Outfit(1)]);
+        assert_eq!(
+            outfits,
+            [Card::TakeOffAll, Card::Outfit(0), Card::Outfit(1)]
+        );
     }
 
     #[test]
     fn trying_on_a_card_changes_only_its_slot() {
         let on = Loadout::of(&["cape.frost", "hat.halo"]);
-        let seen = Seen { worn: on, outfits: vec![("A".into(), Loadout::EMPTY)], shared: false, show_others: true };
+        let seen = Seen {
+            worn: on,
+            outfits: vec![("A".into(), Loadout::EMPTY)],
+            shared: false,
+            show_others: true,
+        };
         let crown = catalog::by_id("hat.crown").unwrap();
-        assert_eq!(try_on(Card::Cosmetic(crown), &seen).unwrap().ids(), ["cape.frost", "hat.crown"]);
-        assert_eq!(try_on(Card::None(Slot::Cape), &seen).unwrap().ids(), ["hat.halo"]);
+        assert_eq!(
+            try_on(Card::Cosmetic(crown), &seen).unwrap().ids(),
+            ["cape.frost", "hat.crown"]
+        );
+        assert_eq!(
+            try_on(Card::None(Slot::Cape), &seen).unwrap().ids(),
+            ["hat.halo"]
+        );
         assert_eq!(try_on(Card::TakeOffAll, &seen), Some(Loadout::EMPTY));
         assert!(try_on(Card::Cosmetic(catalog::by_id("emote.wave").unwrap()), &seen).is_none());
         assert!(worn(Card::None(Slot::Back), &seen) && !worn(Card::None(Slot::Hat), &seen));

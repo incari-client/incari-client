@@ -9,7 +9,14 @@ use super::{Blocks, UNKNOWN};
 use std::collections::HashMap;
 
 /// Properties that say how many items a block holds.
-const COUNTED: [&str; 6] = ["candles", "pickles", "eggs", "layers", "flower_amount", "segment_amount"];
+const COUNTED: [&str; 6] = [
+    "candles",
+    "pickles",
+    "eggs",
+    "layers",
+    "flower_amount",
+    "segment_amount",
+];
 
 #[derive(Debug, Default)]
 pub struct Materials {
@@ -47,7 +54,11 @@ impl Materials {
     /// `UNKNOWN` for one the game hasn't.
     pub fn new(schematic: &Schematic, states: &[u32], blocks: &dyn Blocks) -> Self {
         let n = schematic.palette.len();
-        let mut m = Self { item_of: vec![None; n], cost_of: vec![0; n], ..Self::default() };
+        let mut m = Self {
+            item_of: vec![None; n],
+            cost_of: vec![0; n],
+            ..Self::default()
+        };
         let mut by_id: HashMap<String, usize> = HashMap::new();
         for (i, spec) in schematic.palette.iter().enumerate() {
             let state = states[i];
@@ -91,7 +102,11 @@ impl Materials {
         self.total_needed = self.needed.iter().filter(|&&n| n > 0).sum();
         let (needed, items) = (&self.needed, &self.items);
         // In place, nothing allocated; ids are unique, so the order is the same every time.
-        self.order.sort_unstable_by(|&a, &b| needed[b].cmp(&needed[a]).then_with(|| items[a].cmp(&items[b])));
+        self.order.sort_unstable_by(|&a, &b| {
+            needed[b]
+                .cmp(&needed[a])
+                .then_with(|| items[a].cmp(&items[b]))
+        });
     }
 
     /// How many kinds of item there are.
@@ -153,17 +168,44 @@ mod tests {
     fn lists_most_needed_first_and_leaves_out_what_no_item_places() {
         let blocks = FakeBlocks::default();
         let mut b = Builder::new(4, 1, 2).unwrap();
-        let list = ["stone", "stone", "stone", "oak_slab[type=double]", "water", "wall_torch", "air", "torch"];
+        let list = [
+            "stone",
+            "stone",
+            "stone",
+            "oak_slab[type=double]",
+            "water",
+            "wall_torch",
+            "air",
+            "torch",
+        ];
         for (i, t) in list.iter().enumerate() {
             let index = b.index(spec(t));
             b.set(i as i32 % 4, 0, i as i32 / 4, index);
         }
         let s = b.build();
-        let states: Vec<u32> =
-            s.palette.iter().map(|p| if p.is_nothing() { UNKNOWN } else { blocks.state(&p.name, &p.properties, 0) }).collect();
+        let states: Vec<u32> = s
+            .palette
+            .iter()
+            .map(|p| {
+                if p.is_nothing() {
+                    UNKNOWN
+                } else {
+                    blocks.state(&p.name, &p.properties, 0)
+                }
+            })
+            .collect();
         let m = Materials::new(&s, &states, &blocks);
-        let ranked: Vec<(&str, i64)> = (0..m.kinds()).map(|r| (m.id(m.ranked(r)), m.needed(m.ranked(r)))).collect();
-        assert_eq!(ranked, [("minecraft:stone", 3), ("minecraft:oak_slab", 2), ("minecraft:torch", 2)]);
+        let ranked: Vec<(&str, i64)> = (0..m.kinds())
+            .map(|r| (m.id(m.ranked(r)), m.needed(m.ranked(r))))
+            .collect();
+        assert_eq!(
+            ranked,
+            [
+                ("minecraft:stone", 3),
+                ("minecraft:oak_slab", 2),
+                ("minecraft:torch", 2)
+            ]
+        );
         assert_eq!((m.kinds_needed(), m.total_needed()), (3, 7));
     }
 }

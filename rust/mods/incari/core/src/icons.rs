@@ -71,11 +71,20 @@ impl Icon {
         let (x, y) = (u - 0.5, v - 0.5);
         match self {
             Icon::Cube => {
-                let p = [0.0, -0.42, 0.37, -0.21, 0.37, 0.21, 0.0, 0.42, -0.37, 0.21, -0.37, -0.21];
+                let p = [
+                    0.0, -0.42, 0.37, -0.21, 0.37, 0.21, 0.0, 0.42, -0.37, 0.21, -0.37, -0.21,
+                ];
                 let mut d = f32::MAX;
                 for i in 0..6 {
                     let j = (i + 1) % 6;
-                    d = d.min(segment(x, y, p[i * 2], p[i * 2 + 1], p[j * 2], p[j * 2 + 1]));
+                    d = d.min(segment(
+                        x,
+                        y,
+                        p[i * 2],
+                        p[i * 2 + 1],
+                        p[j * 2],
+                        p[j * 2 + 1],
+                    ));
                 }
                 d = d.min(segment(x, y, 0.0, 0.0, -0.37, -0.21));
                 d = d.min(segment(x, y, 0.0, 0.0, 0.37, -0.21));
@@ -186,10 +195,19 @@ impl Icon {
             }
             Icon::Flag => {
                 let pole = segment(x, y, -0.3, -0.42, -0.3, 0.44) - stroke * 0.55;
-                let p = [-0.3, -0.36, 0.34, -0.36, 0.18, -0.16, 0.34, 0.04, -0.3, 0.04];
+                let p = [
+                    -0.3, -0.36, 0.34, -0.36, 0.18, -0.16, 0.34, 0.04, -0.3, 0.04,
+                ];
                 let mut d = f32::MAX;
                 for i in 0..4 {
-                    d = d.min(segment(x, y, p[i * 2], p[i * 2 + 1], p[i * 2 + 2], p[i * 2 + 3]));
+                    d = d.min(segment(
+                        x,
+                        y,
+                        p[i * 2],
+                        p[i * 2 + 1],
+                        p[i * 2 + 2],
+                        p[i * 2 + 3],
+                    ));
                 }
                 pole.min(d - stroke * 0.5)
             }
@@ -216,10 +234,19 @@ impl Icon {
                 body.min(plus)
             }
             Icon::Send => {
-                let p = [-0.38, -0.34, 0.4, 0.0, -0.38, 0.34, -0.22, 0.0, -0.38, -0.34];
+                let p = [
+                    -0.38, -0.34, 0.4, 0.0, -0.38, 0.34, -0.22, 0.0, -0.38, -0.34,
+                ];
                 let mut d = f32::MAX;
                 for i in 0..4 {
-                    d = d.min(segment(x, y, p[i * 2], p[i * 2 + 1], p[i * 2 + 2], p[i * 2 + 3]));
+                    d = d.min(segment(
+                        x,
+                        y,
+                        p[i * 2],
+                        p[i * 2 + 1],
+                        p[i * 2 + 2],
+                        p[i * 2 + 3],
+                    ));
                 }
                 d = d.min(segment(x, y, -0.22, 0.0, 0.1, 0.0));
                 d - stroke * 0.5

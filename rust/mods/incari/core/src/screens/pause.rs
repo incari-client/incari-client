@@ -38,30 +38,65 @@ impl Screen for Pause {
         let left = x + PADDING;
         let mut top = y + PADDING + HEADER;
         let mut go = None;
-        if ui::button(cx.p, cx.ui, [left, top, WIDE, CONTROL_HEIGHT], &t(cx, "menu.returnToGame"), true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [left, top, WIDE, CONTROL_HEIGHT],
+            &t(cx, "menu.returnToGame"),
+            true,
+        ) {
             go = Some(Go::Game("resume"));
         }
         top += ROW;
-        if ui::button(cx.p, cx.ui, [left, top, HALF, CONTROL_HEIGHT], &t(cx, "gui.advancements"), true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [left, top, HALF, CONTROL_HEIGHT],
+            &t(cx, "gui.advancements"),
+            true,
+        ) {
             go = Some(Go::Game("advancements"));
         }
-        if ui::button(cx.p, cx.ui, [left + WIDE - HALF, top, HALF, CONTROL_HEIGHT], &t(cx, "gui.stats"), true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [left + WIDE - HALF, top, HALF, CONTROL_HEIGHT],
+            &t(cx, "gui.stats"),
+            true,
+        ) {
             go = Some(Go::Game("stats"));
         }
         top += ROW;
         // The icon row (PauseScreen's): report bugs, feedback, friends. Incari has no Player
         // Reporting button.
         let icons = [
-            ("gui/sprites/pause_menu/bug", "menu.reportBugs", "report_bugs"),
-            ("gui/sprites/pause_menu/social_interactions", "menu.sendFeedback", "feedback"),
-            ("gui/sprites/friends/friends", "gui.friends.open.tooltip", "friends"),
+            (
+                "gui/sprites/pause_menu/bug",
+                "menu.reportBugs",
+                "report_bugs",
+            ),
+            (
+                "gui/sprites/pause_menu/social_interactions",
+                "menu.sendFeedback",
+                "feedback",
+            ),
+            (
+                "gui/sprites/friends/friends",
+                "gui.friends.open.tooltip",
+                "friends",
+            ),
         ];
         let mut ix = left + ((WIDE - (icons.len() as f32 * 24.0 - 4.0)) / 2.0).floor();
         for (sprite, tip, action) in icons {
             let r = [ix, top, 20.0, 20.0];
             let hot = cx.ui.over(r);
             crate::skin::button(cx.p, r, false, hot, 1.0);
-            cx.p.sprite(sprite, [0.0, 0.0, 15.0, 15.0], [ix + 3.0, top + 3.0, 15.0, 15.0], 0xFFFF_FFFF);
+            cx.p.sprite(
+                sprite,
+                [0.0, 0.0, 15.0, 15.0],
+                [ix + 3.0, top + 3.0, 15.0, 15.0],
+                0xFFFF_FFFF,
+            );
             if hot {
                 let tip = t(cx, tip);
                 cx.ui.tooltip(tip);
@@ -83,18 +118,39 @@ impl Screen for Pause {
             true,
             true,
         ) {
-            go = Some(Go::Open(Box::new(super::incari_settings::IncariSettings::default())));
+            go = Some(Go::Open(Box::new(
+                super::incari_settings::IncariSettings::default(),
+            )));
         }
         top += ROW;
-        if ui::button(cx.p, cx.ui, [left, top, HALF, CONTROL_HEIGHT], &t(cx, "menu.options"), true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [left, top, HALF, CONTROL_HEIGHT],
+            &t(cx, "menu.options"),
+            true,
+        ) {
             go = Some(Go::GameOver("options"));
         }
         let world = t(cx, "options.worldOptions.button");
-        if ui::button(cx.p, cx.ui, [left + WIDE - HALF, top, HALF, CONTROL_HEIGHT], &world, true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [left + WIDE - HALF, top, HALF, CONTROL_HEIGHT],
+            &world,
+            true,
+        ) {
             go = Some(Go::GameOver("lan"));
         }
         top += ROW;
-        let quit = t(cx, if cx.host.on_server() { "menu.disconnect" } else { "menu.returnToMenu" });
+        let quit = t(
+            cx,
+            if cx.host.on_server() {
+                "menu.disconnect"
+            } else {
+                "menu.returnToMenu"
+            },
+        );
         if ui::button(cx.p, cx.ui, [left, top, WIDE, CONTROL_HEIGHT], &quit, true) {
             go = Some(Go::Game("disconnect"));
         }

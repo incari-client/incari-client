@@ -90,7 +90,10 @@ impl Painter<'_> {
 
     /// A point in the painter's units to GUI units.
     fn at(&self, x: f32, y: f32) -> (f32, f32) {
-        (self.origin[0] + x * self.zoom, self.origin[1] + y * self.zoom)
+        (
+            self.origin[0] + x * self.zoom,
+            self.origin[1] + y * self.zoom,
+        )
     }
 
     /// A rectangle in the painter's units to GUI units.
@@ -197,14 +200,20 @@ impl Painter<'_> {
         if fill >> 24 != 0 {
             if r == 0 {
                 self.list.fill([x, y, w, h], fill);
-            } else if let Some(region) = self.canvas.get(Key::Fill(r as u16), || corner_image(0, r, 0)) {
+            } else if let Some(region) = self
+                .canvas
+                .get(Key::Fill(r as u16), || corner_image(0, r, 0))
+            {
                 self.nine(region, r, [px, py, pw, ph], fill, true);
             }
         }
         if edge >> 24 != 0 {
             if r <= 1 {
                 self.frame_px([px, py, pw, ph], edge);
-            } else if let Some(region) = self.canvas.get(Key::Ring(r as u16), || corner_image(1, r, 0)) {
+            } else if let Some(region) = self
+                .canvas
+                .get(Key::Ring(r as u16), || corner_image(1, r, 0))
+            {
                 self.nine(region, r, [px, py, pw, ph], edge, false);
             }
         }
@@ -294,7 +303,12 @@ impl Painter<'_> {
         };
         let argb = self.faded(argb);
         let (px, py) = (self.px(x), self.px(y));
-        let dst = [self.gui(px), self.gui(py), self.gui(pixels as f32), self.gui(pixels as f32)];
+        let dst = [
+            self.gui(px),
+            self.gui(py),
+            self.gui(pixels as f32),
+            self.gui(pixels as f32),
+        ];
         self.list.image(r.src(), dst, argb);
     }
 
@@ -322,7 +336,12 @@ impl Painter<'_> {
             // The mark leaves room around the tree for the comet's orbit: drawn a little past
             // the icon's square, so the tree stands as tall as the line icons beside it.
             let grow = (size / 4.0).floor().max(1.0);
-            self.logo(x - grow, y - grow, size + grow * 2.0, (argb >> 24) as f32 / 255.0);
+            self.logo(
+                x - grow,
+                y - grow,
+                size + grow * 2.0,
+                (argb >> 24) as f32 / 255.0,
+            );
             return;
         }
         let [x, y, size, _] = self.place(x, y, size, 0.0);
@@ -330,12 +349,20 @@ impl Painter<'_> {
         if pixels == 0 || argb >> 24 == 0 {
             return;
         }
-        let Some(r) = self.canvas.get(Key::Icon(icon, pixels as u16), || icon.paint(pixels)) else {
+        let Some(r) = self
+            .canvas
+            .get(Key::Icon(icon, pixels as u16), || icon.paint(pixels))
+        else {
             return;
         };
         let argb = self.faded(argb);
         let (px, py) = (self.px(x), self.px(y));
-        let dst = [self.gui(px), self.gui(py), self.gui(pixels as f32), self.gui(pixels as f32)];
+        let dst = [
+            self.gui(px),
+            self.gui(py),
+            self.gui(pixels as f32),
+            self.gui(pixels as f32),
+        ];
         self.list.image(r.src(), dst, argb);
     }
 
@@ -349,12 +376,20 @@ impl Painter<'_> {
         if pixels == 0 {
             return;
         }
-        let Some(r) = self.canvas.get(Key::Logo(pixels as u16), || source.scaled(pixels, pixels)) else {
+        let Some(r) = self
+            .canvas
+            .get(Key::Logo(pixels as u16), || source.scaled(pixels, pixels))
+        else {
             return;
         };
         let a = ((alpha.clamp(0.0, 1.0) * self.fade) * 255.0).round() as u32;
         let (px, py) = (self.px(x), self.px(y));
-        let dst = [self.gui(px), self.gui(py), self.gui(pixels as f32), self.gui(pixels as f32)];
+        let dst = [
+            self.gui(px),
+            self.gui(py),
+            self.gui(pixels as f32),
+            self.gui(pixels as f32),
+        ];
         self.list.image(r.src(), dst, a << 24 | 0xFF_FFFF);
     }
 
@@ -448,8 +483,16 @@ impl Painter<'_> {
             image
         });
         if let Some(r) = made {
-            let (px, py) = (self.px(x) + bounds.min.x.round(), self.px(y) + bounds.min.y.round());
-            let dst = [self.gui(px), self.gui(py), self.gui(r.w as f32), self.gui(r.h as f32)];
+            let (px, py) = (
+                self.px(x) + bounds.min.x.round(),
+                self.px(y) + bounds.min.y.round(),
+            );
+            let dst = [
+                self.gui(px),
+                self.gui(py),
+                self.gui(r.w as f32),
+                self.gui(r.h as f32),
+            ];
             let argb = self.faded(argb);
             self.list.image(r.src(), dst, argb);
         }
@@ -474,12 +517,19 @@ impl Painter<'_> {
         if pixels < 2 || argb >> 24 == 0 {
             return;
         }
-        let Some(r) = self.canvas.get(Key::Shape(shape, pixels as u16), || paint_shape(shape, pixels)) else {
+        let Some(r) = self.canvas.get(Key::Shape(shape, pixels as u16), || {
+            paint_shape(shape, pixels)
+        }) else {
             return;
         };
         let half = pixels as f32 / 2.0;
         let (px, py) = (self.px(cx) - half, self.px(cy) - half);
-        let dst = [self.gui(px.round()), self.gui(py.round()), self.gui(pixels as f32), self.gui(pixels as f32)];
+        let dst = [
+            self.gui(px.round()),
+            self.gui(py.round()),
+            self.gui(pixels as f32),
+            self.gui(pixels as f32),
+        ];
         let argb = self.faded(argb);
         self.list.image(r.src(), dst, argb);
     }
@@ -495,7 +545,8 @@ impl Painter<'_> {
     pub fn text_scaled(&mut self, text: &str, x: f32, y: f32, argb: u32, shadow: bool, scale: f32) {
         let argb = self.faded(argb);
         let (x, y) = self.at(x, y);
-        self.list.text(text, [x, y], argb, shadow, scale * self.zoom);
+        self.list
+            .text(text, [x, y], argb, shadow, scale * self.zoom);
     }
 
     /// Text centred on `cx`.
@@ -660,7 +711,9 @@ fn fade_right() -> Image {
 }
 
 fn fade_down() -> Image {
-    Image::mask(1, BAND_WIDTH, |_, y| 1.0 - (y as f32 + 0.5) / BAND_WIDTH as f32)
+    Image::mask(1, BAND_WIDTH, |_, y| {
+        1.0 - (y as f32 + 0.5) / BAND_WIDTH as f32
+    })
 }
 
 fn dot() -> Image {
@@ -699,9 +752,14 @@ fn paint_shape(shape: Shape, pixels: u32) -> Image {
             }
             let coverage = (fill + edge * rim_alpha) / 16.0;
             let alpha = (coverage.min(1.0) * 255.0).round() as u32;
-            let white = if fill + edge == 0.0 { 0.0 } else { fill / (fill + edge * rim_alpha) };
+            let white = if fill + edge == 0.0 {
+                0.0
+            } else {
+                fill / (fill + edge * rim_alpha)
+            };
             let c = |shift: u32| {
-                ((255.0 * white + (RIM >> shift & 0xFF) as f32 * (1.0 - white)).round() as u32) << shift
+                ((255.0 * white + (RIM >> shift & 0xFF) as f32 * (1.0 - white)).round() as u32)
+                    << shift
             };
             image.set_argb(px, py, alpha << 24 | c(16) | c(8) | c(0));
         }
@@ -732,7 +790,8 @@ fn shape_distance(shape: Shape, x: f32, y: f32) -> f32 {
 fn regular(sides: usize, rx: f32, ry: f32) -> Vec<f32> {
     let mut points = Vec::with_capacity(sides * 2);
     for i in 0..sides {
-        let angle = -std::f32::consts::FRAC_PI_2 + i as f32 * 2.0 * std::f32::consts::PI / sides as f32;
+        let angle =
+            -std::f32::consts::FRAC_PI_2 + i as f32 * 2.0 * std::f32::consts::PI / sides as f32;
         points.push(angle.cos() * rx);
         points.push(angle.sin() * ry);
     }
@@ -807,7 +866,12 @@ pub(crate) mod tests {
         assert_eq!(fit(&Mono, "Toggle Sprint", 200.0), "Toggle Sprint");
         assert_eq!(fit(&Mono, "Toggle Sprint", 60.0), "Toggle...");
         assert_eq!(fit(&Mono, "Toggle", 12.0), "");
-        let lines = wrap(&Mono, "Sprint and sneak without holding the keys.", 120.0, 2);
+        let lines = wrap(
+            &Mono,
+            "Sprint and sneak without holding the keys.",
+            120.0,
+            2,
+        );
         assert_eq!(lines, ["Sprint and sneak", "without holding t..."]);
     }
 
@@ -826,7 +890,13 @@ pub(crate) mod tests {
 
     #[test]
     fn shapes_have_a_dark_rim_and_white_middle() {
-        for shape in [Shape::Circle, Shape::Star, Shape::Heart, Shape::Arrow, Shape::Cross] {
+        for shape in [
+            Shape::Circle,
+            Shape::Star,
+            Shape::Heart,
+            Shape::Arrow,
+            Shape::Cross,
+        ] {
             let image = paint_shape(shape, 32);
             let middle = image.argb(16, 17);
             assert_eq!(middle & 0xFF_FFFF, 0xFF_FFFF, "{shape:?}");

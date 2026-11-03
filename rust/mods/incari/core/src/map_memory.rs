@@ -153,7 +153,9 @@ impl Region {
             at += 768;
             let mut chunk = Box::new([0u32; 256]);
             for (j, c) in chunk.iter_mut().enumerate() {
-                let color = (rgb[3 * j] as u32) << 16 | (rgb[3 * j + 1] as u32) << 8 | rgb[3 * j + 2] as u32;
+                let color = (rgb[3 * j] as u32) << 16
+                    | (rgb[3 * j + 1] as u32) << 8
+                    | rgb[3 * j + 2] as u32;
                 *c = if color == 0 { 0 } else { 0xFF00_0000 | color };
             }
             region.chunks[i] = Some(chunk);
@@ -164,7 +166,13 @@ impl Region {
 
 /// A remembered region's file, under `incari/`.
 pub fn file(world: &str, key: &Key) -> String {
-    format!("map/{}/{}/{}.{}.map", safe_name(world), safe_name(&key.dimension), key.x, key.z)
+    format!(
+        "map/{}/{}/{}.{}.map",
+        safe_name(world),
+        safe_name(&key.dimension),
+        key.x,
+        key.z
+    )
 }
 
 /// The remembered map of the world played.
@@ -262,7 +270,14 @@ impl MapMemory {
     }
 
     /// The map drew chunk `chunk_x, chunk_z` of `dimension`: its 256 colours, row by row.
-    pub fn record(&mut self, files: &mut dyn Bytes, dimension: &str, chunk_x: i32, chunk_z: i32, colors: &[u32; 256]) {
+    pub fn record(
+        &mut self,
+        files: &mut dyn Bytes,
+        dimension: &str,
+        chunk_x: i32,
+        chunk_z: i32,
+        colors: &[u32; 256],
+    ) {
         if self.world.is_none() {
             return;
         }
@@ -281,18 +296,39 @@ impl MapMemory {
 
     /// Region `x, z` of `dimension`, read from its file if it isn't in memory; None with no world
     /// open, or nothing seen there and `make` false.
-    pub fn region(&mut self, files: &mut dyn Bytes, dimension: &str, x: i32, z: i32, make: bool) -> Option<&mut Region> {
+    pub fn region(
+        &mut self,
+        files: &mut dyn Bytes,
+        dimension: &str,
+        x: i32,
+        z: i32,
+        make: bool,
+    ) -> Option<&mut Region> {
         self.world.as_ref()?;
-        let key = Key { dimension: dimension.to_owned(), x, z };
+        let key = Key {
+            dimension: dimension.to_owned(),
+            x,
+            z,
+        };
         self.uses += 1;
         if !self.regions.contains_key(&key) {
-            let read = if self.remember { self.read(files, &key) } else { None };
+            let read = if self.remember {
+                self.read(files, &key)
+            } else {
+                None
+            };
             let region = match read {
                 Some(r) => r,
                 None if make => Region::default(),
                 None => return None,
             };
-            self.regions.insert(key.clone(), Region { used_at: self.uses, ..region });
+            self.regions.insert(
+                key.clone(),
+                Region {
+                    used_at: self.uses,
+                    ..region
+                },
+            );
             self.evict(files);
         }
         let region = self.regions.get_mut(&key)?;
@@ -302,7 +338,11 @@ impl MapMemory {
 
     /// The region in memory, without reading its file.
     pub fn kept(&self, dimension: &str, x: i32, z: i32) -> Option<&Region> {
-        self.regions.get(&Key { dimension: dimension.to_owned(), x, z })
+        self.regions.get(&Key {
+            dimension: dimension.to_owned(),
+            x,
+            z,
+        })
     }
 
     /// Saves every region that changed.
@@ -315,7 +355,12 @@ impl MapMemory {
 
     fn evict(&mut self, files: &mut dyn Bytes) {
         while self.regions.len() > KEPT {
-            let Some(oldest) = self.regions.iter().min_by_key(|r| r.1.used_at).map(|r| r.0.clone()) else {
+            let Some(oldest) = self
+                .regions
+                .iter()
+                .min_by_key(|r| r.1.used_at)
+                .map(|r| r.0.clone())
+            else {
                 return;
             };
             self.write(files, &oldest);
@@ -343,7 +388,8 @@ impl MapMemory {
         let bytes = files.read(&path)?;
         let region = (zlib.inflate)(&bytes).and_then(|raw| Region::decode(&raw));
         if region.is_none() {
-            self.problems.push(format!("Not a map region this build reads: {path}"));
+            self.problems
+                .push(format!("Not a map region this build reads: {path}"));
         }
         region
     }
@@ -352,7 +398,14 @@ impl MapMemory {
 /// What the world map draws from: each region's colours, the surface's height where it's known.
 pub trait MapSource {
     /// Calls `f` with region `rx, rz` of `dimension`, or None where nothing's been seen.
-    fn region(&mut self, files: &mut dyn Bytes, dimension: &str, rx: i32, rz: i32, f: &mut dyn FnMut(Option<&Region>));
+    fn region(
+        &mut self,
+        files: &mut dyn Bytes,
+        dimension: &str,
+        rx: i32,
+        rz: i32,
+        f: &mut dyn FnMut(Option<&Region>),
+    );
     /// The surface's height (the highest block that blocks motion) at a block of a loaded chunk.
     fn surface(&self, x: i32, z: i32) -> Option<i32> {
         let _ = (x, z);
@@ -364,7 +417,14 @@ pub trait MapSource {
 pub struct Remembered;
 
 impl MapSource for Remembered {
-    fn region(&mut self, files: &mut dyn Bytes, dimension: &str, rx: i32, rz: i32, f: &mut dyn FnMut(Option<&Region>)) {
+    fn region(
+        &mut self,
+        files: &mut dyn Bytes,
+        dimension: &str,
+        rx: i32,
+        rz: i32,
+        f: &mut dyn FnMut(Option<&Region>),
+    ) {
         let done = with(|m| f(m.region(files, dimension, rx, rz, false).map(|r| &*r)));
         if done.is_none() {
             f(None);
@@ -399,7 +459,10 @@ mod tests {
     }
 
     /// No compression, for the tests: the format inside is what's checked.
-    const PLAIN: Zlib = Zlib { deflate: |b| b.to_vec(), inflate: |b| Some(b.to_vec()) };
+    const PLAIN: Zlib = Zlib {
+        deflate: |b| b.to_vec(),
+        inflate: |b| Some(b.to_vec()),
+    };
 
     fn chunk(color: u32) -> [u32; 256] {
         let mut c = [color; 256];
@@ -432,7 +495,11 @@ mod tests {
 
     #[test]
     fn names_files_as_java_does() {
-        let key = Key { dimension: "minecraft:overworld".into(), x: -1, z: 3 };
+        let key = Key {
+            dimension: "minecraft:overworld".into(),
+            x: -1,
+            z: 3,
+        };
         let f = file("world/A", &key);
         assert!(f.starts_with("map/world_A-"));
         assert!(f.contains("/minecraft_overworld-"));
@@ -449,9 +516,16 @@ mod tests {
         memory.open("world/A", &mut files);
         memory.record(&mut files, "d", -1, 33, &chunk(0xFF00_FF00));
         let region = memory.kept("d", -1, 1).unwrap();
-        assert_eq!((region.revision, region.color(31 * 16, 16)), (1, Some(0xFF00_FF00)));
+        assert_eq!(
+            (region.revision, region.color(31 * 16, 16)),
+            (1, Some(0xFF00_FF00))
+        );
         memory.record(&mut files, "d", -1, 33, &chunk(0xFF00_FF00));
-        assert_eq!(memory.kept("d", -1, 1).unwrap().revision, 1, "the same colours change nothing");
+        assert_eq!(
+            memory.kept("d", -1, 1).unwrap().revision,
+            1,
+            "the same colours change nothing"
+        );
         for _ in 0..SAVE_TICKS {
             memory.tick(&mut files);
         }
@@ -489,8 +563,21 @@ mod tests {
         memory.open("w", &mut files);
         memory.record(&mut files, "d", 1, 0, &chunk(0xFF22_2222));
         memory.save(&mut files);
-        let file = file("w", &Key { dimension: "d".into(), x: 0, z: 0 });
-        assert!(Region::decode(&files.0[&file]).unwrap().chunk(1, 0).is_none(), "not saved while off");
+        let file = file(
+            "w",
+            &Key {
+                dimension: "d".into(),
+                x: 0,
+                z: 0,
+            },
+        );
+        assert!(
+            Region::decode(&files.0[&file])
+                .unwrap()
+                .chunk(1, 0)
+                .is_none(),
+            "not saved while off"
+        );
         memory.set_remember(true, &files);
         memory.save(&mut files);
         let saved = Region::decode(&files.0[&file]).unwrap();

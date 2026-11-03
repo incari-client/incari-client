@@ -54,7 +54,11 @@ impl Default for EmoteWheel {
 impl EmoteWheel {
     /// The wheel with the player's own emotes.
     pub fn new() -> Self {
-        Self { emotes: wardrobe::with(|w| w.emotes()), hovered: None, tapped: None }
+        Self {
+            emotes: wardrobe::with(|w| w.emotes()),
+            hovered: None,
+            tapped: None,
+        }
     }
 
     /// The emote under the pointer, for tests.
@@ -120,7 +124,10 @@ fn circle(cx: &mut Cx, centre: [f32; 2], radius: f32, width: f32, argb: u32, id:
     };
     let argb = p.faded(argb);
     let s = pixels as f32 / p.scale;
-    let (gx, gy) = ((x * p.scale).round() / p.scale, (y * p.scale).round() / p.scale);
+    let (gx, gy) = (
+        (x * p.scale).round() / p.scale,
+        (y * p.scale).round() / p.scale,
+    );
     p.list.image(r.src(), [gx, gy, s, s], argb);
 }
 
@@ -147,7 +154,11 @@ impl Screen for EmoteWheel {
             self.play(cx, at);
             return;
         }
-        let disc = if th.normal() { 0xB010_1822 } else { th.glass_solid };
+        let disc = if th.normal() {
+            0xB010_1822
+        } else {
+            th.glass_solid
+        };
         circle(cx, centre, RADIUS, RADIUS, disc, 0);
         circle(cx, centre, RADIUS, 1.0, th.glass_edge, 1);
         circle(cx, centre, INNER, 1.0, th.glass_edge, 2);
@@ -158,9 +169,22 @@ impl Screen for EmoteWheel {
             let w = cx.p.width(emote.name);
             let on = Some(i) == self.hovered;
             if on {
-                cx.p.round((x - w / 2.0).floor() - 6.0, y - 8.0, w + 12.0, 16.0, 8.0, th.accent);
+                cx.p.round(
+                    (x - w / 2.0).floor() - 6.0,
+                    y - 8.0,
+                    w + 12.0,
+                    16.0,
+                    8.0,
+                    th.accent,
+                );
             }
-            cx.p.text(emote.name, (x - w / 2.0).floor(), y - 4.0, if on { th.on_accent } else { th.text }, false);
+            cx.p.text(
+                emote.name,
+                (x - w / 2.0).floor(),
+                y - 4.0,
+                if on { th.on_accent } else { th.text },
+                false,
+            );
         }
         let (middle, color) = match self.hovered() {
             Some(e) => (e.name, th.accent),
@@ -188,11 +212,23 @@ mod tests {
     #[test]
     fn the_pointer_picks_the_emote_it_points_toward() {
         let c = [100.0, 100.0];
-        assert_eq!(pointed_at([100.0, 50.0], c, 8), Some(0), "straight up is the first");
+        assert_eq!(
+            pointed_at([100.0, 50.0], c, 8),
+            Some(0),
+            "straight up is the first"
+        );
         assert_eq!(pointed_at([150.0, 100.0], c, 8), Some(2), "clockwise");
         assert_eq!(pointed_at([100.0, 150.0], c, 8), Some(4));
-        assert_eq!(pointed_at([105.0, 105.0], c, 8), None, "the middle plays nothing");
+        assert_eq!(
+            pointed_at([105.0, 105.0], c, 8),
+            None,
+            "the middle plays nothing"
+        );
         assert_eq!(pointed_at([100.0, 50.0], c, 0), None);
-        assert_eq!(pointed_at([99.0, 40.0], c, 8), Some(0), "just left of up rounds to up");
+        assert_eq!(
+            pointed_at([99.0, 40.0], c, 8),
+            Some(0),
+            "just left of up rounds to up"
+        );
     }
 }

@@ -59,7 +59,11 @@ pub struct Fake {
 
 impl Fake {
     pub fn new() -> Self {
-        Self { protocol: 1, now: 1_700_000_000_000, ..Default::default() }
+        Self {
+            protocol: 1,
+            now: 1_700_000_000_000,
+            ..Default::default()
+        }
     }
 
     fn id(&mut self, prefix: &str) -> String {
@@ -68,7 +72,10 @@ impl Fake {
     }
 
     pub fn open(&mut self) -> usize {
-        self.sockets.push(Socket { open: true, ..Default::default() });
+        self.sockets.push(Socket {
+            open: true,
+            ..Default::default()
+        });
         self.sockets.len() - 1
     }
 
@@ -98,7 +105,9 @@ impl Fake {
     }
 
     fn blocked(&self, a: &str, b: &str) -> bool {
-        self.blocks.iter().any(|(_, x, y, _)| (x == a && y == b) || (x == b && y == a))
+        self.blocks
+            .iter()
+            .any(|(_, x, y, _)| (x == a && y == b) || (x == b && y == a))
     }
 
     fn friendship(&self, a: &str, b: &str) -> Option<String> {
@@ -114,7 +123,9 @@ impl Fake {
     }
 
     fn online(&self, key: &str) -> bool {
-        self.sockets.iter().any(|s| s.account.as_deref() == Some(key))
+        self.sockets
+            .iter()
+            .any(|s| s.account.as_deref() == Some(key))
     }
 
     fn friend_json(&self, fid: &str, other: &str) -> Value {
@@ -142,7 +153,11 @@ impl Fake {
 
     fn sign_in(&mut self, s: usize, key: &str) -> String {
         let token = self.id("token-");
-        self.accounts.get_mut(key).unwrap().tokens.push(token.clone());
+        self.accounts
+            .get_mut(key)
+            .unwrap()
+            .tokens
+            .push(token.clone());
         self.sockets[s].account = Some(key.to_owned());
         token
     }
@@ -221,14 +236,17 @@ impl Fake {
                 out.insert("bits".into(), json!(BITS));
             }
             "signup" => {
-                let (username, password, challenge) = (str_of("username"), str_of("password"), str_of("challenge"));
+                let (username, password, challenge) =
+                    (str_of("username"), str_of("password"), str_of("challenge"));
                 let nonce = m["nonce"].as_u64().ok_or("bad_request")?;
                 let bytes = rules::base64_url(&challenge).ok_or("bad_request")?;
                 let mut work = rules::ProofOfWork::new(&bytes, BITS).ok_or("bad_request")?;
                 if !self.challenges.contains(&challenge) || !work.passes(nonce) {
                     return Err("bad_request");
                 }
-                if rules::username_problem(&username).is_some() || rules::password_problem(&password, &username).is_some() {
+                if rules::username_problem(&username).is_some()
+                    || rules::password_problem(&password, &username).is_some()
+                {
                     return Err("weak_password");
                 }
                 let key = username.to_lowercase();
@@ -236,24 +254,39 @@ impl Fake {
                     return Err("taken");
                 }
                 self.challenges.remove(&challenge);
-                self.accounts.insert(key.clone(), Account {
-                    username,
-                    password,
-                    tokens: vec![],
-                    codes: Self::codes(),
-                    share_server: true,
-                    messages: "friends".into(),
-                    friend_requests: true,
-                    badge: true,
-                });
+                self.accounts.insert(
+                    key.clone(),
+                    Account {
+                        username,
+                        password,
+                        tokens: vec![],
+                        codes: Self::codes(),
+                        share_server: true,
+                        messages: "friends".into(),
+                        friend_requests: true,
+                        badge: true,
+                    },
+                );
                 let token = self.sign_in(s, &key);
                 out.insert("token".into(), json!(token));
-                out.insert("recoveryCodes".into(), json!(Self::codes().iter().map(|c| c.to_lowercase()).collect::<Vec<_>>()));
+                out.insert(
+                    "recoveryCodes".into(),
+                    json!(
+                        Self::codes()
+                            .iter()
+                            .map(|c| c.to_lowercase())
+                            .collect::<Vec<_>>()
+                    ),
+                );
                 out.insert("account".into(), self.account_json(&key));
             }
             "signin" => {
                 let key = str_of("username").to_lowercase();
-                if self.accounts.get(&key).is_none_or(|a| a.password != str_of("password")) {
+                if self
+                    .accounts
+                    .get(&key)
+                    .is_none_or(|a| a.password != str_of("password"))
+                {
                     return Err("unauthorized");
                 }
                 let token = self.sign_in(s, &key);
@@ -274,7 +307,10 @@ impl Fake {
             "recover" => {
                 let key = str_of("username").to_lowercase();
                 let code = str_of("code");
-                let ok = self.accounts.get(&key).is_some_and(|a| a.codes.contains(&code));
+                let ok = self
+                    .accounts
+                    .get(&key)
+                    .is_some_and(|a| a.codes.contains(&code));
                 if !ok {
                     return Err("unauthorized");
                 }
@@ -340,11 +376,18 @@ impl Fake {
                     None => self.sockets[s].place = None,
                     Some(hash) => {
                         let name = str_of("name");
-                        self.sockets[s].place = Some((hash.to_owned(), name.clone(), m["server"].as_str().map(str::to_owned)));
+                        self.sockets[s].place = Some((
+                            hash.to_owned(),
+                            name.clone(),
+                            m["server"].as_str().map(str::to_owned),
+                        ));
                         // Whoever looked this name up on the same server hears of it.
                         let badge = self.accounts[&key].badge;
                         for other in 0..self.sockets.len() {
-                            let same = self.sockets[other].place.as_ref().is_some_and(|p| p.0 == hash);
+                            let same = self.sockets[other]
+                                .place
+                                .as_ref()
+                                .is_some_and(|p| p.0 == hash);
                             if other != s && same && self.sockets[other].looked_up.contains(&name) {
                                 let them = self.sockets[other].account.clone().unwrap_or_default();
                                 if !self.blocked(&key, &them) {
@@ -360,13 +403,27 @@ impl Fake {
             }
             "lookup" => {
                 let me = self.me(s)?;
-                let hash = self.sockets[s].place.as_ref().map(|p| p.0.clone()).ok_or("bad_request")?;
+                let hash = self.sockets[s]
+                    .place
+                    .as_ref()
+                    .map(|p| p.0.clone())
+                    .ok_or("bad_request")?;
                 let mut players = Vec::new();
-                for name in m["names"].as_array().unwrap().iter().filter_map(Value::as_str) {
+                for name in m["names"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter_map(Value::as_str)
+                {
                     self.sockets[s].looked_up.insert(name.to_owned());
                     for other in 0..self.sockets.len() {
-                        let Some(key) = self.sockets[other].account.clone() else { continue };
-                        let here = self.sockets[other].place.as_ref().is_some_and(|p| p.0 == hash && p.1 == name);
+                        let Some(key) = self.sockets[other].account.clone() else {
+                            continue;
+                        };
+                        let here = self.sockets[other]
+                            .place
+                            .as_ref()
+                            .is_some_and(|p| p.0 == hash && p.1 == name);
                         if here && key != me && !self.blocked(&key, &me) {
                             players.push(json!({"name": name, "pid": Self::pid(&hash, &key),
                                 "friend": self.friendship(&key, &me).is_some(), "cosmetics": [],
@@ -384,7 +441,11 @@ impl Fake {
                     if a == me || b == me {
                         let other = if a == me { b } else { a };
                         let mut f = self.friend_json(&fid, &other);
-                        let unread = self.messages.iter().filter(|x| x.0 == fid && x.1 != me).count();
+                        let unread = self
+                            .messages
+                            .iter()
+                            .filter(|x| x.0 == fid && x.1 != me)
+                            .count();
                         f["unread"] = json!(unread);
                         friends.push(f);
                     }
@@ -401,7 +462,10 @@ impl Fake {
             "befriend" => {
                 let me = self.me(s)?;
                 let (to, label) = if let Some(pid) = m["pid"].as_str() {
-                    (pid.rsplit('-').next().unwrap_or("").to_owned(), str_of("name"))
+                    (
+                        pid.rsplit('-').next().unwrap_or("").to_owned(),
+                        str_of("name"),
+                    )
                 } else {
                     let key = str_of("username").to_lowercase();
                     if !self.accounts.contains_key(&key) || key == me {
@@ -438,13 +502,17 @@ impl Fake {
             "accept" | "decline" => {
                 let me = self.me(s)?;
                 let rid = str_of("rid");
-                let at = self.requests.iter().position(|r| r.0 == rid && (r.2 == me || (t == "decline" && r.1 == me)));
+                let at = self
+                    .requests
+                    .iter()
+                    .position(|r| r.0 == rid && (r.2 == me || (t == "decline" && r.1 == me)));
                 let (rid, from, to, _) = self.requests.remove(at.ok_or("bad_request")?);
                 let other = if from == me { to } else { from };
                 self.send_to_account(&other, &json!({"t": "requestgone", "rid": rid}), None);
                 if t == "accept" {
                     let fid = self.id("f");
-                    self.friendships.push((fid.clone(), me.clone(), other.clone()));
+                    self.friendships
+                        .push((fid.clone(), me.clone(), other.clone()));
                     let mine = self.friend_json(&fid, &me);
                     self.send_to_account(&other, &json!({"t": "friend", "friend": mine}), None);
                     out.insert("friend".into(), self.friend_json(&fid, &other));
@@ -471,12 +539,17 @@ impl Fake {
                     if self.accounts[&other].messages == "nobody" {
                         return Err("closed");
                     }
-                    self.messages.push((fid.to_owned(), me.clone(), text.clone(), mid.clone(), at));
-                    let event = json!({"t": "message", "mid": mid, "at": at, "text": text, "fid": fid});
+                    self.messages
+                        .push((fid.to_owned(), me.clone(), text.clone(), mid.clone(), at));
+                    let event =
+                        json!({"t": "message", "mid": mid, "at": at, "text": text, "fid": fid});
                     self.send_to_account(&other, &event, None);
                 } else {
                     let to = str_of("pid").rsplit('-').next().unwrap_or("").to_owned();
-                    let open = self.accounts.get(&to).is_some_and(|a| a.messages == "everyone");
+                    let open = self
+                        .accounts
+                        .get(&to)
+                        .is_some_and(|a| a.messages == "everyone");
                     if !open || self.blocked(&me, &to) {
                         return Err("closed");
                     }
@@ -509,7 +582,10 @@ impl Fake {
             "block" => {
                 let me = self.me(s)?;
                 let (them, label) = if let Some(pid) = m["pid"].as_str() {
-                    (pid.rsplit('-').next().unwrap_or("").to_owned(), str_of("name"))
+                    (
+                        pid.rsplit('-').next().unwrap_or("").to_owned(),
+                        str_of("name"),
+                    )
                 } else {
                     (str_of("username").to_lowercase(), str_of("username"))
                 };
@@ -523,8 +599,12 @@ impl Fake {
             }
             "blocks" => {
                 let me = self.me(s)?;
-                let list: Vec<Value> =
-                    self.blocks.iter().filter(|b| b.1 == me).map(|b| json!({"bid": b.0, "label": b.3})).collect();
+                let list: Vec<Value> = self
+                    .blocks
+                    .iter()
+                    .filter(|b| b.1 == me)
+                    .map(|b| json!({"bid": b.0, "label": b.3}))
+                    .collect();
                 out.insert("blocks".into(), json!(list));
             }
             "unblock" => {
@@ -543,7 +623,11 @@ impl Fake {
 
     fn request_json(&self, r: &(String, String, String, String), viewer: &str) -> Value {
         let incoming = r.2 == viewer;
-        let label = if incoming { self.accounts[&r.1].username.clone() } else { r.3.clone() };
+        let label = if incoming {
+            self.accounts[&r.1].username.clone()
+        } else {
+            r.3.clone()
+        };
         json!({"rid": r.0, "incoming": incoming, "label": label})
     }
 }
@@ -580,13 +664,20 @@ impl Client {
     pub fn new(session: Option<String>) -> Self {
         let mut online = Online::new("wss://test/v1/ws", "incari/26.3", session.as_deref(), 7);
         online.pow_tries_per_tick = 1 << 20;
-        Self { online, socket: None, session, now: 0.0, reachable: true }
+        Self {
+            online,
+            socket: None,
+            session,
+            now: 0.0,
+            reachable: true,
+        }
     }
 
     /// Does what the service asked and hands it what came back, until both are quiet.
     pub fn settle(&mut self, fake: &mut Fake) -> &mut Self {
         for _ in 0..1000 {
-            self.online.tick(self.now, 1_700_000_000_000 + self.now as i64);
+            self.online
+                .tick(self.now, 1_700_000_000_000 + self.now as i64);
             let effects = self.online.take_effects();
             let mut busy = !effects.is_empty();
             for e in effects {

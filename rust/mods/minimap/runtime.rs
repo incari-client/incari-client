@@ -59,7 +59,11 @@ pub fn view(across: i32, round: bool) -> (f32, [f32; 4]) {
 
 /// The element's height: the map, and the coordinates' tag when they show.
 pub fn height(coordinates: bool) -> f32 {
-    if coordinates { SIZE + COORDINATES_GAP + LINE + 3.0 } else { SIZE }
+    if coordinates {
+        SIZE + COORDINATES_GAP + LINE + 3.0
+    } else {
+        SIZE
+    }
 }
 
 /// The compass bearing the player faces, degrees clockwise from north, from the game's yaw (0
@@ -76,7 +80,11 @@ pub fn compass_point(i: usize, rotation: f32, at: f32, round: bool) -> [f32; 2] 
     let wz = [-1.0, 0.0, 1.0, 0.0][i % 4];
     let x = wx * cos + wz * sin;
     let y = -wx * sin + wz * cos;
-    let reach: f32 = if round { 1.0 } else { f32::abs(x).max(f32::abs(y)) };
+    let reach: f32 = if round {
+        1.0
+    } else {
+        f32::abs(x).max(f32::abs(y))
+    };
     [x / reach * at, y / reach * at]
 }
 
@@ -149,7 +157,11 @@ mod tests {
         assert_eq!(view(96, true), (0.75, [0.0, 0.0, 128.0, 128.0]));
         assert_eq!(view(32, false), (0.5, [32.0, 32.0, 64.0, 64.0]));
         assert_eq!(view(32, true).0, 0.5);
-        assert!(ZOOMS.iter().all(|&z| (0.5..=4.0).contains(&view(z, false).0)));
+        assert!(
+            ZOOMS
+                .iter()
+                .all(|&z| (0.5..=4.0).contains(&view(z, false).0))
+        );
         assert_eq!(zoomed(7, 1), 7);
         assert_eq!(zoomed(1, -1), 1);
     }

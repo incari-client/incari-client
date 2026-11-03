@@ -13,7 +13,12 @@ pub fn contains(r: Rect, p: [f32; 2]) -> bool {
 
 /// `r` with `by` taken off each side.
 pub fn inset(r: Rect, by: f32) -> Rect {
-    [r[0] + by, r[1] + by, (r[2] - 2.0 * by).max(0.0), (r[3] - 2.0 * by).max(0.0)]
+    [
+        r[0] + by,
+        r[1] + by,
+        (r[2] - 2.0 * by).max(0.0),
+        (r[3] - 2.0 * by).max(0.0),
+    ]
 }
 
 /// The part of `a` inside `b`.
@@ -29,20 +34,48 @@ pub fn intersect(a: Rect, b: Rect) -> Rect {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Cmd {
     /// A plain rectangle.
-    Fill { rect: Rect, argb: u32 },
+    Fill {
+        rect: Rect,
+        argb: u32,
+    },
     /// Part `src` (canvas pixels) of the canvas over `dst`, multiplied by `argb`.
-    Image { src: Rect, dst: Rect, argb: u32 },
+    Image {
+        src: Rect,
+        dst: Rect,
+        argb: u32,
+    },
     /// Part `src` (canvas pixels) of the canvas over any four-cornered shape (`corners` match
     /// `src`'s top left, top right, bottom right, bottom left).
-    Quad { src: Rect, corners: [[f32; 2]; 4], argb: u32 },
+    Quad {
+        src: Rect,
+        corners: [[f32; 2]; 4],
+        argb: u32,
+    },
     /// A sprite of the game's atlas by name (`gui/sprites/...`), part `src` of it over `dst`.
-    Sprite { name: Range<u32>, src: Rect, dst: Rect, argb: u32 },
+    Sprite {
+        name: Range<u32>,
+        src: Rect,
+        dst: Rect,
+        argb: u32,
+    },
     /// A line of the game's text, `scale` times its size from its top left.
-    Text { text: Range<u32>, at: [f32; 2], argb: u32, shadow: bool, scale: f32 },
+    Text {
+        text: Range<u32>,
+        at: [f32; 2],
+        argb: u32,
+        shadow: bool,
+        scale: f32,
+    },
     /// An item's icon, `size` square.
-    Item { id: Range<u32>, at: [f32; 2], size: f32 },
+    Item {
+        id: Range<u32>,
+        at: [f32; 2],
+        size: f32,
+    },
     /// Only what's drawn until the matching `ClipEnd` and inside `rect` shows.
-    ClipStart { rect: Rect },
+    ClipStart {
+        rect: Rect,
+    },
     ClipEnd,
 }
 
@@ -102,7 +135,12 @@ impl DrawList {
             return;
         }
         let name = self.intern(name);
-        self.cmds.push(Cmd::Sprite { name, src, dst, argb });
+        self.cmds.push(Cmd::Sprite {
+            name,
+            src,
+            dst,
+            argb,
+        });
     }
 
     pub fn text(&mut self, text: &str, at: [f32; 2], argb: u32, shadow: bool, scale: f32) {

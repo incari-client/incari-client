@@ -12,12 +12,19 @@ pub struct BlockSpec {
 
 impl BlockSpec {
     /// No block wanted: a structure's void, outside a schematic's regions. Never looked up.
-    pub const NOTHING: BlockSpec = BlockSpec { name: String::new(), properties: Vec::new() };
+    pub const NOTHING: BlockSpec = BlockSpec {
+        name: String::new(),
+        properties: Vec::new(),
+    };
 
     /// `name` with the `minecraft:` namespace if it has none.
     pub fn of(name: &str, mut properties: Vec<(String, String)>) -> Self {
         let id = name.trim();
-        let name = if !id.is_empty() && !id.contains(':') { format!("minecraft:{id}") } else { id.to_owned() };
+        let name = if !id.is_empty() && !id.contains(':') {
+            format!("minecraft:{id}")
+        } else {
+            id.to_owned()
+        };
         properties.sort();
         properties.dedup_by(|a, b| a.0 == b.0);
         Self { name, properties }
@@ -44,7 +51,10 @@ impl BlockSpec {
 
     /// Air of any kind.
     pub fn is_air(&self) -> bool {
-        matches!(self.name.as_str(), "minecraft:air" | "minecraft:cave_air" | "minecraft:void_air")
+        matches!(
+            self.name.as_str(),
+            "minecraft:air" | "minecraft:cave_air" | "minecraft:void_air"
+        )
     }
 
     /// Whether it stands for no block wanted.
@@ -54,7 +64,10 @@ impl BlockSpec {
 
     /// One property's value, or `fallback`.
     pub fn property<'a>(&'a self, key: &str, fallback: &'a str) -> &'a str {
-        self.properties.iter().find(|(k, _)| k == key).map_or(fallback, |(_, v)| v.as_str())
+        self.properties
+            .iter()
+            .find(|(k, _)| k == key)
+            .map_or(fallback, |(_, v)| v.as_str())
     }
 }
 
@@ -85,9 +98,18 @@ mod tests {
         let s = BlockSpec::parse("oak_stairs[half=bottom, facing=north]");
         assert_eq!(s.name, "minecraft:oak_stairs");
         assert_eq!(s.property("facing", ""), "north");
-        assert_eq!(s.to_string(), "minecraft:oak_stairs[facing=north,half=bottom]");
-        assert_eq!(s, BlockSpec::parse("minecraft:oak_stairs[facing=north,half=bottom]"));
-        assert_eq!(BlockSpec::parse("minecraft:stone").to_string(), "minecraft:stone");
+        assert_eq!(
+            s.to_string(),
+            "minecraft:oak_stairs[facing=north,half=bottom]"
+        );
+        assert_eq!(
+            s,
+            BlockSpec::parse("minecraft:oak_stairs[facing=north,half=bottom]")
+        );
+        assert_eq!(
+            BlockSpec::parse("minecraft:stone").to_string(),
+            "minecraft:stone"
+        );
         assert_eq!(BlockSpec::parse("mod:thing[a=1").property("a", ""), "1");
         assert!(BlockSpec::parse("cave_air").is_air());
         assert!(BlockSpec::NOTHING.is_nothing());

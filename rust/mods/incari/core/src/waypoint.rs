@@ -15,8 +15,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 /// The colours the editor offers, `0xRRGGBB`, in order: each new waypoint takes the next.
 pub const COLORS: [u32; 12] = [
-    0xFF5A5A, 0xFF9F43, 0xFFD93D, 0x8BE04E, 0x3DDC97, 0x3DD6F5, 0x5B8CFF, 0x9D7BFF, 0xF06FD8, 0xFFFFFF, 0xA9B4BF,
-    0x8B5E3C,
+    0xFF5A5A, 0xFF9F43, 0xFFD93D, 0x8BE04E, 0x3DDC97, 0x3DD6F5, 0x5B8CFF, 0x9D7BFF, 0xF06FD8,
+    0xFFFFFF, 0xA9B4BF, 0x8B5E3C,
 ];
 
 /// The longest name, in UTF-16 units as Java counts them.
@@ -189,7 +189,8 @@ fn clip(name: &str) -> String {
 
 /// Java's `String.hashCode`, over UTF-16 units.
 pub fn java_hash(text: &str) -> i32 {
-    text.encode_utf16().fold(0i32, |h, u| h.wrapping_mul(31).wrapping_add(u as i32))
+    text.encode_utf16()
+        .fold(0i32, |h, u| h.wrapping_mul(31).wrapping_add(u as i32))
 }
 
 /// A name as a file or folder's: letters, digits, dots and dashes kept (of its first 64 UTF-16
@@ -243,7 +244,10 @@ pub fn write(waypoints: &[Waypoint]) -> String {
         }
         out.push_str("{\"name\":");
         json_string(&mut out, &w.name);
-        out.push_str(&format!(",\"x\":{},\"y\":{},\"z\":{},\"dimension\":", w.x, w.y, w.z));
+        out.push_str(&format!(
+            ",\"x\":{},\"y\":{},\"z\":{},\"dimension\":",
+            w.x, w.y, w.z
+        ));
         json_string(&mut out, &w.dimension);
         out.push_str(&format!(
             ",\"color\":\"#{:06X}\",\"icon\":\"{}\",\"visible\":{},\"beam\":{},\"death\":{}}}",
@@ -279,7 +283,9 @@ pub fn read(text: &str, problems: &mut dyn FnMut(String)) -> Vec<Waypoint> {
     for entry in entries {
         match entry.as_object().and_then(entry_waypoint) {
             Some(w) => out.push(w),
-            None => problems(format!("left out a waypoint that couldn't be read: {entry}")),
+            None => problems(format!(
+                "left out a waypoint that couldn't be read: {entry}"
+            )),
         }
     }
     out
@@ -299,10 +305,13 @@ fn as_int(v: &Value) -> Option<i32> {
 fn entry_waypoint(entry: &serde_json::Map<String, Value>) -> Option<Waypoint> {
     let string = |k: &str| entry.get(k).and_then(Value::as_str);
     let number = |k: &str| entry.get(k).filter(|v| v.is_number()).and_then(as_int);
-    let flag = |k: &str, otherwise: bool| entry.get(k).and_then(Value::as_bool).unwrap_or(otherwise);
+    let flag =
+        |k: &str, otherwise: bool| entry.get(k).and_then(Value::as_bool).unwrap_or(otherwise);
     let name = string("name")?;
     let (x, y, z) = (number("x")?, number("y")?, number("z")?);
-    let rgb = string("color").and_then(crate::color::parse_hex).unwrap_or(COLORS[0]);
+    let rgb = string("color")
+        .and_then(crate::color::parse_hex)
+        .unwrap_or(COLORS[0]);
     let mut w = Waypoint::new(
         name,
         x,
@@ -476,7 +485,15 @@ pub fn next_name(all: &[Waypoint]) -> String {
 
 /// A new waypoint at a block, not yet added: the next free name, the palette's next colour.
 pub fn draft(all: &[Waypoint], x: i32, y: i32, z: i32, dimension: &str) -> Waypoint {
-    Waypoint::new(&next_name(all), x, y, z, dimension, COLORS[all.len() % COLORS.len()], Shape::Circle)
+    Waypoint::new(
+        &next_name(all),
+        x,
+        y,
+        z,
+        dimension,
+        COLORS[all.len() % COLORS.len()],
+        Shape::Circle,
+    )
 }
 
 /// "the Overworld", "the Nether", "the End", or a modded dimension's path ("Deep dark").
@@ -486,7 +503,10 @@ pub fn dimension_name(dimension: &str) -> String {
         NETHER => "the Nether".into(),
         END => "the End".into(),
         _ => {
-            let path = dimension.split_once(':').map_or(dimension, |p| p.1).replace('_', " ");
+            let path = dimension
+                .split_once(':')
+                .map_or(dimension, |p| p.1)
+                .replace('_', " ");
             let mut chars = path.chars();
             match chars.next() {
                 None => dimension.to_owned(),
@@ -524,7 +544,11 @@ impl Player {
 
     /// The block they stand in.
     pub fn block(&self) -> [i32; 3] {
-        [self.x.floor() as i32, self.y.floor() as i32, self.z.floor() as i32]
+        [
+            self.x.floor() as i32,
+            self.y.floor() as i32,
+            self.z.floor() as i32,
+        ]
     }
 
     /// Whether `w` is shown to them now: visible and in their dimension.
@@ -543,7 +567,14 @@ pub struct DeathWatch {
 
 impl DeathWatch {
     /// Once a tick, with the module's Mark deaths and Clear deaths on arrival.
-    pub fn tick(&mut self, store: &mut Waypoints, player: Option<&Player>, dead: bool, mark: bool, clear: bool) {
+    pub fn tick(
+        &mut self,
+        store: &mut Waypoints,
+        player: Option<&Player>,
+        dead: bool,
+        mark: bool,
+        clear: bool,
+    ) {
         let dead = player.is_some() && dead;
         if let Some(p) = player
             && dead
@@ -555,7 +586,8 @@ impl DeathWatch {
                 store.remove(last);
             }
             let [x, y, z] = p.block();
-            let mut death = Waypoint::new(DEATH_NAME, x, y, z, &p.dimension, DEATH_COLOR, Shape::Cross);
+            let mut death =
+                Waypoint::new(DEATH_NAME, x, y, z, &p.dimension, DEATH_COLOR, Shape::Cross);
             death.death = true;
             store.add(death);
             self.left_death = false;
@@ -618,7 +650,13 @@ pub fn set_player(at: Option<([f64; 3], f32, &str)>) {
                 }
             }
             (Some((pos, yaw, dim)), None) => {
-                *slot = Some(Player { x: pos[0], y: pos[1], z: pos[2], yaw, dimension: dim.to_owned() })
+                *slot = Some(Player {
+                    x: pos[0],
+                    y: pos[1],
+                    z: pos[2],
+                    yaw,
+                    dimension: dim.to_owned(),
+                })
             }
         }
     });
@@ -664,7 +702,10 @@ pub(crate) mod tests {
         let back = read(&text, &mut |m| problems.push(m));
         assert!(problems.is_empty());
         assert_eq!(back.len(), 2);
-        assert_eq!((back[1].name(), back[1].icon, back[1].beam, back[1].rgb()), ("Fort \"Q\"", Shape::Star, false, 0x0A0B0C));
+        assert_eq!(
+            (back[1].name(), back[1].icon, back[1].beam, back[1].rgb()),
+            ("Fort \"Q\"", Shape::Star, false, 0x0A0B0C)
+        );
     }
 
     #[test]
@@ -681,10 +722,19 @@ pub(crate) mod tests {
         assert_eq!(problems.len(), 3);
         assert_eq!(read.len(), 2);
         let a = &read[0];
-        assert_eq!((a.x, a.y, a.z, a.dimension.as_str()), (1, 64, -3, OVERWORLD));
-        assert_eq!((a.rgb(), a.icon, a.visible, a.beam, a.death), (0x112233, Shape::Circle, true, true, false));
+        assert_eq!(
+            (a.x, a.y, a.z, a.dimension.as_str()),
+            (1, 64, -3, OVERWORLD)
+        );
+        assert_eq!(
+            (a.rgb(), a.icon, a.visible, a.beam, a.death),
+            (0x112233, Shape::Circle, true, true, false)
+        );
         let c = &read[1];
-        assert_eq!((c.x, c.rgb(), c.death), (4_000_000_000u64 as i32, COLORS[0], true));
+        assert_eq!(
+            (c.x, c.rgb(), c.death),
+            (4_000_000_000u64 as i32, COLORS[0], true)
+        );
         let mut none = Vec::new();
         assert!(super::read("[1]", &mut |m| none.push(m)).is_empty());
         assert_eq!(none, ["not a waypoints file"]);
@@ -696,10 +746,19 @@ pub(crate) mod tests {
         // Java: "hello".hashCode() == 99162322, "polygenelubricants".hashCode() == Integer.MIN_VALUE.
         assert_eq!(java_hash("hello"), 99_162_322);
         assert_eq!(java_hash("polygenelubricants"), i32::MIN);
-        assert_eq!(safe_name("polygenelubricants"), "polygenelubricants-80000000");
+        assert_eq!(
+            safe_name("polygenelubricants"),
+            "polygenelubricants-80000000"
+        );
         // Integer.toHexString(s.hashCode()), from a JVM.
-        assert_eq!(format!("{:x}", java_hash("world/New World") as u32), "27946295");
-        assert_eq!(format!("{:x}", java_hash("server/play.example.net:25565") as u32), "79a2b902");
+        assert_eq!(
+            format!("{:x}", java_hash("world/New World") as u32),
+            "27946295"
+        );
+        assert_eq!(
+            format!("{:x}", java_hash("server/play.example.net:25565") as u32),
+            "79a2b902"
+        );
         // Gson 2.11's JsonElement.toString of the same name, from a JVM.
         let mut s = String::new();
         json_string(&mut s, "Fort \"Q\" <a>&=\u{2028}\u{1}é");
@@ -707,15 +766,32 @@ pub(crate) mod tests {
         assert_eq!(java_hash(""), 0);
         assert_eq!(java_hash("a"), 97);
         assert_eq!(java_hash("ab"), 97 * 31 + 98);
-        assert_eq!(path("world/New World"), format!("waypoints/world_New_World-{:x}.json", java_hash("world/New World") as u32));
+        assert_eq!(
+            path("world/New World"),
+            format!(
+                "waypoints/world_New_World-{:x}.json",
+                java_hash("world/New World") as u32
+            )
+        );
         // A character past the Basic Multilingual Plane is two units: two underscores.
         assert!(safe_name("a😀").starts_with("a__-"));
-        assert_eq!(safe_name(&"x".repeat(70)).split('-').next().unwrap().len(), 64);
+        assert_eq!(
+            safe_name(&"x".repeat(70)).split('-').next().unwrap().len(),
+            64
+        );
     }
 
     #[test]
     fn clips_names_as_java_does() {
-        let w = Waypoint::new("  Base\t", 0, 0, 0, OVERWORLD, 0xFF00_0000 | 0x123456, Shape::Circle);
+        let w = Waypoint::new(
+            "  Base\t",
+            0,
+            0,
+            0,
+            OVERWORLD,
+            0xFF00_0000 | 0x123456,
+            Shape::Circle,
+        );
         assert_eq!((w.name(), w.rgb()), ("Base", 0x123456));
         assert_eq!(clip(&"y".repeat(40)).len(), MAX_NAME);
         assert_eq!(clip("\u{00A0}x"), "\u{00A0}x");
@@ -725,7 +801,15 @@ pub(crate) mod tests {
     fn saves_a_second_after_a_change_and_deletes_an_empty_file() {
         let mut files = Files::default();
         let mut store = Waypoints::new();
-        store.add(Waypoint::new("Nowhere", 0, 0, 0, OVERWORLD, 0, Shape::Circle));
+        store.add(Waypoint::new(
+            "Nowhere",
+            0,
+            0,
+            0,
+            OVERWORLD,
+            0,
+            Shape::Circle,
+        ));
         assert!(store.all().is_empty(), "nothing outside a world");
         store.open("world/A", &mut files);
         let w = Waypoint::new("Home", 1, 2, 3, OVERWORLD, 0xFF0000, Shape::Heart);
@@ -765,11 +849,30 @@ pub(crate) mod tests {
 
     #[test]
     fn names_drafts_and_places() {
-        let mut all = vec![Waypoint::new("Waypoint 2", 0, 0, 0, OVERWORLD, 0, Shape::Circle)];
+        let mut all = vec![Waypoint::new(
+            "Waypoint 2",
+            0,
+            0,
+            0,
+            OVERWORLD,
+            0,
+            Shape::Circle,
+        )];
         assert_eq!(next_name(&all), "Waypoint 3");
-        all.push(Waypoint::new("Waypoint 3", 0, 0, 0, OVERWORLD, 0, Shape::Circle));
+        all.push(Waypoint::new(
+            "Waypoint 3",
+            0,
+            0,
+            0,
+            OVERWORLD,
+            0,
+            Shape::Circle,
+        ));
         let d = draft(&all, 1, 2, 3, NETHER);
-        assert_eq!((d.name(), d.rgb(), d.icon), ("Waypoint 4", COLORS[2], Shape::Circle));
+        assert_eq!(
+            (d.name(), d.rgb(), d.icon),
+            ("Waypoint 4", COLORS[2], Shape::Circle)
+        );
         assert_eq!(dimension_name(NETHER), "the Nether");
         assert_eq!(dimension_name("mymod:deep_dark"), "Deep dark");
         assert_eq!(dimension_name("odd:"), "odd:");
@@ -784,12 +887,21 @@ pub(crate) mod tests {
         let mut store = Waypoints::new();
         store.open("world/A", &mut files);
         let mut watch = DeathWatch::default();
-        let at = |x: f64| Player { x, y: 64.0, z: 0.5, yaw: 0.0, dimension: OVERWORLD.into() };
+        let at = |x: f64| Player {
+            x,
+            y: 64.0,
+            z: 0.5,
+            yaw: 0.0,
+            dimension: OVERWORLD.into(),
+        };
         watch.tick(&mut store, Some(&at(10.5)), true, true, true);
         watch.tick(&mut store, Some(&at(10.5)), true, true, true);
         assert_eq!(store.all().len(), 1);
         let death = store.death().unwrap();
-        assert_eq!((death.name(), death.x, death.icon), (DEATH_NAME, 10, Shape::Cross));
+        assert_eq!(
+            (death.name(), death.x, death.icon),
+            (DEATH_NAME, 10, Shape::Cross)
+        );
         // Respawned beside it: not an arrival.
         watch.tick(&mut store, Some(&at(11.0)), false, true, true);
         assert!(store.death().is_some());

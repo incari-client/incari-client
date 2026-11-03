@@ -51,7 +51,12 @@ impl Ui {
     pub fn input(&mut self, event: &Input) {
         match event {
             Input::Move { at } => self.mouse = *at,
-            Input::Button { button, pressed, at, modifiers } => {
+            Input::Button {
+                button,
+                pressed,
+                at,
+                modifiers,
+            } => {
                 self.mouse = *at;
                 self.shift = modifiers & input::SHIFT != 0;
                 match (*button, *pressed) {
@@ -71,7 +76,12 @@ impl Ui {
                 self.scroll += dy;
                 self.scroll_at = *at;
             }
-            Input::Key { key, pressed, modifiers, .. } => {
+            Input::Key {
+                key,
+                pressed,
+                modifiers,
+                ..
+            } => {
                 self.shift = modifiers & input::SHIFT != 0;
                 if *pressed {
                     self.keys.push((*key, *modifiers));
@@ -156,7 +166,10 @@ impl Ui {
 
     /// Takes a press of keyboard key `code`, with its modifiers.
     pub fn key_with(&mut self, code: u16) -> Option<u32> {
-        let i = self.keys.iter().position(|(k, _)| *k == Key::Keyboard(code))?;
+        let i = self
+            .keys
+            .iter()
+            .position(|(k, _)| *k == Key::Keyboard(code))?;
         Some(self.keys.remove(i).1)
     }
 
@@ -180,7 +193,18 @@ impl Ui {
         }
         y = y.clamp(2.0, (screen[1] - h - 2.0).max(2.0));
         let th = p.theme;
-        p.round_box(x, y, w, h, th.radius, th.floating, th.glass_edge_solid, 0.0, 0.0, 0);
+        p.round_box(
+            x,
+            y,
+            w,
+            h,
+            th.radius,
+            th.floating,
+            th.glass_edge_solid,
+            0.0,
+            0.0,
+            0,
+        );
         for (i, line) in lines.iter().enumerate() {
             p.text(line, x + 4.0, y + 4.0 + i as f32 * 10.0, th.text, true);
         }
@@ -195,7 +219,13 @@ pub fn button(p: &mut Painter, ui: &mut Ui, r: Rect, label: &str, active: bool) 
     let text = p.fit(label, r[2] - 8.0).into_owned();
     let color = if active { th.text } else { th.muted };
     // The game's Button draws its label with the drop shadow.
-    p.centered(&text, r[0] + r[2] / 2.0, r[1] + ((r[3] - 7.0) / 2.0).floor(), color, true);
+    p.centered(
+        &text,
+        r[0] + r[2] / 2.0,
+        r[1] + ((r[3] - 7.0) / 2.0).floor(),
+        color,
+        true,
+    );
     active && ui.clicked(r)
 }
 
@@ -230,7 +260,10 @@ pub fn menu_button_ext(
     skin::button(p, r, !active, hot, 1.0);
     let th = p.theme;
     let color = if active { th.text } else { th.muted };
-    let t = p.motion.ease(motion::key(r[0] + 1.0, r[1], r[2], r[3]), if hot { 1.0 } else { 0.0 });
+    let t = p.motion.ease(
+        motion::key(r[0] + 1.0, r[1], r[2], r[3]),
+        if hot { 1.0 } else { 0.0 },
+    );
     let mut x = r[0] + 8.0 + (t * 3.0).round();
     let right = r[0] + r[2] - 8.0;
     let icon_room = if icon.is_some() { ICON + 6.0 } else { 0.0 };
@@ -259,17 +292,37 @@ pub fn menu_button_ext(
 }
 
 /// A line of a sidebar: a label, a value at its right, lit while `chosen`.
-pub fn entry(p: &mut Painter, ui: &mut Ui, r: Rect, label: &str, value: &str, chosen: bool) -> bool {
+pub fn entry(
+    p: &mut Painter,
+    ui: &mut Ui,
+    r: Rect,
+    label: &str,
+    value: &str,
+    chosen: bool,
+) -> bool {
     let th = p.theme;
     let hot = ui.over(r);
     if chosen || hot {
-        p.round(r[0], r[1], r[2], r[3], th.radius, if chosen { th.button_hot } else { th.button });
+        p.round(
+            r[0],
+            r[1],
+            r[2],
+            r[3],
+            th.radius,
+            if chosen { th.button_hot } else { th.button },
+        );
     }
     if chosen {
         p.round(r[0], r[1] + 4.0, 2.0, r[3] - 8.0, 1.0, th.accent);
     }
     let text_y = r[1] + ((r[3] - 7.0) / 2.0).floor();
-    p.text(label, r[0] + 7.0, text_y, if chosen { th.text } else { th.muted }, false);
+    p.text(
+        label,
+        r[0] + 7.0,
+        text_y,
+        if chosen { th.text } else { th.muted },
+        false,
+    );
     // A long value (a profile's name) is cut, never drawn over the label; whole under the pointer.
     let label_right = r[0] + 7.0 + p.width(label) + 6.0;
     let shown = p.fit(value, r[0] + r[2] - 6.0 - label_right).into_owned();
@@ -288,13 +341,32 @@ pub fn switch(p: &mut Painter, ui: &mut Ui, r: Rect, on: bool) -> bool {
     let th = p.theme;
     let label = if on { "On" } else { "Off" };
     let sx = r[0] + r[2] - 8.0 - crate::panels::SWITCH_WIDTH;
-    crate::panels::toggle(p, sx, r[1] + ((r[3] - crate::panels::SWITCH_HEIGHT) / 2.0).floor(), on, 1.0);
-    p.text(label, r[0] + 8.0, r[1] + ((r[3] - 7.0) / 2.0).floor(), if on { th.text } else { th.muted }, false);
+    crate::panels::toggle(
+        p,
+        sx,
+        r[1] + ((r[3] - crate::panels::SWITCH_HEIGHT) / 2.0).floor(),
+        on,
+        1.0,
+    );
+    p.text(
+        label,
+        r[0] + 8.0,
+        r[1] + ((r[3] - 7.0) / 2.0).floor(),
+        if on { th.text } else { th.muted },
+        false,
+    );
     ui.clicked(r)
 }
 
 /// A slider from 0 to 1 at `value`, showing `label`; the value it's dragged to.
-pub fn slider(p: &mut Painter, ui: &mut Ui, id: u64, r: Rect, value: f32, label: &str) -> Option<f32> {
+pub fn slider(
+    p: &mut Painter,
+    ui: &mut Ui,
+    id: u64,
+    r: Rect,
+    value: f32,
+    label: &str,
+) -> Option<f32> {
     let hot = ui.over(r) || ui.drag == Some(id);
     skin::well(p, r, p.theme.button, hot, 1.0);
     let track = [r[0] + 4.0, r[2] - 8.0];
@@ -306,7 +378,13 @@ pub fn slider(p: &mut Painter, ui: &mut Ui, id: u64, r: Rect, value: f32, label:
     p.round(at.floor() - 2.0, line - 2.0, 5.0, 5.0, 3.0, knob);
     let th = p.theme;
     let text = p.fit(label, r[2] - 8.0).into_owned();
-    p.centered(&text, r[0] + r[2] / 2.0, r[1] + ((r[3] - 9.0) / 2.0).floor(), th.text, true);
+    p.centered(
+        &text,
+        r[0] + r[2] / 2.0,
+        r[1] + ((r[3] - 9.0) / 2.0).floor(),
+        th.text,
+        true,
+    );
     if ui.clicked(r) {
         ui.drag = Some(id);
     }
@@ -348,7 +426,10 @@ pub fn text_field(
         p.text(hint, r[0] + 4.0, ty, alpha(th.muted, 0.8), true);
     } else {
         // Scrolled so the caret stays in the field.
-        let before: String = text.chars().take(ui.caret.min(text.chars().count())).collect();
+        let before: String = text
+            .chars()
+            .take(ui.caret.min(text.chars().count()))
+            .collect();
         let caret_x = p.width(&before);
         let shift = (caret_x - room + 2.0).max(0.0);
         p.text(text, r[0] + 4.0 - shift, ty, th.text, true);
@@ -440,7 +521,14 @@ pub fn scroll(ui: &mut Ui, area: Rect, scroll: &mut f32, content: f32, step: f32
 }
 
 /// The footer's buttons, centred in a row at `y`: the index of the one pressed.
-pub fn footer(p: &mut Painter, ui: &mut Ui, cx: f32, y: f32, labels: &[&str], width: f32) -> Option<usize> {
+pub fn footer(
+    p: &mut Painter,
+    ui: &mut Ui,
+    cx: f32,
+    y: f32,
+    labels: &[&str],
+    width: f32,
+) -> Option<usize> {
     let n = labels.len() as f32;
     let total = n * width + (n - 1.0) * GAP;
     let mut x = (cx - total / 2.0).floor();
@@ -470,7 +558,12 @@ mod tests {
     #[test]
     fn a_press_goes_to_the_control_under_it_once() {
         let mut ui = Ui::default();
-        ui.input(&Input::Button { button: 0, pressed: true, at: [15.0, 15.0], modifiers: 0 });
+        ui.input(&Input::Button {
+            button: 0,
+            pressed: true,
+            at: [15.0, 15.0],
+            modifiers: 0,
+        });
         assert!(!ui.clicked([100.0, 100.0, 10.0, 10.0]));
         assert!(ui.clicked([10.0, 10.0, 10.0, 10.0]));
         assert!(!ui.clicked([10.0, 10.0, 10.0, 10.0]));

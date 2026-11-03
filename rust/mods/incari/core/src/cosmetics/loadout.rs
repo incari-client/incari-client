@@ -13,7 +13,9 @@ pub struct Loadout {
 
 impl Loadout {
     /// Nothing worn.
-    pub const EMPTY: Loadout = Loadout { by_slot: [None; WORN] };
+    pub const EMPTY: Loadout = Loadout {
+        by_slot: [None; WORN],
+    };
 
     /// The loadout these ids describe, leaving out what this client can't draw.
     pub fn of<S: AsRef<str>>(ids: &[S]) -> Self {
@@ -31,12 +33,17 @@ impl Loadout {
 
     /// What's worn in `slot`.
     pub fn in_slot(&self, slot: Slot) -> Option<&'static Cosmetic> {
-        if slot.worn() { self.by_slot[slot.index()] } else { None }
+        if slot.worn() {
+            self.by_slot[slot.index()]
+        } else {
+            None
+        }
     }
 
     /// Whether `cosmetic` is worn.
     pub fn wears(&self, cosmetic: &Cosmetic) -> bool {
-        self.in_slot(cosmetic.slot).is_some_and(|c| c.id == cosmetic.id)
+        self.in_slot(cosmetic.slot)
+            .is_some_and(|c| c.id == cosmetic.id)
     }
 
     /// This loadout with `cosmetic` in its slot, in place of what was there; itself for an emote.
@@ -86,8 +93,18 @@ mod tests {
 
     #[test]
     fn reads_forgivingly_and_keeps_one_a_slot() {
-        let l = Loadout::of(&["hat.crown", "hat.halo", "emote.wave", "cape.unknown", "cape.tide"]);
-        assert_eq!(l.ids(), ["cape.tide", "hat.crown"], "slot order, the first of a slot, no emotes");
+        let l = Loadout::of(&[
+            "hat.crown",
+            "hat.halo",
+            "emote.wave",
+            "cape.unknown",
+            "cape.tide",
+        ]);
+        assert_eq!(
+            l.ids(),
+            ["cape.tide", "hat.crown"],
+            "slot order, the first of a slot, no emotes"
+        );
         let crown = catalog::by_id("hat.crown").unwrap();
         assert!(l.wears(crown));
         let halo = catalog::by_id("hat.halo").unwrap();
@@ -95,7 +112,11 @@ mod tests {
         assert!(l2.wears(halo) && !l2.wears(crown));
         assert_eq!(l2.without(Slot::Hat).without(Slot::Cape), Loadout::EMPTY);
         assert!(Loadout::of::<&str>(&[]).is_empty());
-        assert_eq!(l.with(catalog::by_id("emote.bow").unwrap()), l, "emotes aren't worn");
+        assert_eq!(
+            l.with(catalog::by_id("emote.bow").unwrap()),
+            l,
+            "emotes aren't worn"
+        );
         assert_eq!(l.owned_by(|c| c.slot != Slot::Hat).ids(), ["cape.tide"]);
     }
 }

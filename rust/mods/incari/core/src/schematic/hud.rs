@@ -62,7 +62,12 @@ pub fn status(canvas: &mut HudCanvas, s: &Session, look: &Look) -> Option<[f32; 
         if c.status.is_empty() {
             return None;
         }
-        let width = c.status.iter().map(|(l, _)| canvas.text_width(l)).fold(0.0, f32::max) + PAD_X * 2.0;
+        let width = c
+            .status
+            .iter()
+            .map(|(l, _)| canvas.text_width(l))
+            .fold(0.0, f32::max)
+            + PAD_X * 2.0;
         let height = c.status.len() as f32 * LINE + PAD_Y * 2.0 - 1.0;
         canvas.fill(0.0, 0.0, width, height, Tone::Background);
         for (i, (line, tone)) in c.status.iter().enumerate() {
@@ -72,7 +77,12 @@ pub fn status(canvas: &mut HudCanvas, s: &Session, look: &Look) -> Option<[f32; 
     })
 }
 
-fn status_lines(canvas: &HudCanvas, s: &Session, look: &Look, editing: bool) -> Vec<(String, Tone)> {
+fn status_lines(
+    canvas: &HudCanvas,
+    s: &Session,
+    look: &Look,
+    editing: bool,
+) -> Vec<(String, Tone)> {
     let Some(now) = s.loaded() else {
         if editing {
             return vec![
@@ -86,7 +96,10 @@ fn status_lines(canvas: &HudCanvas, s: &Session, look: &Look, editing: bool) -> 
     let mut lines = vec![(fit(canvas, &now.schematic.name, STATUS_WIDTH), Tone::Accent)];
     let v = &now.verifier;
     let total = now.schematic.block_count();
-    lines.push((format!("{} of {total} placed", v.right().min(total)), Tone::Text));
+    lines.push((
+        format!("{} of {total} placed", v.right().min(total)),
+        Tone::Text,
+    ));
     let wrong = v.wrong_blocks() + v.wrong_states();
     if wrong > 0 || v.extra() > 0 {
         let problems = match (wrong, v.extra()) {
@@ -132,7 +145,8 @@ pub fn materials(canvas: &mut HudCanvas, s: &Session, items: &Items) -> Option<[
         }
         let mut width = canvas.text_width(&c.header);
         for row in &c.rows {
-            width = width.max(ICON + GAP + canvas.text_width(&row.name) + GAP * 2.0 + c.count_width);
+            width =
+                width.max(ICON + GAP + canvas.text_width(&row.name) + GAP * 2.0 + c.count_width);
         }
         let width = width + PAD_X * 2.0;
         let height = PAD_Y * 2.0 + LINE + c.rows.len() as f32 * (ICON + 1.0);
@@ -156,7 +170,14 @@ pub fn materials(canvas: &mut HudCanvas, s: &Session, items: &Items) -> Option<[
     })
 }
 
-fn build_rows(c: &mut Cache, canvas: &HudCanvas, s: &Session, items: &Items, editing: bool, max: usize) {
+fn build_rows(
+    c: &mut Cache,
+    canvas: &HudCanvas,
+    s: &Session,
+    items: &Items,
+    editing: bool,
+    max: usize,
+) {
     c.rows.clear();
     c.count_width = 0.0;
     let add = |c: &mut Cache, id: &str, needed: i64| {
@@ -171,7 +192,11 @@ fn build_rows(c: &mut Cache, canvas: &HudCanvas, s: &Session, items: &Items, edi
         c.rows.push(row);
     };
     let Some(now) = s.loaded() else {
-        c.header = if editing { "Materials: 2 left".into() } else { String::new() };
+        c.header = if editing {
+            "Materials: 2 left".into()
+        } else {
+            String::new()
+        };
         if editing {
             add(c, "minecraft:stone_bricks", 320);
             add(c, "minecraft:oak_planks", 64);

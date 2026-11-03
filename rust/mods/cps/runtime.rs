@@ -18,7 +18,11 @@ pub fn text(buttons: &str, left: u32, right: u32) -> String {
 
 /// The widest it says, so its width holds still as the counts change.
 pub fn widest(buttons: &str) -> &'static str {
-    if buttons == "both" { "00 | 00 CPS" } else { "00 CPS" }
+    if buttons == "both" {
+        "00 | 00 CPS"
+    } else {
+        "00 CPS"
+    }
 }
 
 /// The last text made, and what it was made for.

@@ -55,11 +55,31 @@ pub struct Item<'a> {
 /// The Java sample player's: diamond armor at a few levels of wear and a sword, for the HUD editor
 /// when you wear nothing.
 pub const SAMPLE_ITEMS: [Item<'static>; 5] = [
-    Item { id: "minecraft:diamond_helmet", damage: 36, max: 363 },
-    Item { id: "minecraft:diamond_chestplate", damage: 185, max: 528 },
-    Item { id: "minecraft:diamond_leggings", damage: 297, max: 495 },
-    Item { id: "minecraft:diamond_boots", damage: 365, max: 429 },
-    Item { id: "minecraft:diamond_sword", damage: 312, max: 1561 },
+    Item {
+        id: "minecraft:diamond_helmet",
+        damage: 36,
+        max: 363,
+    },
+    Item {
+        id: "minecraft:diamond_chestplate",
+        damage: 185,
+        max: 528,
+    },
+    Item {
+        id: "minecraft:diamond_leggings",
+        damage: 297,
+        max: 495,
+    },
+    Item {
+        id: "minecraft:diamond_boots",
+        damage: 365,
+        max: 429,
+    },
+    Item {
+        id: "minecraft:diamond_sword",
+        damage: 312,
+        max: 1561,
+    },
 ];
 
 /// An effect as the effects element shows it: its id (vanilla's without its namespace), its
@@ -74,9 +94,24 @@ pub struct Effect {
 
 /// The Java sample player's effects, for the HUD editor when you have none.
 pub const SAMPLE_EFFECTS: [Effect; 3] = [
-    Effect { id: "speed", amplifier: 1, duration: 1660, beneficial: true },
-    Effect { id: "strength", amplifier: 0, duration: 3600, beneficial: true },
-    Effect { id: "fire_resistance", amplifier: 0, duration: 160, beneficial: true },
+    Effect {
+        id: "speed",
+        amplifier: 1,
+        duration: 1660,
+        beneficial: true,
+    },
+    Effect {
+        id: "strength",
+        amplifier: 0,
+        duration: 3600,
+        beneficial: true,
+    },
+    Effect {
+        id: "fire_resistance",
+        amplifier: 0,
+        duration: 160,
+        beneficial: true,
+    },
 ];
 
 /// Whole percent left, rounded down, but 1 while anything's left: 0% is broken.
@@ -103,7 +138,10 @@ pub fn wear(item: Item<'_>, colors: bool) -> Tone {
     if !colors || item.max == 0 {
         return Tone::Text;
     }
-    let (remaining, max) = (u64::from(item.max.saturating_sub(item.damage)), u64::from(item.max));
+    let (remaining, max) = (
+        u64::from(item.max.saturating_sub(item.damage)),
+        u64::from(item.max),
+    );
     if remaining * 5 < max {
         Tone::Negative
     } else if remaining * 2 < max {
@@ -144,7 +182,9 @@ fn hsv(hue: f32) -> u32 {
 
 /// " II" for amplifier 1; nothing for level I; numbers past X.
 pub fn level(amplifier: i32) -> String {
-    const NUMERALS: [&str; 10] = ["", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"];
+    const NUMERALS: [&str; 10] = [
+        "", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X",
+    ];
     usize::try_from(amplifier)
         .ok()
         .and_then(|a| NUMERALS.get(a))
@@ -163,12 +203,20 @@ pub fn clock(seconds: i32) -> String {
 
 /// An effect's time left: "1:23", "∞" for one without end.
 pub fn time(duration: i32) -> String {
-    if duration < 0 { "∞".to_owned() } else { clock(duration / 20) }
+    if duration < 0 {
+        "∞".to_owned()
+    } else {
+        clock(duration / 20)
+    }
 }
 
 /// The time's tone: amber in its last ten seconds.
 pub fn time_tone(duration: i32) -> Tone {
-    if (0..ENDING).contains(&duration) { Tone::Warning } else { Tone::Muted }
+    if (0..ENDING).contains(&duration) {
+        Tone::Warning
+    } else {
+        Tone::Muted
+    }
 }
 
 /// The name's tone: helpful in green, harmful in red, when coloured by kind.
@@ -224,7 +272,12 @@ thread_local! {
 
 /// Calls `f` with armor row `row`'s durability text in `durability`'s format, None when nothing is
 /// written beside it (an item that doesn't wear, or the bar alone).
-pub fn with_item_text<R>(row: usize, item: Item<'_>, durability: &'static str, f: impl FnOnce(Option<&str>) -> R) -> R {
+pub fn with_item_text<R>(
+    row: usize,
+    item: Item<'_>,
+    durability: &'static str,
+    f: impl FnOnce(Option<&str>) -> R,
+) -> R {
     if item.max == 0 || durability == "bar" {
         return f(None);
     }
@@ -233,7 +286,10 @@ pub fn with_item_text<R>(row: usize, item: Item<'_>, durability: &'static str, f
         let slot = &mut rows[row.min(4)];
         let key = (item.damage, item.max, durability);
         if slot.0 != Some(key) {
-            *slot = (Some(key), format(durability, item.max.saturating_sub(item.damage), item.max));
+            *slot = (
+                Some(key),
+                format(durability, item.max.saturating_sub(item.damage), item.max),
+            );
         }
         f(Some(&slot.1))
     })
@@ -242,7 +298,12 @@ pub fn with_item_text<R>(row: usize, item: Item<'_>, durability: &'static str, f
 /// Calls `f` with effect row `row`'s "Speed II", its name from `translate` (the key to the
 /// language's name), made again only when the row's effect changes. Ids are the game's static
 /// strings: the address names one.
-pub fn with_name<R>(row: usize, effect: Effect, translate: impl FnOnce(&str) -> String, f: impl FnOnce(&str) -> R) -> R {
+pub fn with_name<R>(
+    row: usize,
+    effect: Effect,
+    translate: impl FnOnce(&str) -> String,
+    f: impl FnOnce(&str) -> R,
+) -> R {
     NAMES.with(|cell| {
         let mut rows = cell.borrow_mut();
         let slot = &mut rows[row.min(MAX_EFFECTS - 1)];
@@ -291,7 +352,11 @@ mod tests {
     use super::*;
 
     fn item(damage: u32, max: u32) -> Item<'static> {
-        Item { id: "minecraft:diamond_helmet", damage, max }
+        Item {
+            id: "minecraft:diamond_helmet",
+            damage,
+            max,
+        }
     }
 
     #[test]
@@ -302,7 +367,10 @@ mod tests {
         assert_eq!(format("bar", 217, 250), "");
         assert_eq!(percent(1, 1000), 1);
         assert_eq!(percent(0, 1000), 0);
-        assert_eq!(with_item_text(0, item(1, 4), "percent", |t| t.map(str::to_owned)), Some("75%".into()));
+        assert_eq!(
+            with_item_text(0, item(1, 4), "percent", |t| t.map(str::to_owned)),
+            Some("75%".into())
+        );
         assert!(with_item_text(0, item(1, 4), "bar", |t| t.is_none()));
         assert!(with_item_text(1, item(0, 0), "percent", |t| t.is_none()));
     }
@@ -339,9 +407,15 @@ mod tests {
         assert_eq!(name_key("mymod:frost_bite"), "effect.mymod.frost_bite");
         assert_eq!(fallback_name("mymod:frost_bite"), "Frost Bite");
         let speed = SAMPLE_EFFECTS[0];
-        assert_eq!(with_name(0, speed, |_| "Speed".into(), str::to_owned), "Speed II");
+        assert_eq!(
+            with_name(0, speed, |_| "Speed".into(), str::to_owned),
+            "Speed II"
+        );
         let strength = SAMPLE_EFFECTS[1];
-        assert_eq!(with_name(1, strength, str::to_owned, str::to_owned), "Strength");
+        assert_eq!(
+            with_name(1, strength, str::to_owned, str::to_owned),
+            "Strength"
+        );
         assert_eq!(with_time(0, 1660, str::to_owned), "1:23");
         assert_eq!(with_icon(0, "speed", str::to_owned), "mob_effect/speed");
         assert_eq!(name_tone(speed, true), Tone::Positive);

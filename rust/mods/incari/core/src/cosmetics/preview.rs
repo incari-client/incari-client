@@ -69,14 +69,26 @@ pub struct PlayerPreview {
 
 impl Default for PlayerPreview {
     fn default() -> Self {
-        Self { yaw: FRONT, target: FRONT, dragged_at: None, dragging: None, emote: None, quads: Vec::new(), faces: Vec::new() }
+        Self {
+            yaw: FRONT,
+            target: FRONT,
+            dragged_at: None,
+            dragging: None,
+            emote: None,
+            quads: Vec::new(),
+            faces: Vec::new(),
+        }
     }
 }
 
 impl PlayerPreview {
     /// Turns to show `slot` best: capes and wings from behind, the rest from the front.
     pub fn show(&mut self, slot: Slot) {
-        self.target = if matches!(slot, Slot::Cape | Slot::Back) { BACK } else { FRONT };
+        self.target = if matches!(slot, Slot::Cape | Slot::Back) {
+            BACK
+        } else {
+            FRONT
+        };
         self.dragged_at = None;
     }
 
@@ -134,13 +146,29 @@ impl PlayerPreview {
 
     /// Draws the player standing still in `rect`, turned `yaw` degrees (the title card's: facing
     /// the pointer as `player.rs` does).
-    pub fn draw_still(&mut self, p: &mut Painter, rect: [f32; 4], loadout: Loadout, yaw: f32, pitch: f32) {
+    pub fn draw_still(
+        &mut self,
+        p: &mut Painter,
+        rect: [f32; 4],
+        loadout: Loadout,
+        yaw: f32,
+        pitch: f32,
+    ) {
         let age = (p.motion.now / 50.0) as f32;
         self.render(p, rect, loadout, age, yaw.to_radians(), pitch, None);
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn render(&mut self, p: &mut Painter, rect: [f32; 4], loadout: Loadout, age: f32, yaw: f32, tilt: f32, pose: Option<emotes::Pose>) {
+    fn render(
+        &mut self,
+        p: &mut Painter,
+        rect: [f32; 4],
+        loadout: Loadout,
+        age: f32,
+        yaw: f32,
+        tilt: f32,
+        pose: Option<emotes::Pose>,
+    ) {
         let Some((skin, slim)) = p.assets.skin.as_ref() else {
             return;
         };
@@ -151,7 +179,9 @@ impl PlayerPreview {
         let [x, y, w, h] = rect;
         let unit = (h / (BLOCKS * 16.0)).min(w / (BLOCKS * 8.0));
         let (cx, cy) = (x + w / 2.0, y + h / 2.0);
-        let view = Affine::rotation_x(tilt).then(&Affine::rotation_y(yaw)).then(&Affine::translation([0.0, -MIDDLE_Y, 0.0]));
+        let view = Affine::rotation_x(tilt)
+            .then(&Affine::rotation_y(yaw))
+            .then(&Affine::translation([0.0, -MIDDLE_Y, 0.0]));
         let rig = rig(age, slim, pose);
         self.faces.clear();
         let mut quads = std::mem::take(&mut self.quads);
@@ -162,14 +192,38 @@ impl PlayerPreview {
         let boxes: [SkinBox; 12] = [
             (&rig.head, [-4.0, -8.0, -4.0], [8, 8, 8], 0.0, [0, 0]),
             (&rig.body, [-4.0, 0.0, -2.0], [8, 12, 4], 0.0, [16, 16]),
-            (&rig.right_arm, [right_x, -2.0, -2.0], [arm, 12, 4], 0.0, [40, 16]),
-            (&rig.left_arm, [-1.0, -2.0, -2.0], [arm, 12, 4], 0.0, [32, 48]),
+            (
+                &rig.right_arm,
+                [right_x, -2.0, -2.0],
+                [arm, 12, 4],
+                0.0,
+                [40, 16],
+            ),
+            (
+                &rig.left_arm,
+                [-1.0, -2.0, -2.0],
+                [arm, 12, 4],
+                0.0,
+                [32, 48],
+            ),
             (&rig.right_leg, [-2.0, 0.0, -2.0], [4, 12, 4], 0.0, [0, 16]),
             (&rig.left_leg, [-2.0, 0.0, -2.0], [4, 12, 4], 0.0, [16, 48]),
             (&rig.head, [-4.0, -8.0, -4.0], [8, 8, 8], 0.5, [32, 0]),
             (&rig.body, [-4.0, 0.0, -2.0], [8, 12, 4], 0.25, [16, 32]),
-            (&rig.right_arm, [right_x, -2.0, -2.0], [arm, 12, 4], 0.25, [40, 32]),
-            (&rig.left_arm, [-1.0, -2.0, -2.0], [arm, 12, 4], 0.25, [48, 48]),
+            (
+                &rig.right_arm,
+                [right_x, -2.0, -2.0],
+                [arm, 12, 4],
+                0.25,
+                [40, 32],
+            ),
+            (
+                &rig.left_arm,
+                [-1.0, -2.0, -2.0],
+                [arm, 12, 4],
+                0.25,
+                [48, 48],
+            ),
             (&rig.right_leg, [-2.0, 0.0, -2.0], [4, 12, 4], 0.25, [0, 32]),
             (&rig.left_leg, [-2.0, 0.0, -2.0], [4, 12, 4], 0.25, [0, 48]),
         ];
@@ -181,32 +235,52 @@ impl PlayerPreview {
             }
         }
 
-        let backpack = loadout.in_slot(Slot::Back).is_some_and(|b| b.id == "back.backpack");
+        let backpack = loadout
+            .in_slot(Slot::Back)
+            .is_some_and(|b| b.id == "back.backpack");
         // The cape hangs from the body's back, swung out a little (the preview's lean is 6).
         let swing = (6.0f32 + 6.0 / 2.0).to_radians();
         if let Some(cape) = loadout.in_slot(Slot::Cape).filter(|_| !backpack)
             && let Some(face) = textures::cape_face(p, cape)
         {
-            let m = view.then(&rig.body).then(&Affine::translation([0.0, 0.0, 2.0])).then(&Affine::rotation_x(swing));
+            let m = view
+                .then(&rig.body)
+                .then(&Affine::translation([0.0, 0.0, 2.0]))
+                .then(&Affine::rotation_x(swing));
             for (q, shade) in cape_quads(&m) {
                 self.push(&q, face, Source::Cape(shade), [cx, cy], unit, 0.1);
             }
         }
         let state = models::State {
             age,
-            cape_swing: loadout.in_slot(Slot::Cape).filter(|_| !backpack).map(|_| swing),
+            cape_swing: loadout
+                .in_slot(Slot::Cape)
+                .filter(|_| !backpack)
+                .map(|_| swing),
             ..models::State::default()
         };
-        for cosmetic in [loadout.in_slot(Slot::Hat), loadout.in_slot(Slot::Back)].into_iter().flatten() {
-            let (Some(spec), Some(region)) = (models::spec(cosmetic.id), textures::model(p, cosmetic)) else {
+        for cosmetic in [loadout.in_slot(Slot::Hat), loadout.in_slot(Slot::Back)]
+            .into_iter()
+            .flatten()
+        {
+            let (Some(spec), Some(region)) =
+                (models::spec(cosmetic.id), textures::model(p, cosmetic))
+            else {
                 continue;
             };
             models::mesh(cosmetic.id, &spec, &state, &mut quads);
-            let anchor = if spec.anchor == Anchor::Head { &rig.head } else { &rig.body };
+            let anchor = if spec.anchor == Anchor::Head {
+                &rig.head
+            } else {
+                &rig.body
+            };
             let m = view.then(anchor);
             let glow = spec.look == Look::Glow;
             for q in &quads {
-                let q = Quad { pos: q.pos.map(|c| m.apply(c)), uv: q.uv };
+                let q = Quad {
+                    pos: q.pos.map(|c| m.apply(c)),
+                    uv: q.uv,
+                };
                 self.push(&q, region, Source::Model(glow), [cx, cy], unit, 0.2);
             }
         }
@@ -215,19 +289,35 @@ impl PlayerPreview {
         self.faces.sort_by(|a, b| b.depth.total_cmp(&a.depth));
         for f in &self.faces {
             let argb = p.faded(f.argb);
-            p.list.quad(f.src, f.corners.map(|c| {
-                let [gx, gy, _, _] = p.place(c[0], c[1], 0.0, 0.0);
-                [gx, gy]
-            }), argb);
+            p.list.quad(
+                f.src,
+                f.corners.map(|c| {
+                    let [gx, gy, _, _] = p.place(c[0], c[1], 0.0, 0.0);
+                    [gx, gy]
+                }),
+                argb,
+            );
         }
     }
 
     /// Projects a quad (view space, model pixels) and keeps it when it faces the viewer.
-    fn push(&mut self, q: &Quad, region: Region, source: Source, [cx, cy]: [f32; 2], unit: f32, bias: f32) {
+    fn push(
+        &mut self,
+        q: &Quad,
+        region: Region,
+        source: Source,
+        [cx, cy]: [f32; 2],
+        unit: f32,
+        bias: f32,
+    ) {
         let [a, b, c] = [q.pos[0], q.pos[1], q.pos[2]];
         let e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
         let e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-        let mut n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+        let mut n = [
+            e1[1] * e2[2] - e1[2] * e2[1],
+            e1[2] * e2[0] - e1[0] * e2[2],
+            e1[0] * e2[1] - e1[1] * e2[0],
+        ];
         let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
         if len < 1e-6 {
             // A corner doubled: the other three.
@@ -246,11 +336,21 @@ impl PlayerPreview {
             Source::Cape(s) => (s, false),
             Source::Model(g) => (1.0, g),
         };
-        let bright = if glow { 1.0 } else { (0.55 + 0.45 * lit) * shade };
+        let bright = if glow {
+            1.0
+        } else {
+            (0.55 + 0.45 * lit) * shade
+        };
         let v = (bright.clamp(0.0, 1.0) * 255.0).round() as u32;
         let argb = 0xFF00_0000 | v << 16 | v << 8 | v;
-        let (umin, umax) = (q.uv.iter().map(|t| t[0]).fold(f32::MAX, f32::min), q.uv.iter().map(|t| t[0]).fold(f32::MIN, f32::max));
-        let (vmin, vmax) = (q.uv.iter().map(|t| t[1]).fold(f32::MAX, f32::min), q.uv.iter().map(|t| t[1]).fold(f32::MIN, f32::max));
+        let (umin, umax) = (
+            q.uv.iter().map(|t| t[0]).fold(f32::MAX, f32::min),
+            q.uv.iter().map(|t| t[0]).fold(f32::MIN, f32::max),
+        );
+        let (vmin, vmax) = (
+            q.uv.iter().map(|t| t[1]).fold(f32::MAX, f32::min),
+            q.uv.iter().map(|t| t[1]).fold(f32::MIN, f32::max),
+        );
         let project = |p: [f32; 3]| [cx + p[0] * unit, cy + p[1] * unit];
         let mut corners = [[0.0; 2]; 4];
         if umax - umin < 1e-4 || vmax - vmin < 1e-4 {
@@ -275,7 +375,12 @@ impl PlayerPreview {
         }
         let depth = q.pos.iter().map(|p| p[2]).sum::<f32>() / 4.0 - bias;
         let src = region.part(umin, vmin, (umax - umin).max(1.0), (vmax - vmin).max(1.0));
-        self.faces.push(Face { corners, src, depth, argb });
+        self.faces.push(Face {
+            corners,
+            src,
+            depth,
+            argb,
+        });
     }
 }
 
@@ -300,13 +405,18 @@ pub fn draw_title(cx: &mut crate::screen::Cx, rect: [f32; 4]) {
     let ay = ((y + h * 0.15 - mouse[1]) / 40.0).atan();
     // The model's 2.6 blocks hold a halo and wings: a little larger box than `player::draw`'s.
     let grown = [x - w * 0.2, y - h * 0.22, w * 1.4, h * 1.3];
-    TITLE.with(|t| t.borrow_mut().draw_still(cx.p, grown, worn, -ax * 20.0, TILT + ay * 0.2));
+    TITLE.with(|t| {
+        t.borrow_mut()
+            .draw_still(cx.p, grown, worn, -ax * 20.0, TILT + ay * 0.2)
+    });
 }
 
 /// The game's player model posed standing at `age` (`AnimationUtils.bobArms`), with an emote's
 /// pose over it. Model pixels, +y down, the feet at y = 24.
 fn rig(age: f32, slim: bool, pose: Option<emotes::Pose>) -> Rig {
-    let part = |at: [f32; 3], r: [f32; 3]| Affine::translation(at).then(&Affine::rotation_zyx(r[0], r[1], r[2]));
+    let part = |at: [f32; 3], r: [f32; 3]| {
+        Affine::translation(at).then(&Affine::rotation_zyx(r[0], r[1], r[2]))
+    };
     let bob_z = (age * 0.09).cos() * 0.05 + 0.05;
     let bob_x = (age * 0.067).sin() * 0.05;
     let (w, head, right, left) = match pose {
@@ -331,19 +441,69 @@ fn rig(age: f32, slim: bool, pose: Option<emotes::Pose>) -> Rig {
 /// from the cape's face, the inner side the same in shade, the edges the face's middle colour.
 fn cape_quads(m: &Affine) -> Vec<(Quad, f32)> {
     let p = |x: f32, y: f32, z: f32| m.apply([x, y, z]);
-    let face = |a, b, c, d, uv: [[f32; 2]; 4], shade: f32| (Quad { pos: [a, b, c, d], uv }, shade);
+    let face = |a, b, c, d, uv: [[f32; 2]; 4], shade: f32| {
+        (
+            Quad {
+                pos: [a, b, c, d],
+                uv,
+            },
+            shade,
+        )
+    };
     // Both sides show the design's left at the player's left (+x), as the game's cape does.
     let middle = [[5.0, 8.0]; 4];
     vec![
         // Outer, facing away from the player (+z).
-        face(p(-5.0, 0.0, 1.0), p(5.0, 0.0, 1.0), p(5.0, 16.0, 1.0), p(-5.0, 16.0, 1.0), [[10.0, 0.0], [0.0, 0.0], [0.0, 16.0], [10.0, 16.0]], 1.0),
+        face(
+            p(-5.0, 0.0, 1.0),
+            p(5.0, 0.0, 1.0),
+            p(5.0, 16.0, 1.0),
+            p(-5.0, 16.0, 1.0),
+            [[10.0, 0.0], [0.0, 0.0], [0.0, 16.0], [10.0, 16.0]],
+            1.0,
+        ),
         // Inner, facing the player's back.
-        face(p(5.0, 0.0, 0.0), p(-5.0, 0.0, 0.0), p(-5.0, 16.0, 0.0), p(5.0, 16.0, 0.0), [[0.0, 0.0], [10.0, 0.0], [10.0, 16.0], [0.0, 16.0]], 0.55),
+        face(
+            p(5.0, 0.0, 0.0),
+            p(-5.0, 0.0, 0.0),
+            p(-5.0, 16.0, 0.0),
+            p(5.0, 16.0, 0.0),
+            [[0.0, 0.0], [10.0, 0.0], [10.0, 16.0], [0.0, 16.0]],
+            0.55,
+        ),
         // The edges: the sides, the bottom and the top.
-        face(p(5.0, 0.0, 0.0), p(5.0, 16.0, 0.0), p(5.0, 16.0, 1.0), p(5.0, 0.0, 1.0), middle, 0.7),
-        face(p(-5.0, 0.0, 0.0), p(-5.0, 0.0, 1.0), p(-5.0, 16.0, 1.0), p(-5.0, 16.0, 0.0), middle, 0.7),
-        face(p(-5.0, 16.0, 0.0), p(-5.0, 16.0, 1.0), p(5.0, 16.0, 1.0), p(5.0, 16.0, 0.0), middle, 0.7),
-        face(p(-5.0, 0.0, 0.0), p(5.0, 0.0, 0.0), p(5.0, 0.0, 1.0), p(-5.0, 0.0, 1.0), middle, 0.7),
+        face(
+            p(5.0, 0.0, 0.0),
+            p(5.0, 16.0, 0.0),
+            p(5.0, 16.0, 1.0),
+            p(5.0, 0.0, 1.0),
+            middle,
+            0.7,
+        ),
+        face(
+            p(-5.0, 0.0, 0.0),
+            p(-5.0, 0.0, 1.0),
+            p(-5.0, 16.0, 1.0),
+            p(-5.0, 16.0, 0.0),
+            middle,
+            0.7,
+        ),
+        face(
+            p(-5.0, 16.0, 0.0),
+            p(-5.0, 16.0, 1.0),
+            p(5.0, 16.0, 1.0),
+            p(5.0, 16.0, 0.0),
+            middle,
+            0.7,
+        ),
+        face(
+            p(-5.0, 0.0, 0.0),
+            p(5.0, 0.0, 0.0),
+            p(5.0, 0.0, 1.0),
+            p(-5.0, 0.0, 1.0),
+            middle,
+            0.7,
+        ),
     ]
 }
 
@@ -367,10 +527,20 @@ mod tests {
             let [a, b, c] = [q.pos[0], q.pos[1], q.pos[2]];
             let e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
             let e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-            let n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
-            let centre = q.pos.iter().fold([0.0f32; 3], |s, p| [s[0] + p[0] / 4.0, s[1] + p[1] / 4.0, s[2] + p[2] / 4.0]);
+            let n = [
+                e1[1] * e2[2] - e1[2] * e2[1],
+                e1[2] * e2[0] - e1[0] * e2[2],
+                e1[0] * e2[1] - e1[1] * e2[0],
+            ];
+            let centre = q.pos.iter().fold([0.0f32; 3], |s, p| {
+                [s[0] + p[0] / 4.0, s[1] + p[1] / 4.0, s[2] + p[2] / 4.0]
+            });
             let out = [centre[0], centre[1] - 8.0, centre[2] - 0.5];
-            assert!(n[0] * out[0] + n[1] * out[1] + n[2] * out[2] > 0.0, "{:?}", q.pos);
+            assert!(
+                n[0] * out[0] + n[1] * out[1] + n[2] * out[2] > 0.0,
+                "{:?}",
+                q.pos
+            );
         }
     }
 
@@ -378,7 +548,15 @@ mod tests {
     fn the_players_boxes_face_out() {
         // The head's front (the game's north face) faces the viewer at -z.
         let mut quads = Vec::new();
-        models::box_quads([-4.0, -8.0, -4.0], [8, 8, 8], 0.0, [0, 0], false, &Affine::IDENTITY, &mut quads);
+        models::box_quads(
+            [-4.0, -8.0, -4.0],
+            [8, 8, 8],
+            0.0,
+            [0, 0],
+            false,
+            &Affine::IDENTITY,
+            &mut quads,
+        );
         let front = &quads[3];
         assert!(front.pos.iter().all(|p| p[2] == -4.0));
         assert_eq!(front.uv[1], [8.0, 8.0], "the face's texture");

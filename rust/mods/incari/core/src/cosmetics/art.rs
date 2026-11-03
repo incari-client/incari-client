@@ -10,7 +10,10 @@ pub const ICON: usize = 24;
 
 /// Whether the cape `id` moves: it's painted again as time passes.
 pub fn animated(id: &str) -> bool {
-    matches!(id, "cape.aurora" | "cape.midnight" | "cape.ember" | "cape.tide")
+    matches!(
+        id,
+        "cape.aurora" | "cape.midnight" | "cape.ember" | "cape.tide"
+    )
 }
 
 fn round(v: f32) -> i32 {
@@ -43,7 +46,12 @@ pub fn cape(id: &str, t: f32, out: &mut [u32]) {
     out[1..=20].fill(edge);
     for y in 0..22 {
         for x in 22..46 {
-            out[y * w + x] = design(id, (x as f32 - 22.0 + 0.5) * 10.0 / 24.0, (y as f32 + 0.5) * 16.0 / 22.0, t);
+            out[y * w + x] = design(
+                id,
+                (x as f32 - 22.0 + 0.5) * 10.0 / 24.0,
+                (y as f32 + 0.5) * 16.0 / 22.0,
+                t,
+            );
         }
     }
 }
@@ -154,7 +162,14 @@ fn sakura(px: f32, py: f32, v: f32) -> u32 {
     if branch < 0.55 && px < 9.5 {
         color = 0x5E3B3B;
     }
-    let blossoms = [[2.0, 10.5], [5.0, 8.0], [8.0, 5.5], [3.0, 4.0], [7.5, 12.5], [1.5, 1.8]];
+    let blossoms = [
+        [2.0, 10.5],
+        [5.0, 8.0],
+        [8.0, 5.5],
+        [3.0, 4.0],
+        [7.5, 12.5],
+        [1.5, 1.8],
+    ];
     for [bx, by] in blossoms {
         let (dx, dy) = (px - bx, py - by);
         let d = dx * dx + dy * dy;
@@ -218,7 +233,11 @@ fn angel_wing(sx: f32, sy: f32) -> u32 {
     if sy < top || sy > bottom {
         return 0;
     }
-    let mut color = mix(0xFFFFFF, 0xDCE3EC, clamp((sy - top) / (bottom - top).max(0.05)) * 0.6);
+    let mut color = mix(
+        0xFFFFFF,
+        0xDCE3EC,
+        clamp((sy - top) / (bottom - top).max(0.05)) * 0.6,
+    );
     // Rows of feathers: lines across, and their tips toward the bottom.
     let row = (sy - top) / (bottom - top).max(0.05) * 4.0;
     if row - row.floor() < 0.12 && row > 0.8 {
@@ -334,7 +353,11 @@ fn beanie_icon(x: f32, y: f32) -> u32 {
     let (dx, dy) = ((x - 12.0) / 9.0, (y - 17.0) / 11.0);
     if y < 17.0 && dx * dx + dy * dy < 1.0 {
         let row = (y / 2.5) as i32;
-        return if row & 1 == 0 { 0xFF7F_C3F2 } else { 0xFFEA_F6FF };
+        return if row & 1 == 0 {
+            0xFF7F_C3F2
+        } else {
+            0xFFEA_F6FF
+        };
     }
     if (17.0..20.0).contains(&y) && (3.0..21.0).contains(&x) {
         return 0xFF4F_8FC7;
@@ -376,7 +399,11 @@ fn ears_icon(x: f32, y: f32) -> u32 {
                 return 0xFFF2_A6BC;
             }
             // A light rim, so dark ears read on a dark card.
-            return if d > half - 0.8 || t > 0.92 { 0xFF9A_9AAE } else { 0xFF4A_4A58 };
+            return if d > half - 0.8 || t > 0.92 {
+                0xFF9A_9AAE
+            } else {
+                0xFF4A_4A58
+            };
         }
     }
     0
@@ -388,7 +415,11 @@ fn backpack_icon(x: f32, y: f32) -> u32 {
             return 0xFF7F_C3F2;
         }
         if (8.0..16.0).contains(&x) && (12.0..18.0).contains(&y) {
-            return if x < 8.8 || x > 15.2 || y < 12.8 || y > 17.2 { 0xFFA9_DCFF } else { 0xFF2C_4A72 };
+            return if x < 8.8 || x > 15.2 || y < 12.8 || y > 17.2 {
+                0xFFA9_DCFF
+            } else {
+                0xFF2C_4A72
+            };
         }
         return 0xFF22_385A;
     }
@@ -403,7 +434,11 @@ fn wings_icon(id: &str, x: f32, y: f32) -> u32 {
         return 0;
     }
     let color = wing(id, sx, sy);
-    if color >> 24 == 0 { 0 } else { 0xFF00_0000 | color }
+    if color >> 24 == 0 {
+        0
+    } else {
+        0xFF00_0000 | color
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -421,7 +456,10 @@ pub fn mix(a: u32, b: u32, t: f32) -> u32 {
 }
 
 fn add(base: u32, light: u32, amount: f32) -> u32 {
-    let ch = |shift: u32| (((base >> shift) & 255) as i32 + round(((light >> shift) & 255) as f32 * amount)).min(255) as u32;
+    let ch = |shift: u32| {
+        (((base >> shift) & 255) as i32 + round(((light >> shift) & 255) as f32 * amount)).min(255)
+            as u32
+    };
     ch(16) << 16 | ch(8) << 8 | ch(0)
 }
 
@@ -497,8 +535,17 @@ mod tests {
         let mut cape_px = vec![0u32; CAPE_WIDTH * CAPE_HEIGHT];
         for c in catalog::in_slot(Slot::Cape) {
             cape(c.id, 1.5, &mut cape_px);
-            assert_eq!(cape_px[CAPE_WIDTH + 1] >> 24, 0xFF, "{}: the outer side is opaque", c.id);
-            assert_eq!(cape_px[CAPE_WIDTH * 31 + 63], 0, "outside the layout stays clear");
+            assert_eq!(
+                cape_px[CAPE_WIDTH + 1] >> 24,
+                0xFF,
+                "{}: the outer side is opaque",
+                c.id
+            );
+            assert_eq!(
+                cape_px[CAPE_WIDTH * 31 + 63],
+                0,
+                "outside the layout stays clear"
+            );
         }
         let mut icon_px = vec![0u32; ICON * ICON];
         for c in catalog::in_slot(Slot::Hat).chain(catalog::in_slot(Slot::Back)) {

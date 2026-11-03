@@ -50,23 +50,39 @@ impl Screen for Account {
                     self.form.status("Saved.", Tone::Positive);
                 }
                 Some(AccountAction::SignOut { everywhere }) if self.form.answered(&outcome) => {
-                    let said = if everywhere { "Signed out on every device." } else { "Signed out." };
+                    let said = if everywhere {
+                        "Signed out on every device."
+                    } else {
+                        "Signed out."
+                    };
                     self.form.status(said, Tone::Positive);
                 }
                 _ => {}
             }
         }
-        let (status, name, shares) = online::with(|o| (o.status(), o.account_name().map(str::to_owned), o.shares_server()));
+        let (status, name, shares) = online::with(|o| {
+            (
+                o.status(),
+                o.account_name().map(str::to_owned),
+                o.shares_server(),
+            )
+        });
         let done = done_label(cx);
         let mut s = Stack::default();
         let mut ids = AccountIds::default();
         match status {
             Status::Off => {
-                s.text("Incari accounts aren't available in this version.", Tone::Muted);
+                s.text(
+                    "Incari accounts aren't available in this version.",
+                    Tone::Muted,
+                );
                 ids.done = Some(s.button(&done));
             }
             Status::UpdateNeeded => {
-                s.text("Update Incari Client to use your account. Everything else still works.", Tone::Warning);
+                s.text(
+                    "Update Incari Client to use your account. Everything else still works.",
+                    Tone::Warning,
+                );
                 ids.done = Some(s.button(&done));
             }
             Status::Connecting => {
@@ -102,7 +118,10 @@ impl Screen for Account {
                 ids.done = Some(s.button(&done));
             }
             Status::SignedIn => {
-                s.centred(format!("Signed in as {}", name.as_deref().unwrap_or("?")), Tone::Accent);
+                s.centred(
+                    format!("Signed in as {}", name.as_deref().unwrap_or("?")),
+                    Tone::Accent,
+                );
                 s.gap(2.0);
                 ids.share = Some(s.toggle("Show friends which server I'm on", shares));
                 ids.blocked = Some(s.button("Blocked Players"));
@@ -210,7 +229,11 @@ impl Screen for SignIn {
         let row = s.row(&[&cancel, "Sign In"]);
         let forgot = s.button("Forgot Password");
         s.submit(row + 1);
-        s.focus(if self.form.value(USERNAME).is_empty() { USERNAME } else { PASSWORD });
+        s.focus(if self.form.value(USERNAME).is_empty() {
+            USERNAME
+        } else {
+            PASSWORD
+        });
         match self.form.show(cx, "Sign In", s).pressed {
             Some(p) if p == row => cx.go(Go::Back),
             Some(p) if p == row + 1 => self.sign_in(),
@@ -229,7 +252,10 @@ impl SignIn {
         if self.form.busy() {
             return;
         }
-        let (name, secret) = (self.form.value(USERNAME).to_owned(), self.form.value(PASSWORD).to_owned());
+        let (name, secret) = (
+            self.form.value(USERNAME).to_owned(),
+            self.form.value(PASSWORD).to_owned(),
+        );
         if name.is_empty() || secret.is_empty() {
             self.form.problem("Type your username and password.");
             return;
@@ -293,7 +319,8 @@ impl Screen for CreateAccount {
     fn escape(&mut self, cx: &mut Cx) {
         if self.form.busy() && !online::with(|o| o.cancel_sign_up()) {
             // The form is out and the account may already exist: its codes are moments away.
-            self.form.status("Almost done. Your account is being created...", Tone::Muted);
+            self.form
+                .status("Almost done. Your account is being created...", Tone::Muted);
             return;
         }
         cx.go(Go::Back);
@@ -303,7 +330,13 @@ impl Screen for CreateAccount {
         if let Some(t) = self.form.ticket() {
             // Still solving the challenge: nothing is made. Past that, the account was made all the
             // same: its codes wait for the account screen.
-            online::with(|o| if o.cancel_sign_up() { o.forget(t) } else { o.keep_codes(t) });
+            online::with(|o| {
+                if o.cancel_sign_up() {
+                    o.forget(t)
+                } else {
+                    o.keep_codes(t)
+                }
+            });
         }
     }
 }
@@ -328,7 +361,8 @@ impl CreateAccount {
             return;
         }
         let t = online::with(|o| o.sign_up(&name, &secret));
-        self.form.sending(t, "Creating your account (a few seconds)...");
+        self.form
+            .sending(t, "Creating your account (a few seconds)...");
     }
 }
 
@@ -395,7 +429,8 @@ impl ForgotPassword {
             return;
         }
         if rules::normalize_code(&code).is_none() {
-            self.form.problem("A code is 12 letters and digits, like ABCD-EFGH-JKMN.");
+            self.form
+                .problem("A code is 12 letters and digits, like ABCD-EFGH-JKMN.");
             return;
         }
         if let Some(problem) = rules::password_problem(&secret, &name) {
@@ -435,7 +470,10 @@ impl Screen for ChangePassword {
         }
         let mut s = Stack::default();
         if self.changed {
-            s.text("Your password is changed. Every other device was signed out.", Tone::Positive);
+            s.text(
+                "Your password is changed. Every other device was signed out.",
+                Tone::Positive,
+            );
             let done = s.button(&done_label(cx));
             s.submit(done);
             if self.form.show(cx, "Change Password", s).pressed == Some(done) {
@@ -506,12 +544,18 @@ pub struct ConfirmPassword {
 impl ConfirmPassword {
     /// New Recovery Codes: ten new ones, shown once; the old ten stop working.
     pub fn new_codes() -> Self {
-        Self { form: Form::default(), what: Confirming::NewCodes }
+        Self {
+            form: Form::default(),
+            what: Confirming::NewCodes,
+        }
     }
 
     /// Delete Account: the account and everything tied to it, at once and for good.
     pub fn delete() -> Self {
-        Self { form: Form::default(), what: Confirming::Delete }
+        Self {
+            form: Form::default(),
+            what: Confirming::Delete,
+        }
     }
 
     fn title(&self) -> &'static str {
@@ -580,8 +624,14 @@ impl ConfirmPassword {
             return;
         }
         let (t, waiting) = match self.what {
-            Confirming::NewCodes => (online::with(|o| o.new_recovery_codes(&password)), "Making new codes..."),
-            Confirming::Delete => (online::with(|o| o.delete_account(&password)), "Deleting your account..."),
+            Confirming::NewCodes => (
+                online::with(|o| o.new_recovery_codes(&password)),
+                "Making new codes...",
+            ),
+            Confirming::Delete => (
+                online::with(|o| o.delete_account(&password)),
+                "Deleting your account...",
+            ),
         };
         self.form.sending(t, waiting);
         self.form.set_value(YOUR_PASSWORD, "");
@@ -606,7 +656,12 @@ pub struct RecoveryCodes {
 
 impl RecoveryCodes {
     pub fn new(codes: Vec<String>, new_account: bool) -> Self {
-        Self { form: Form::default(), codes, new_account, saved: false }
+        Self {
+            form: Form::default(),
+            codes,
+            new_account,
+            saved: false,
+        }
     }
 
     /// The file and the clipboard's text.
@@ -641,7 +696,13 @@ impl Screen for RecoveryCodes {
         let shown = self.form.show(cx, "Your Recovery Codes", s);
         if let Some(&[x, y]) = shown.spaces.first() {
             let th = cx.p.theme;
-            cx.p.fill(x, y - 3.0, CONTENT_WIDTH, CODE_ROWS as f32 * 12.0 + 4.0, th.field);
+            cx.p.fill(
+                x,
+                y - 3.0,
+                CONTENT_WIDTH,
+                CODE_ROWS as f32 * 12.0 + 4.0,
+                th.field,
+            );
             for (i, code) in self.codes.iter().enumerate() {
                 let (column, row) = (i / CODE_ROWS, i % CODE_ROWS);
                 let cx0 = x + 6.0 + column as f32 * (CONTENT_WIDTH / 2.0).floor();
@@ -657,7 +718,8 @@ impl Screen for RecoveryCodes {
             }
             Some(p) if p == row + 1 => {
                 online::download(CODES_FILE, self.as_text().into_bytes());
-                self.form.status(&format!("Downloading {CODES_FILE}"), Tone::Positive);
+                self.form
+                    .status(&format!("Downloading {CODES_FILE}"), Tone::Positive);
             }
             Some(p) if p == saved => self.saved = !self.saved,
             Some(p) if p == proceed => cx.go(Go::Back),
@@ -729,7 +791,8 @@ impl Screen for BlockedPlayers {
                         if let Some(list) = self.blocks.as_mut() {
                             list.retain(|b| *b != block);
                         }
-                        self.form.status(&format!("Unblocked {}.", block.label), Tone::Positive);
+                        self.form
+                            .status(&format!("Unblocked {}.", block.label), Tone::Positive);
                     }
                     None => {}
                 }
@@ -754,8 +817,11 @@ impl Screen for BlockedPlayers {
             Some(list) => {
                 pages = list.len().div_ceil(PAGE);
                 self.page = self.page.min(pages - 1);
-                let heading =
-                    if pages > 1 { format!("Blocked ({} of {pages})", self.page + 1) } else { "Blocked".to_owned() };
+                let heading = if pages > 1 {
+                    format!("Blocked ({} of {pages})", self.page + 1)
+                } else {
+                    "Blocked".to_owned()
+                };
                 s.centred(heading, Tone::Text);
                 for block in list.iter().skip(self.page * PAGE).take(PAGE) {
                     unblocks.push((s.entry(&block.label, &["Unblock"]), block.clone()));
@@ -860,7 +926,13 @@ impl Report {
     }
 
     fn new(who: &str, reported: Reported) -> Self {
-        Self { form: Form::default(), who: who.to_owned(), reported, reason: 0, sent: false }
+        Self {
+            form: Form::default(),
+            who: who.to_owned(),
+            reported,
+            reason: 0,
+            sent: false,
+        }
     }
 }
 
@@ -874,7 +946,13 @@ impl Screen for Report {
         let title = format!("Report {}", self.who);
         let mut s = Stack::default();
         if self.sent {
-            s.text(format!("Report about {} sent. Block them to stop hearing from them.", self.who), Tone::Positive);
+            s.text(
+                format!(
+                    "Report about {} sent. Block them to stop hearing from them.",
+                    self.who
+                ),
+                Tone::Positive,
+            );
             let done = s.button(&done_label(cx));
             s.submit(done);
             if self.form.show(cx, &title, s).pressed == Some(done) {
@@ -893,11 +971,18 @@ impl Screen for Report {
         match shown.pressed {
             Some(p) if p == reason => {
                 let n = ReportReason::ALL.len();
-                self.reason = if shown.back { (self.reason + n - 1) % n } else { (self.reason + 1) % n };
+                self.reason = if shown.back {
+                    (self.reason + n - 1) % n
+                } else {
+                    (self.reason + 1) % n
+                };
             }
             Some(p) if p == row => cx.go(Go::Back),
             Some(p) if p == row + 1 && !self.form.busy() => {
-                let (reason, note) = (ReportReason::ALL[self.reason], self.form.value(NOTE).to_owned());
+                let (reason, note) = (
+                    ReportReason::ALL[self.reason],
+                    self.form.value(NOTE).to_owned(),
+                );
                 let t = online::with(|o| match &self.reported {
                     Reported::Player(pid) => o.report_player(pid, reason, &note),
                     Reported::Username(name) => o.report_username(name, reason, &note),

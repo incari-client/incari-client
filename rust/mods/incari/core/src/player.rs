@@ -16,19 +16,67 @@ struct Part {
 
 /// The parts, inner layers first; `arm` is 4 wide, or 3 for slim arms.
 fn parts(arm: f32) -> Vec<Part> {
-    let p = |tex: [f32; 2], size: [f32; 3], at: [f32; 3], grow: f32, head: bool| Part { tex, size, at, grow, head };
+    let p = |tex: [f32; 2], size: [f32; 3], at: [f32; 3], grow: f32, head: bool| Part {
+        tex,
+        size,
+        at,
+        grow,
+        head,
+    };
     vec![
         p([0.0, 0.0], [8.0, 8.0, 8.0], [-4.0, 24.0, -4.0], 0.0, true),
-        p([16.0, 16.0], [8.0, 12.0, 4.0], [-4.0, 12.0, -2.0], 0.0, false),
-        p([40.0, 16.0], [arm, 12.0, 4.0], [-4.0 - arm, 12.0, -2.0], 0.0, false),
-        p([32.0, 48.0], [arm, 12.0, 4.0], [4.0, 12.0, -2.0], 0.0, false),
+        p(
+            [16.0, 16.0],
+            [8.0, 12.0, 4.0],
+            [-4.0, 12.0, -2.0],
+            0.0,
+            false,
+        ),
+        p(
+            [40.0, 16.0],
+            [arm, 12.0, 4.0],
+            [-4.0 - arm, 12.0, -2.0],
+            0.0,
+            false,
+        ),
+        p(
+            [32.0, 48.0],
+            [arm, 12.0, 4.0],
+            [4.0, 12.0, -2.0],
+            0.0,
+            false,
+        ),
         p([0.0, 16.0], [4.0, 12.0, 4.0], [-4.0, 0.0, -2.0], 0.0, false),
         p([16.0, 48.0], [4.0, 12.0, 4.0], [0.0, 0.0, -2.0], 0.0, false),
         p([32.0, 0.0], [8.0, 8.0, 8.0], [-4.0, 24.0, -4.0], 0.5, true),
-        p([16.0, 32.0], [8.0, 12.0, 4.0], [-4.0, 12.0, -2.0], 0.25, false),
-        p([40.0, 32.0], [arm, 12.0, 4.0], [-4.0 - arm, 12.0, -2.0], 0.25, false),
-        p([48.0, 48.0], [arm, 12.0, 4.0], [4.0, 12.0, -2.0], 0.25, false),
-        p([0.0, 32.0], [4.0, 12.0, 4.0], [-4.0, 0.0, -2.0], 0.25, false),
+        p(
+            [16.0, 32.0],
+            [8.0, 12.0, 4.0],
+            [-4.0, 12.0, -2.0],
+            0.25,
+            false,
+        ),
+        p(
+            [40.0, 32.0],
+            [arm, 12.0, 4.0],
+            [-4.0 - arm, 12.0, -2.0],
+            0.25,
+            false,
+        ),
+        p(
+            [48.0, 48.0],
+            [arm, 12.0, 4.0],
+            [4.0, 12.0, -2.0],
+            0.25,
+            false,
+        ),
+        p(
+            [0.0, 32.0],
+            [4.0, 12.0, 4.0],
+            [-4.0, 0.0, -2.0],
+            0.25,
+            false,
+        ),
         p([0.0, 48.0], [4.0, 12.0, 4.0], [0.0, 0.0, -2.0], 0.25, false),
     ]
 }
@@ -62,13 +110,23 @@ pub fn draw(p: &mut Painter, rect: [f32; 4], mouse: [f32; 2]) {
     let head_pitch = (ay * 20.0).to_radians();
     let mut faces = Vec::with_capacity(72);
     for part in parts(if slim { 3.0 } else { 4.0 }) {
-        let (yaw, pitch) = if part.head { (head_yaw, head_pitch) } else { (body_yaw, 0.0) };
+        let (yaw, pitch) = if part.head {
+            (head_yaw, head_pitch)
+        } else {
+            (body_yaw, 0.0)
+        };
         let project = |v: [f32; 3]| -> ([f32; 2], f32) {
             // About the neck for the head, the feet's middle for the rest.
             let pivot_y = if part.head { 24.0 } else { 0.0 };
             let (px, py, pz) = (v[0], v[1] - pivot_y, v[2]);
-            let (py, pz) = (py * pitch.cos() - pz * pitch.sin(), py * pitch.sin() + pz * pitch.cos());
-            let (px, pz) = (px * yaw.cos() + pz * yaw.sin(), -px * yaw.sin() + pz * yaw.cos());
+            let (py, pz) = (
+                py * pitch.cos() - pz * pitch.sin(),
+                py * pitch.sin() + pz * pitch.cos(),
+            );
+            let (px, pz) = (
+                px * yaw.cos() + pz * yaw.sin(),
+                -px * yaw.sin() + pz * yaw.cos(),
+            );
             ([cx + px * unit, cy + (16.0 - (py + pivot_y)) * unit], pz)
         };
         box_faces(&part, region, project, &mut faces);
@@ -82,7 +140,12 @@ pub fn draw(p: &mut Painter, rect: [f32; 4], mouse: [f32; 2]) {
 }
 
 /// A box's faces that face the viewer.
-fn box_faces(part: &Part, region: Region, project: impl Fn([f32; 3]) -> ([f32; 2], f32), out: &mut Vec<Face>) {
+fn box_faces(
+    part: &Part,
+    region: Region,
+    project: impl Fn([f32; 3]) -> ([f32; 2], f32),
+    out: &mut Vec<Face>,
+) {
     let [w, h, d] = part.size;
     let g = part.grow;
     let [x0, y0, z0] = [part.at[0] - g, part.at[1] - g, part.at[2] - g];
@@ -95,23 +158,42 @@ fn box_faces(part: &Part, region: Region, project: impl Fn([f32; 3]) -> ([f32; 2
     const SHADES: [f32; 6] = [1.0, 0.7, 0.8, 0.8, 0.95, 0.5];
     let faces: [([f32; 4], [[f32; 3]; 4]); 6] = [
         // Front (+z).
-        ([u + d, v + d, w, h], [[x0, y1, z1], [x1, y1, z1], [x1, y0, z1], [x0, y0, z1]]),
+        (
+            [u + d, v + d, w, h],
+            [[x0, y1, z1], [x1, y1, z1], [x1, y0, z1], [x0, y0, z1]],
+        ),
         // Back (-z).
-        ([u + d + w + d, v + d, w, h], [[x1, y1, z0], [x0, y1, z0], [x0, y0, z0], [x1, y0, z0]]),
+        (
+            [u + d + w + d, v + d, w, h],
+            [[x1, y1, z0], [x0, y1, z0], [x0, y0, z0], [x1, y0, z0]],
+        ),
         // The player's right (-x).
-        ([u, v + d, d, h], [[x0, y1, z0], [x0, y1, z1], [x0, y0, z1], [x0, y0, z0]]),
+        (
+            [u, v + d, d, h],
+            [[x0, y1, z0], [x0, y1, z1], [x0, y0, z1], [x0, y0, z0]],
+        ),
         // The player's left (+x).
-        ([u + d + w, v + d, d, h], [[x1, y1, z1], [x1, y1, z0], [x1, y0, z0], [x1, y0, z1]]),
+        (
+            [u + d + w, v + d, d, h],
+            [[x1, y1, z1], [x1, y1, z0], [x1, y0, z0], [x1, y0, z1]],
+        ),
         // Top.
-        ([u + d, v, w, d], [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]]),
+        (
+            [u + d, v, w, d],
+            [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]],
+        ),
         // Bottom.
-        ([u + d + w, v, w, d], [[x0, y0, z1], [x1, y0, z1], [x1, y0, z0], [x0, y0, z0]]),
+        (
+            [u + d + w, v, w, d],
+            [[x0, y0, z1], [x1, y0, z1], [x1, y0, z0], [x0, y0, z0]],
+        ),
     ];
     for ((src, corners), shade) in faces.into_iter().zip(SHADES) {
         let projected = corners.map(&project);
         let pts = projected.map(|c| c.0);
         // Facing the viewer: drawn clockwise on screen.
-        let cross = (pts[1][0] - pts[0][0]) * (pts[3][1] - pts[0][1]) - (pts[1][1] - pts[0][1]) * (pts[3][0] - pts[0][0]);
+        let cross = (pts[1][0] - pts[0][0]) * (pts[3][1] - pts[0][1])
+            - (pts[1][1] - pts[0][1]) * (pts[3][0] - pts[0][0]);
         if cross <= 0.0 {
             continue;
         }

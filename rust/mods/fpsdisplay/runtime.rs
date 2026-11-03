@@ -80,7 +80,12 @@ mod tests {
     fn colours_by_speed_only_when_asked() {
         assert_eq!(tone(false, 5), Tone::Text);
         assert_eq!(
-            [tone(true, 60), tone(true, 59), tone(true, 30), tone(true, 29)],
+            [
+                tone(true, 60),
+                tone(true, 59),
+                tone(true, 30),
+                tone(true, 29)
+            ],
             [Tone::Positive, Tone::Warning, Tone::Warning, Tone::Negative]
         );
     }

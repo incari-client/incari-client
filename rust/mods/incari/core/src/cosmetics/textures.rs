@@ -25,7 +25,11 @@ thread_local! {
 }
 
 fn image(width: usize, height: usize, pixels: &[u32]) -> Image {
-    Image { width: width as u32, height: height as u32, rgba: art::rgba(pixels) }
+    Image {
+        width: width as u32,
+        height: height as u32,
+        rgba: art::rgba(pixels),
+    }
 }
 
 /// The frame a moving cape shows at `now_ms`; 0 for one that doesn't move.
@@ -49,7 +53,8 @@ pub fn cape_face(p: &mut Painter, cape: &Cosmetic) -> Option<Region> {
             let mut f = f.borrow_mut();
             match f.iter_mut().find(|(i, _)| *i == index) {
                 Some((_, last)) => {
-                    p.canvas.forget(Key::Picture(CAPE_FACE + index as u32, *last));
+                    p.canvas
+                        .forget(Key::Picture(CAPE_FACE + index as u32, *last));
                     *last = frame;
                 }
                 None => f.push((index, frame)),
@@ -77,7 +82,10 @@ pub fn icon(p: &mut Painter, cosmetic: &Cosmetic) -> Option<Region> {
 /// Where a model's 64x64 texture is on the canvas (a hat or back cosmetic; None for the rest).
 pub fn model(p: &mut Painter, cosmetic: &Cosmetic) -> Option<Region> {
     let spec = models::spec(cosmetic.id)?;
-    let key = Key::Picture(MODEL + catalog::index(cosmetic) as u32, models::TEXTURE as u16);
+    let key = Key::Picture(
+        MODEL + catalog::index(cosmetic) as u32,
+        models::TEXTURE as u16,
+    );
     p.canvas.get(key, || {
         let mut px = vec![0u32; models::TEXTURE * models::TEXTURE];
         models::texture(cosmetic.id, &spec, &mut px);

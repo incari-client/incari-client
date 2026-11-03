@@ -100,9 +100,8 @@ impl Client {
 
     /// Reads the profiles and the client's settings: once, at start.
     pub fn load(&mut self, host: &mut dyn Host) {
-        let text = |host: &dyn Host, path: &str| {
-            host.read(path).and_then(|b| String::from_utf8(b).ok())
-        };
+        let text =
+            |host: &dyn Host, path: &str| host.read(path).and_then(|b| String::from_utf8(b).ok());
         self.prefs = Prefs::read(
             text(host, "look.txt").as_deref(),
             text(host, "settings.txt").as_deref(),
@@ -115,28 +114,38 @@ impl Client {
     /// Reads the player's skin again (the title shows, a profile was edited).
     pub fn refresh_skin(&mut self, host: &dyn Host) {
         self.assets.skin = host.own_skin().map(|(rgba, slim)| {
-            (crate::canvas::Image { width: 64, height: 64, rgba }, slim)
+            (
+                crate::canvas::Image {
+                    width: 64,
+                    height: 64,
+                    rgba,
+                },
+                slim,
+            )
         });
         self.canvas.forget(crate::canvas::Key::Skin);
     }
 
     /// The theme from the Theme module's settings and the GUI preset.
     pub fn refresh_theme(&mut self) {
-        let palette = self.modules.module("theme").map_or(crate::theme::FROST_PALETTE, |m| {
-            let s = &m.settings;
-            if s.get("accent").is_none() {
-                return crate::theme::FROST_PALETTE;
-            }
-            Palette {
-                accent: s.color("accent") & 0xFF_FFFF,
-                text: s.color("text") & 0xFF_FFFF,
-                muted: s.color("muted") & 0xFF_FFFF,
-                panel: s.color("panel") & 0xFF_FFFF,
-                panel_opacity: s.int("panel-opacity"),
-                hud_opacity: s.int("hud-opacity"),
-                radius: s.int("radius"),
-            }
-        });
+        let palette = self
+            .modules
+            .module("theme")
+            .map_or(crate::theme::FROST_PALETTE, |m| {
+                let s = &m.settings;
+                if s.get("accent").is_none() {
+                    return crate::theme::FROST_PALETTE;
+                }
+                Palette {
+                    accent: s.color("accent") & 0xFF_FFFF,
+                    text: s.color("text") & 0xFF_FFFF,
+                    muted: s.color("muted") & 0xFF_FFFF,
+                    panel: s.color("panel") & 0xFF_FFFF,
+                    panel_opacity: s.int("panel-opacity"),
+                    hud_opacity: s.int("hud-opacity"),
+                    radius: s.int("radius"),
+                }
+            });
         self.theme = Theme::from_palette(palette, self.prefs.preset);
         self.motion.on = self.theme.normal();
     }
@@ -162,12 +171,19 @@ impl Client {
 
     /// Whether anything of Incari's is showing, so input is Incari's.
     pub fn showing(&self, screen: &str) -> bool {
-        self.claims(screen) || !self.stack.is_empty() && Self::root_for(screen, self.holding_world) != Root::Game
+        self.claims(screen)
+            || !self.stack.is_empty() && Self::root_for(screen, self.holding_world) != Root::Game
     }
 
     /// A frame: Incari's screens over the game's (`native_overlay`). Leaves what to draw in
     /// `self.list`.
-    pub fn frame(&mut self, host: &mut dyn Host, measure: &dyn Measure, size: [f32; 2], scale: f32) {
+    pub fn frame(
+        &mut self,
+        host: &mut dyn Host,
+        measure: &dyn Measure,
+        size: [f32; 2],
+        scale: f32,
+    ) {
         self.list.clear();
         self.begin(host, scale);
         let screen = host.screen().to_owned();
@@ -179,7 +195,10 @@ impl Client {
             self.root = match root {
                 Root::Title => {
                     self.refresh_skin(host);
-                    Some((Root::Title, Box::new(crate::screens::title::Title::new(host.now_ms()))))
+                    Some((
+                        Root::Title,
+                        Box::new(crate::screens::title::Title::new(host.now_ms())),
+                    ))
                 }
                 Root::Pause => Some((Root::Pause, Box::new(crate::screens::pause::Pause))),
                 Root::World | Root::Game => None,
@@ -322,7 +341,14 @@ impl Client {
         }
     }
 
-    fn navigate(&mut self, go: Go, host: &mut dyn Host, measure: &dyn Measure, size: [f32; 2], scale: f32) {
+    fn navigate(
+        &mut self,
+        go: Go,
+        host: &mut dyn Host,
+        measure: &dyn Measure,
+        size: [f32; 2],
+        scale: f32,
+    ) {
         self.ui.reset();
         match go {
             Go::Open(screen) => {
@@ -364,7 +390,13 @@ impl Client {
     }
 
     /// Closes the top screen (the root's, when there's none of Incari's over it).
-    fn close_top(&mut self, host: &mut dyn Host, measure: &dyn Measure, size: [f32; 2], scale: f32) {
+    fn close_top(
+        &mut self,
+        host: &mut dyn Host,
+        measure: &dyn Measure,
+        size: [f32; 2],
+        scale: f32,
+    ) {
         let Some(mut screen) = self.stack.pop() else {
             // Back from the root: the pause menu resumes; the title stays.
             if self.root.as_ref().is_some_and(|r| r.0 == Root::Pause) {
@@ -420,7 +452,10 @@ impl Client {
         }
         if self.showing(&screen) {
             // The game keeps its fullscreen and screenshot keys.
-            if let Input::Key { key: Key::Keyboard(code), .. } = event
+            if let Input::Key {
+                key: Key::Keyboard(code),
+                ..
+            } = event
                 && matches!(*code, keys::F11 | keys::F2)
             {
                 return false;
@@ -429,27 +464,52 @@ impl Client {
             // Horizon sends a key's text only when nobody took the key, so a key that types
             // into the focused field goes on (its text then comes as `Input::Text`).
             if self.ui.focus.is_some()
-                && let Input::Key { name, pressed: true, modifiers, .. } = event
+                && let Input::Key {
+                    name,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } = event
                 && modifiers & (crate::input::CONTROL | crate::input::SUPER) == 0
                 && types_text(name)
             {
                 return false;
             }
-            return !matches!(event, Input::Move { .. } | Input::Key { pressed: false, .. });
+            return !matches!(
+                event,
+                Input::Move { .. } | Input::Key { pressed: false, .. }
+            );
         }
         // Playing, or a screen of the game's: only Incari's keys.
-        if let Input::Key { key: Key::Keyboard(crate::recorder::KEY), pressed: true, repeat: false, .. } = event
+        if let Input::Key {
+            key: Key::Keyboard(crate::recorder::KEY),
+            pressed: true,
+            repeat: false,
+            ..
+        } = event
             && self.ui.focus.is_none()
         {
-            let text = host.read("settings.txt").and_then(|b| String::from_utf8(b).ok()).unwrap_or_default();
+            let text = host
+                .read("settings.txt")
+                .and_then(|b| String::from_utf8(b).ok())
+                .unwrap_or_default();
             let settings = crate::recorder::Settings::read(&text);
             let local = (host.local_time())();
             crate::recorder::toggle(host.recorder().as_mut(), &settings, local);
             return true;
         }
-        if let Input::Key { key, pressed: true, repeat: false, .. } = event {
+        if let Input::Key {
+            key,
+            pressed: true,
+            repeat: false,
+            ..
+        } = event
+        {
             if *key == MENU_KEY && screen == "playing" {
-                self.open_in_world(host, Box::new(crate::screens::modules::ModuleList::default()));
+                self.open_in_world(
+                    host,
+                    Box::new(crate::screens::modules::ModuleList::default()),
+                );
                 return true;
             }
             if screen == "playing" && self.modules.key_pressed(*key, &mut HostFiles(host)) {
@@ -475,7 +535,14 @@ impl Client {
     }
 
     /// A sprite the game draws by name, in Frost: true when the skin drew it into `self.list`.
-    pub fn skin(&mut self, measure: &dyn Measure, scale: f32, name: &str, rect: [f32; 4], color: u32) -> bool {
+    pub fn skin(
+        &mut self,
+        measure: &dyn Measure,
+        scale: f32,
+        name: &str,
+        rect: [f32; 4],
+        color: u32,
+    ) -> bool {
         self.list.clear();
         if scale != self.scale {
             self.scale = scale;
@@ -494,9 +561,19 @@ impl Client {
             zoom: 1.0,
         };
         if name == "gui/sprites/hud/crosshair"
-            && let Some(m) = self.modules.modules.iter().find(|m| m.id == "crosshair" && m.enabled)
+            && let Some(m) = self
+                .modules
+                .modules
+                .iter()
+                .find(|m| m.id == "crosshair" && m.enabled)
         {
-            crate::crosshair::draw(&mut p, &m.settings, self.on_target, rect[0] + rect[2] / 2.0, rect[1] + rect[3] / 2.0);
+            crate::crosshair::draw(
+                &mut p,
+                &m.settings,
+                self.on_target,
+                rect[0] + rect[2] / 2.0,
+                rect[1] + rect[3] / 2.0,
+            );
             return true;
         }
         self.skin.sprite(&mut p, name, rect, color)
@@ -531,7 +608,10 @@ impl Client {
 
     /// Module `id`'s settings, while it's on.
     pub fn settings(&self, id: &str) -> Option<&crate::framework::setting::Settings> {
-        self.modules.module(id).filter(|m| m.enabled).map(|m| &m.settings)
+        self.modules
+            .module(id)
+            .filter(|m| m.enabled)
+            .map(|m| &m.settings)
     }
 
     /// Whether the HUD editor is open (elements with nothing to say show a sample).
@@ -557,7 +637,12 @@ impl Client {
             self.canvas.reset();
         }
         let editing = self.editing_hud();
-        let Some(m) = self.modules.modules.iter().find(|m| m.id == module && m.enabled) else {
+        let Some(m) = self
+            .modules
+            .modules
+            .iter()
+            .find(|m| m.id == module && m.enabled)
+        else {
             return false;
         };
         let Some(e) = m.hud.iter().find(|e| e.id == element) else {

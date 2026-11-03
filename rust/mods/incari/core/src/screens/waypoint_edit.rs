@@ -122,7 +122,8 @@ pub fn panel_size(size: [f32; 2]) -> [f32; 2] {
     let n = COLORS.len() as f32;
     let content = SWATCH * n + SWATCH_GAP * (n - 1.0) + 6.0 + 76.0;
     let w = (size[0] - 16.0).min(2.0 * PADDING + LABEL + content);
-    let h = (size[1] - 12.0).min(2.0 * PADDING + 14.0 + 34.0 + 5.0 * LINE + 4.0 * LINE_GAP + 12.0 + LINE);
+    let h = (size[1] - 12.0)
+        .min(2.0 * PADDING + 14.0 + 34.0 + 5.0 * LINE + 4.0 * LINE_GAP + 12.0 + LINE);
     [w.floor(), h.floor()]
 }
 
@@ -153,22 +154,46 @@ impl Screen for WaypointEdit {
             return;
         }
 
-        let title = if self.adding { "New waypoint" } else { "Edit waypoint" };
+        let title = if self.adding {
+            "New waypoint"
+        } else {
+            "Edit waypoint"
+        };
         cx.p.text(title, px + PADDING, py + PADDING, th.text, false);
         let where_ = format!("In {}", waypoint::dimension_name(&self.edited.dimension));
         let ww = cx.p.width(&where_);
-        cx.p.text(&where_, px + pw - PADDING - ww, py + PADDING, th.muted, false);
+        cx.p.text(
+            &where_,
+            px + pw - PADDING - ww,
+            py + PADDING,
+            th.muted,
+            false,
+        );
         self.preview(cx, px + PADDING, preview_y, pw - 2.0 * PADDING);
 
         let label = |cx: &mut Cx, text: &str, y: f32| {
             let muted = cx.p.theme.muted;
-            cx.p.text(text, px + PADDING, y + ((LINE - 8.0) / 2.0).floor(), muted, false);
+            cx.p.text(
+                text,
+                px + PADDING,
+                y + ((LINE - 8.0) / 2.0).floor(),
+                muted,
+                false,
+            );
         };
         let mut y = preview_y + 34.0;
 
         // Name.
         label(cx, "Name", y);
-        if ui::text_field(cx.p, cx.ui, name_id, [left, y, right - left, LINE], &mut self.name, NAME_HINT, MAX_NAME) {
+        if ui::text_field(
+            cx.p,
+            cx.ui,
+            name_id,
+            [left, y, right - left, LINE],
+            &mut self.name,
+            NAME_HINT,
+            MAX_NAME,
+        ) {
             self.edited.set_name(&self.name);
         }
         y += LINE + LINE_GAP;
@@ -181,7 +206,13 @@ impl Screen for WaypointEdit {
             let chosen = self.edited.rgb() == rgb;
             let c = SWATCH / 2.0;
             if chosen || cx.ui.over(r) {
-                cx.p.ring(r[0] + c, r[1] + c, c, 1.5, if chosen { th.accent } else { th.muted });
+                cx.p.ring(
+                    r[0] + c,
+                    r[1] + c,
+                    c,
+                    1.5,
+                    if chosen { th.accent } else { th.muted },
+                );
             }
             cx.p.ring(r[0] + c, r[1] + c, c - 3.0, c - 3.0, 0xFF00_0000 | rgb);
             if cx.ui.clicked(r) {
@@ -200,8 +231,18 @@ impl Screen for WaypointEdit {
         {
             self.edited.set_rgb(argb);
         }
-        if parse_hex(&self.hex).filter(|_| self.hex.len() == 7).is_none() {
-            cx.p.outline(field[0], field[1], field[2], field[3], th.radius, th.negative);
+        if parse_hex(&self.hex)
+            .filter(|_| self.hex.len() == 7)
+            .is_none()
+        {
+            cx.p.outline(
+                field[0],
+                field[1],
+                field[2],
+                field[3],
+                th.radius,
+                th.negative,
+            );
         }
         let (sx, sy) = (hex_r[0] + hex_r[2] - 16.0, hex_r[1] + 4.0);
         cx.p.fill(sx - 1.0, sy - 1.0, 14.0, 14.0, th.muted);
@@ -219,7 +260,11 @@ impl Screen for WaypointEdit {
             if chosen {
                 cx.p.outline(r[0], r[1], r[2], r[3], th.radius + 1.0, th.accent);
             }
-            let color = if chosen { self.edited.argb() } else { alpha(self.edited.argb(), 0.75) };
+            let color = if chosen {
+                self.edited.argb()
+            } else {
+                alpha(self.edited.argb(), 0.75)
+            };
             cx.p.shape(shape, r[0] + r[2] / 2.0, r[1] + r[3] / 2.0, 12.0, color);
             if hot {
                 cx.ui.tooltip(waypoint::shape_label(shape));
@@ -240,7 +285,15 @@ impl Screen for WaypointEdit {
             let r = [x + 10.0, y, field_w, LINE];
             let muted = th.muted;
             cx.p.text(AXES[i], r[0] - 9.0, r[1] + 6.0, muted, false);
-            ui::text_field(cx.p, cx.ui, ui::id("waypoint-xyz", i), r, &mut self.coordinates[i], "", 9);
+            ui::text_field(
+                cx.p,
+                cx.ui,
+                ui::id("waypoint-xyz", i),
+                r,
+                &mut self.coordinates[i],
+                "",
+                9,
+            );
             if typed[i].is_none() {
                 cx.p.outline(r[0], r[1], r[2], r[3], th.radius, th.negative);
             }
@@ -248,7 +301,15 @@ impl Screen for WaypointEdit {
         }
         let here = [x, y, right - x, LINE];
         let player = waypoint::player();
-        if ui::menu_button(cx.p, cx.ui, here, "Here", Some(Icon::Target), "", player.is_some()) {
+        if ui::menu_button(
+            cx.p,
+            cx.ui,
+            here,
+            "Here",
+            Some(Icon::Target),
+            "",
+            player.is_some(),
+        ) {
             self.use_here();
         }
         if cx.ui.over(here) {
@@ -259,10 +320,20 @@ impl Screen for WaypointEdit {
         // Shown, and the beam.
         label(cx, "Show", y);
         let half = ((right - left - GAP) / 2.0).floor();
-        if switch(cx, [left, y, half, LINE], "On the map and screen", self.edited.visible) {
+        if switch(
+            cx,
+            [left, y, half, LINE],
+            "On the map and screen",
+            self.edited.visible,
+        ) {
             self.edited.visible = !self.edited.visible;
         }
-        if switch(cx, [left + half + GAP, y, half, LINE], "Beacon beam", self.edited.beam) {
+        if switch(
+            cx,
+            [left + half + GAP, y, half, LINE],
+            "Beacon beam",
+            self.edited.beam,
+        ) {
             self.edited.beam = !self.edited.beam;
         }
 
@@ -270,7 +341,13 @@ impl Screen for WaypointEdit {
         let bottom = py + ph - PADDING - LINE;
         let keep = if self.adding { "Add" } else { "Save" };
         let can_save = self.can_save();
-        if ui::button(cx.p, cx.ui, [right - BUTTON_WIDTH, bottom, BUTTON_WIDTH, LINE], keep, can_save) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [right - BUTTON_WIDTH, bottom, BUTTON_WIDTH, LINE],
+            keep,
+            can_save,
+        ) {
             self.save(cx);
             return;
         }
@@ -280,7 +357,15 @@ impl Screen for WaypointEdit {
             cx.go(Go::Back);
         }
         if !self.adding
-            && ui::menu_button(cx.p, cx.ui, [px + PADDING, bottom, BUTTON_WIDTH, LINE], "Delete", Some(Icon::Trash), "", true)
+            && ui::menu_button(
+                cx.p,
+                cx.ui,
+                [px + PADDING, bottom, BUTTON_WIDTH, LINE],
+                "Delete",
+                Some(Icon::Trash),
+                "",
+                true,
+            )
         {
             self.delete(cx);
         }
@@ -296,24 +381,46 @@ impl WaypointEdit {
         let shown_name = if named { self.edited.name() } else { NAME_HINT };
         let far = match (waypoint::player(), self.position()) {
             (Some(p), Some([x, y, z])) if p.dimension == self.edited.dimension => {
-                let (dx, dy, dz) = (x as f64 + 0.5 - p.x, y as f64 + 0.5 - p.y, z as f64 + 0.5 - p.z);
+                let (dx, dy, dz) = (
+                    x as f64 + 0.5 - p.x,
+                    y as f64 + 0.5 - p.y,
+                    z as f64 + 0.5 - p.z,
+                );
                 let d = (dx * dx + dy * dy + dz * dz).sqrt();
-                if d < 2.0 { "here".to_owned() } else { waypoint::distance_text(d) }
+                if d < 2.0 {
+                    "here".to_owned()
+                } else {
+                    waypoint::distance_text(d)
+                }
             }
             _ => String::new(),
         };
         let name_w = cx.p.width(shown_name);
-        let far_w = if far.is_empty() { 0.0 } else { cx.p.width(&far) + 5.0 };
+        let far_w = if far.is_empty() {
+            0.0
+        } else {
+            cx.p.width(&far) + 5.0
+        };
         let tag_w = 8.0 + name_w + far_w;
         let icon = 12.0;
         let total = icon + 6.0 + tag_w;
         let x = left + ((width - total) / 2.0).floor();
         let cy = top + 14.0;
-        let color = if self.edited.visible { self.edited.argb() } else { alpha(self.edited.argb(), 0.4) };
+        let color = if self.edited.visible {
+            self.edited.argb()
+        } else {
+            alpha(self.edited.argb(), 0.4)
+        };
         cx.p.shape(self.edited.icon, x + icon / 2.0, cy, icon, color);
         let tag_x = x + icon + 6.0;
         cx.p.round(tag_x, cy - 7.0, tag_w, 14.0, th.radius, th.background);
-        cx.p.text(shown_name, tag_x + 4.0, cy - 4.0, if named { th.text } else { th.muted }, true);
+        cx.p.text(
+            shown_name,
+            tag_x + 4.0,
+            cy - 4.0,
+            if named { th.text } else { th.muted },
+            true,
+        );
         if !far.is_empty() {
             cx.p.text(&far, tag_x + 4.0 + name_w + 5.0, cy - 4.0, th.muted, true);
         }
@@ -325,10 +432,24 @@ fn switch(cx: &mut Cx, r: Rect, label: &str, on: bool) -> bool {
     let hot = cx.ui.over(r);
     panels::card(cx.p, r[0], r[1], r[2], r[3], hot, false, 1.0);
     let th = cx.p.theme;
-    let text = cx.p.fit(label, r[2] - 16.0 - panels::SWITCH_WIDTH).into_owned();
-    cx.p.text(&text, r[0] + 8.0, r[1] + ((r[3] - 8.0) / 2.0).floor(), th.text, false);
+    let text =
+        cx.p.fit(label, r[2] - 16.0 - panels::SWITCH_WIDTH)
+            .into_owned();
+    cx.p.text(
+        &text,
+        r[0] + 8.0,
+        r[1] + ((r[3] - 8.0) / 2.0).floor(),
+        th.text,
+        false,
+    );
     let sx = r[0] + r[2] - 7.0 - panels::SWITCH_WIDTH;
-    panels::toggle(cx.p, sx, r[1] + ((r[3] - panels::SWITCH_HEIGHT) / 2.0).floor(), on, 1.0);
+    panels::toggle(
+        cx.p,
+        sx,
+        r[1] + ((r[3] - panels::SWITCH_HEIGHT) / 2.0).floor(),
+        on,
+        1.0,
+    );
     cx.ui.clicked(r)
 }
 

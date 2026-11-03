@@ -47,10 +47,15 @@ pub fn read(root: &Value, modules: &mut [Module]) -> Map<String, Value> {
     }
     for m in modules.iter_mut() {
         let entry = entries.and_then(|e| e.get(m.id)).and_then(Value::as_object);
-        m.settings.read_json(entry.and_then(|e| e.get("settings")).and_then(Value::as_object));
+        m.settings.read_json(
+            entry
+                .and_then(|e| e.get("settings"))
+                .and_then(Value::as_object),
+        );
         let hud = entry.and_then(|e| e.get("hud")).and_then(Value::as_object);
         for e in &mut m.hud {
-            e.settings.read_json(hud.and_then(|h| h.get(e.id)).and_then(Value::as_object));
+            e.settings
+                .read_json(hud.and_then(|h| h.get(e.id)).and_then(Value::as_object));
         }
         m.enabled = m.always_on
             || entry
@@ -79,7 +84,10 @@ pub fn read_index(root: &Value) -> (Vec<String>, String) {
     if names.is_empty() {
         names.push(DEFAULT.into());
     }
-    let wanted = root.get("active").and_then(Value::as_str).unwrap_or(DEFAULT);
+    let wanted = root
+        .get("active")
+        .and_then(Value::as_str)
+        .unwrap_or(DEFAULT);
     let active = names
         .iter()
         .find(|n| n.eq_ignore_ascii_case(wanted))
@@ -115,7 +123,12 @@ mod tests {
     fn modules() -> Vec<Module> {
         vec![
             Module::new("cps", "CPS", "Clicks.", Category::Hud)
-                .setting(s::choice("buttons", "Buttons", &[("both", "Both"), ("left", "Left")], "both"))
+                .setting(s::choice(
+                    "buttons",
+                    "Buttons",
+                    &[("both", "Both"), ("left", "Left")],
+                    "both",
+                ))
                 .element(HudElement::text("cps", "CPS", Anchor::Left, 2, -48)),
             Module::new("theme", "Theme", "Colours.", Category::Visual).always_on(),
         ]
@@ -139,8 +152,14 @@ mod tests {
         assert!(!m[0].hud[0].settings.bool("background"));
         assert!(unknown.contains_key("schematics"));
         let written = write(&m, &unknown);
-        assert_eq!(written["modules"]["cps"]["hud"]["cps"]["anchor"], "top_right");
-        assert_eq!(written["modules"]["cps"]["settings"]["toggle"], "keyboard:6");
+        assert_eq!(
+            written["modules"]["cps"]["hud"]["cps"]["anchor"],
+            "top_right"
+        );
+        assert_eq!(
+            written["modules"]["cps"]["settings"]["toggle"],
+            "keyboard:6"
+        );
         assert_eq!(written["modules"]["schematics"]["enabled"], true);
         let mut again = modules();
         read(&written, &mut again);
@@ -154,7 +173,8 @@ mod tests {
         assert!(!valid_name(".hidden"));
         assert!(!valid_name(" padded"));
         assert!(!valid_name("a/b"));
-        let (names, active) = read_index(&json!({"active": "qol", "profiles": ["Default", "QoL", "QoL"]}));
+        let (names, active) =
+            read_index(&json!({"active": "qol", "profiles": ["Default", "QoL", "QoL"]}));
         assert_eq!(names, ["Default", "QoL"]);
         assert_eq!(active, "QoL");
     }

@@ -12,13 +12,53 @@ pub const MAX_PASSWORD: usize = 128;
 /// Passwords long enough for the length rule that people still pick most. The service holds the
 /// 10,000 most common; this short list catches the obvious ones without a round trip.
 const COMMON: &[&str] = &[
-    "1234567890", "0987654321", "1234567891", "12345678910", "123456789a", "123456789q", "a123456789",
-    "qwertyuiop", "qwerty1234", "qwerty123456", "1q2w3e4r5t", "1qaz2wsx3edc", "asdfghjkl1", "zxcvbnm123",
-    "abcdefghij", "abc1234567", "password12", "password123", "password1234", "password1!", "p@ssw0rd12",
-    "passw0rd123", "iloveyou12", "iloveyou123", "letmein123", "welcome123", "football12", "football123",
-    "baseball12", "princess12", "sunshine12", "monkey1234", "dragon1234", "trustno1234", "minecraft1",
-    "minecraft12", "minecraft123", "minecraft1234", "eaglercraft", "eaglercraft1", "eaglercraft123",
-    "incariclient", "incari1234", "chromebook1", "chromebook123", "fortnite123", "roblox12345",
+    "1234567890",
+    "0987654321",
+    "1234567891",
+    "12345678910",
+    "123456789a",
+    "123456789q",
+    "a123456789",
+    "qwertyuiop",
+    "qwerty1234",
+    "qwerty123456",
+    "1q2w3e4r5t",
+    "1qaz2wsx3edc",
+    "asdfghjkl1",
+    "zxcvbnm123",
+    "abcdefghij",
+    "abc1234567",
+    "password12",
+    "password123",
+    "password1234",
+    "password1!",
+    "p@ssw0rd12",
+    "passw0rd123",
+    "iloveyou12",
+    "iloveyou123",
+    "letmein123",
+    "welcome123",
+    "football12",
+    "football123",
+    "baseball12",
+    "princess12",
+    "sunshine12",
+    "monkey1234",
+    "dragon1234",
+    "trustno1234",
+    "minecraft1",
+    "minecraft12",
+    "minecraft123",
+    "minecraft1234",
+    "eaglercraft",
+    "eaglercraft1",
+    "eaglercraft123",
+    "incariclient",
+    "incari1234",
+    "chromebook1",
+    "chromebook123",
+    "fortnite123",
+    "roblox12345",
 ];
 
 /// Whether `c` may be in a username: ASCII letters, digits and underscores.
@@ -35,7 +75,9 @@ pub(crate) fn java_len(text: &str) -> usize {
 pub fn username_problem(username: &str) -> Option<String> {
     let n = java_len(username);
     if !(MIN_USERNAME..=MAX_USERNAME).contains(&n) {
-        return Some(format!("A username is {MIN_USERNAME} to {MAX_USERNAME} characters"));
+        return Some(format!(
+            "A username is {MIN_USERNAME} to {MAX_USERNAME} characters"
+        ));
     }
     if !username.chars().all(username_character) {
         return Some("Only letters, digits and underscores".into());
@@ -164,9 +206,19 @@ impl ProofOfWork {
         }
         let mut block = [0u32; 16];
         for (i, word) in block.iter_mut().take(4).enumerate() {
-            *word = u32::from_be_bytes([challenge[i * 4], challenge[i * 4 + 1], challenge[i * 4 + 2], challenge[i * 4 + 3]]);
+            *word = u32::from_be_bytes([
+                challenge[i * 4],
+                challenge[i * 4 + 1],
+                challenge[i * 4 + 2],
+                challenge[i * 4 + 3],
+            ]);
         }
-        Some(Self { bits, block, nonce: 0, found: None })
+        Some(Self {
+            bits,
+            block,
+            nonce: 0,
+            found: None,
+        })
     }
 
     /// Tries up to `tries` more nonces: the nonce once one passes (None if every nonce failed,
@@ -206,7 +258,11 @@ impl ProofOfWork {
         self.block[15] = 192;
         let mut state = sha256::INITIAL;
         sha256::compress(&mut state, &self.block);
-        let zeros = if state[0] != 0 { state[0].leading_zeros() } else { 32 + state[1].leading_zeros() };
+        let zeros = if state[0] != 0 {
+            state[0].leading_zeros()
+        } else {
+            32 + state[1].leading_zeros()
+        };
         zeros >= self.bits
     }
 }
@@ -244,7 +300,10 @@ const GAME_PORT: u16 = 25565;
 /// Where the player is, as the service sees it: SHA-256 of the prefix and the normalized address,
 /// as 64 lowercase hex digits.
 pub fn server_hash(address: &str) -> String {
-    sha256::hex(&format!("{SERVER_HASH_PREFIX}{}", normalize_address(address)))
+    sha256::hex(&format!(
+        "{SERVER_HASH_PREFIX}{}",
+        normalize_address(address)
+    ))
 }
 
 /// The address in its one written form: a lowercase host without a trailing dot, the port only if
@@ -268,7 +327,10 @@ pub fn normalize_address(address: &str) -> String {
         };
         let path = path.trim_end_matches('/');
         let scheme = if secure { "wss://" } else { "ws://" };
-        return format!("{scheme}{}{path}", host_and_port(authority, if secure { 443 } else { 80 }));
+        return format!(
+            "{scheme}{}{path}",
+            host_and_port(authority, if secure { 443 } else { 80 })
+        );
     }
     host_and_port(trimmed, GAME_PORT)
 }
@@ -305,7 +367,8 @@ mod tests {
     use super::*;
 
     /// Shared with the service's own tests (ADR 0058), made with Python's hashlib.
-    const VECTORS: &str = include_str!("../../../../../../online/src/test/resources/incari/online/vectors.json");
+    const VECTORS: &str =
+        include_str!("../../../../../../online/src/test/resources/incari/online/vectors.json");
 
     fn vectors() -> serde_json::Value {
         serde_json::from_str(VECTORS).unwrap()
@@ -317,8 +380,16 @@ mod tests {
         assert_eq!(v["serverHashPrefix"], SERVER_HASH_PREFIX);
         for each in v["serverHashes"].as_array().unwrap() {
             let address = each["address"].as_str().unwrap();
-            assert_eq!(normalize_address(address), each["normalized"].as_str().unwrap(), "{address}");
-            assert_eq!(server_hash(address), each["hash"].as_str().unwrap(), "{address}");
+            assert_eq!(
+                normalize_address(address),
+                each["normalized"].as_str().unwrap(),
+                "{address}"
+            );
+            assert_eq!(
+                server_hash(address),
+                each["hash"].as_str().unwrap(),
+                "{address}"
+            );
         }
     }
 
@@ -326,7 +397,8 @@ mod tests {
     fn proof_of_work_finds_the_vectors_first_nonce() {
         for each in vectors()["proofOfWork"].as_array().unwrap() {
             let challenge = base64_url(each["challenge"].as_str().unwrap()).unwrap();
-            let mut work = ProofOfWork::new(&challenge, each["bits"].as_u64().unwrap() as u32).unwrap();
+            let mut work =
+                ProofOfWork::new(&challenge, each["bits"].as_u64().unwrap() as u32).unwrap();
             let nonce = loop {
                 if let Some(n) = work.step(1000) {
                     break n;
@@ -340,7 +412,10 @@ mod tests {
     fn recovery_codes_match_the_vectors() {
         let v = vectors();
         for each in v["recoveryCodes"]["valid"].as_array().unwrap() {
-            assert_eq!(normalize_code(each[0].as_str().unwrap()).as_deref(), each[1].as_str());
+            assert_eq!(
+                normalize_code(each[0].as_str().unwrap()).as_deref(),
+                each[1].as_str()
+            );
         }
         for each in v["recoveryCodes"]["invalid"].as_array().unwrap() {
             assert_eq!(normalize_code(each.as_str().unwrap()), None);
@@ -349,7 +424,10 @@ mod tests {
 
     #[test]
     fn base64_url_with_and_without_padding() {
-        assert_eq!(base64_url("AAECAwQFBgcICQoLDA0ODw").unwrap(), (0..16).collect::<Vec<u8>>());
+        assert_eq!(
+            base64_url("AAECAwQFBgcICQoLDA0ODw").unwrap(),
+            (0..16).collect::<Vec<u8>>()
+        );
         assert_eq!(base64_url("AAECAwQFBgcICQoLDA0ODw==").unwrap().len(), 16);
         assert_eq!(base64_url("-_8").unwrap(), vec![0xFB, 0xFF]);
         assert_eq!(base64_url("A"), None);
@@ -361,18 +439,43 @@ mod tests {
         assert!(username_problem("ab").is_some());
         assert!(username_problem("a_b-c").is_some());
         assert_eq!(username_problem("Frost_1"), None);
-        assert_eq!(password_problem("short", "x").as_deref(), Some("At least 10 characters"));
-        assert!(password_problem("Minecraft123", "x").unwrap().starts_with("Too common"));
-        assert!(password_problem("aaaaaaaaaaab", "x").unwrap().starts_with("Too common"));
-        assert!(password_problem("9876543210", "x").unwrap().starts_with("Too common"));
-        assert_eq!(password_problem("my frost house 9", "Frost").as_deref(), Some("Don't put your username in it"));
+        assert_eq!(
+            password_problem("short", "x").as_deref(),
+            Some("At least 10 characters")
+        );
+        assert!(
+            password_problem("Minecraft123", "x")
+                .unwrap()
+                .starts_with("Too common")
+        );
+        assert!(
+            password_problem("aaaaaaaaaaab", "x")
+                .unwrap()
+                .starts_with("Too common")
+        );
+        assert!(
+            password_problem("9876543210", "x")
+                .unwrap()
+                .starts_with("Too common")
+        );
+        assert_eq!(
+            password_problem("my frost house 9", "Frost").as_deref(),
+            Some("Don't put your username in it")
+        );
         assert_eq!(password_problem("correct horse battery", "Frost"), None);
-        assert!(password_problem(&"x1".repeat(65), "y").unwrap().starts_with("At most"));
+        assert!(
+            password_problem(&"x1".repeat(65), "y")
+                .unwrap()
+                .starts_with("At most")
+        );
     }
 
     #[test]
     fn featured_bounds() {
-        assert!(valid_featured("Carrotcraft", "wss://eagler.carrot-craft.org"));
+        assert!(valid_featured(
+            "Carrotcraft",
+            "wss://eagler.carrot-craft.org"
+        ));
         assert!(!valid_featured("", "a"));
         assert!(!valid_featured("a", "has space"));
         assert!(!valid_featured(&"n".repeat(33), "a"));

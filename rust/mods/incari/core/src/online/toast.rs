@@ -39,7 +39,15 @@ pub fn menu_shown(now: f64) {
 
 /// What tells one sender's card from another's.
 fn token(notice: &Notice) -> String {
-    format!("{}{}", if notice.request { "request:" } else { "message:" }, notice.who)
+    format!(
+        "{}{}",
+        if notice.request {
+            "request:"
+        } else {
+            "message:"
+        },
+        notice.who
+    )
 }
 
 /// Takes what arrived and draws the cards over everything (`Client::frame`'s list is left as it
@@ -71,7 +79,12 @@ pub fn frame(client: &mut Client, measure: &dyn Measure, size: [f32; 2], scale: 
                             c.from = Some(now);
                         }
                     }
-                    None => cards.push(Card { notice, token, count: 1, from: None }),
+                    None => cards.push(Card {
+                        notice,
+                        token,
+                        count: 1,
+                        from: None,
+                    }),
                 }
             }
         }
@@ -113,11 +126,30 @@ pub fn frame(client: &mut Client, measure: &dyn Measure, size: [f32; 2], scale: 
 /// One card at (`x`, `y`).
 pub fn draw(p: &mut Painter, x: f32, y: f32, notice: &Notice, count: u32) {
     let th = p.theme;
-    p.round_box(x, y, WIDTH, HEIGHT, th.panel_radius, th.floating, th.glass_edge, 0.0, 0.0, 0);
+    p.round_box(
+        x,
+        y,
+        WIDTH,
+        HEIGHT,
+        th.panel_radius,
+        th.floating,
+        th.glass_edge,
+        0.0,
+        0.0,
+        0,
+    );
     avatars::draw(p, x + 8.0, y + 8.0, 16.0, &notice.who);
-    let icon = if notice.request { Icon::PersonAdd } else { Icon::Chat };
+    let icon = if notice.request {
+        Icon::PersonAdd
+    } else {
+        Icon::Chat
+    };
     p.icon(icon, x + WIDTH - 16.0, y + 7.0, 9.0, th.accent);
-    let suffix = if count > 1 { format!(" ({count})") } else { String::new() };
+    let suffix = if count > 1 {
+        format!(" ({count})")
+    } else {
+        String::new()
+    };
     let title_width = WIDTH - 52.0 - p.width(&suffix);
     let title = format!("{}{suffix}", p.fit(&notice.title, title_width));
     p.text(&title, x + 31.0, y + 7.0, th.text, false);

@@ -238,7 +238,11 @@ impl Loaded {
     pub fn place(&mut self, blocks: &dyn Blocks) {
         let (mirror, turns) = (self.placement.mirror(), self.placement.turns());
         for (state, &base) in self.states.iter_mut().zip(&self.base_states) {
-            *state = if base == UNKNOWN || blocks.is_air(base) { base } else { blocks.transform(base, mirror, turns) };
+            *state = if base == UNKNOWN || blocks.is_air(base) {
+                base
+            } else {
+                blocks.transform(base, mirror, turns)
+            };
         }
         self.verifier = Verifier::new(&self.placement, self.states.len());
     }
@@ -331,7 +335,14 @@ impl Session {
     }
 
     /// Reads `bytes`, the file `name`, and places it where the player stands.
-    pub fn load(&mut self, name: &str, bytes: &[u8], inflate: Inflate, blocks: &dyn Blocks, player: Option<Player>) {
+    pub fn load(
+        &mut self,
+        name: &str,
+        bytes: &[u8],
+        inflate: Inflate,
+        blocks: &dyn Blocks,
+        player: Option<Player>,
+    ) {
         let schematic = match formats::read(name, bytes, inflate) {
             Ok(s) => Rc::new(s),
             Err(e) => {
@@ -340,9 +351,16 @@ impl Session {
             }
         };
         let [x, y, z] = player.map_or([0, 64, 0], |p| p.block());
-        let loaded = Loaded::new(schematic.clone(), Placement::new(schematic.clone(), x, y, z), blocks);
+        let loaded = Loaded::new(
+            schematic.clone(),
+            Placement::new(schematic.clone(), x, y, z),
+            blocks,
+        );
         let [sx, sy, sz] = schematic.size;
-        let mut message = format!("{}, {sx} x {sy} x {sz}, placed where you stand.", schematic.name);
+        let mut message = format!(
+            "{}, {sx} x {sy} x {sz}, placed where you stand.",
+            schematic.name
+        );
         match loaded.unknown_kinds {
             0 => {}
             1 => message.push_str(" 1 block isn't in this version: left out."),
@@ -355,7 +373,13 @@ impl Session {
     }
 
     /// Does what a button or key asks.
-    pub fn act(&mut self, action: Action, blocks: &dyn Blocks, player: Option<Player>, look: &Look) {
+    pub fn act(
+        &mut self,
+        action: Action,
+        blocks: &dyn Blocks,
+        player: Option<Player>,
+        look: &Look,
+    ) {
         let Some(now) = self.loaded.as_mut() else {
             return;
         };
@@ -429,7 +453,13 @@ impl Session {
 
     /// Once a tick: a chosen file loaded, buttons pressed done, the settings followed, the world
     /// compared, and the material list counted every half second.
-    pub fn tick(&mut self, blocks: &dyn Blocks, player: Option<Player>, look: &Look, inflate: Inflate) {
+    pub fn tick(
+        &mut self,
+        blocks: &dyn Blocks,
+        player: Option<Player>,
+        look: &Look,
+        inflate: Inflate,
+    ) {
         if let Some((name, bytes)) = self.pending.take() {
             self.load(&name, &bytes, inflate, blocks, player);
         }
@@ -437,7 +467,9 @@ impl Session {
             self.act(action, blocks, player, look);
         }
         if let Some(seen) = self.seen
-            && (seen.ghosts != look.ghosts || seen.layers != look.layers || seen.range != look.range)
+            && (seen.ghosts != look.ghosts
+                || seen.layers != look.layers
+                || seen.range != look.range)
         {
             if seen.layers != look.layers
                 && look.layers != Layers::All
@@ -452,7 +484,11 @@ impl Session {
         let (Some(now), Some(player)) = (self.loaded.as_mut(), player) else {
             return;
         };
-        let world = verifier::World { placement: &now.placement, states: &now.states, blocks };
+        let world = verifier::World {
+            placement: &now.placement,
+            states: &now.states,
+            blocks,
+        };
         now.verifier.tick(&world, player.block(), look.range);
         self.ticks += 1;
         if self.ticks.is_multiple_of(MATERIAL_TICKS) {
@@ -472,7 +508,9 @@ impl Session {
 
     /// The box the ghosts are in: lowest corner, and one past the highest.
     pub fn ghost_bounds(&self) -> Option<([i32; 3], [i32; 3])> {
-        self.loaded.as_ref().map(|l| (l.placement.min(), l.placement.max()))
+        self.loaded
+            .as_ref()
+            .map(|l| (l.placement.min(), l.placement.max()))
     }
 
     /// A number that changes whenever what `ghost_at` gives in section `section` might have.
@@ -486,7 +524,14 @@ impl Session {
     }
 
     /// The state to draw a ghost of at `x, y, z`, if any. Called while a section is meshed.
-    pub fn ghost_at(&self, x: i32, y: i32, z: i32, look: &Look, blocks: &dyn Blocks) -> Option<u32> {
+    pub fn ghost_at(
+        &self,
+        x: i32,
+        y: i32,
+        z: i32,
+        look: &Look,
+        blocks: &dyn Blocks,
+    ) -> Option<u32> {
         let now = self.loaded.as_ref()?;
         if look.ghosts == Ghosts::None || !self.shows(y, look) {
             return None;
@@ -511,7 +556,12 @@ impl Session {
             return;
         };
         if look.outline {
-            out.push(WorldBox { min: now.placement.min(), max: now.placement.max(), argb: look.outline_color, fill: 0 });
+            out.push(WorldBox {
+                min: now.placement.min(),
+                max: now.placement.max(),
+                argb: look.outline_color,
+                fill: 0,
+            });
         }
         if !look.highlight {
             return;
@@ -530,7 +580,10 @@ impl Session {
                         if out.len() >= MAX_BOXES {
                             return;
                         }
-                        let edge = (sx - cs[0]).abs().max((sy - cs[1]).abs()).max((sz - cs[2]).abs());
+                        let edge = (sx - cs[0])
+                            .abs()
+                            .max((sy - cs[1]).abs())
+                            .max((sz - cs[2]).abs());
                         if edge != ring {
                             continue;
                         }
@@ -546,7 +599,9 @@ impl Session {
                             let y = (sy << 4) | (at >> 8);
                             let z = (sz << 4) | ((at >> 4) & 15);
                             let d = [x - c[0], y - c[1], z - c[2]].map(i64::from);
-                            if !self.shows(y, look) || d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > reach_sq {
+                            if !self.shows(y, look)
+                                || d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > reach_sq
+                            {
                                 continue;
                             }
                             let rgb = match issue & 7 {
@@ -585,16 +640,33 @@ mod tests {
         sponge(
             3,
             [3, 2, 1],
-            &[("minecraft:air", 0), ("minecraft:stone", 1), ("minecraft:oak_stairs[facing=north]", 2), ("minecraft:glass", 3)],
+            &[
+                ("minecraft:air", 0),
+                ("minecraft:stone", 1),
+                ("minecraft:oak_stairs[facing=north]", 2),
+                ("minecraft:glass", 3),
+            ],
             &[1, 1, 2, 0, 0, 3],
         )
     }
 
-    const PLAYER: Player = Player { pos: [100.5, 64.0, 200.5], yaw: 0.0 };
+    const PLAYER: Player = Player {
+        pos: [100.5, 64.0, 200.5],
+        yaw: 0.0,
+    };
 
     fn loaded(blocks: &FakeBlocks) -> Session {
-        let mut s = Session { ghost_revision: 1, ..Session::default() };
-        s.load("tower.schem", &tower(), stored_inflate, blocks, Some(PLAYER));
+        let mut s = Session {
+            ghost_revision: 1,
+            ..Session::default()
+        };
+        s.load(
+            "tower.schem",
+            &tower(),
+            stored_inflate,
+            blocks,
+            Some(PLAYER),
+        );
         s
     }
 
@@ -624,7 +696,10 @@ mod tests {
     fn choosing_a_file_loads_it_where_the_player_stands() {
         let blocks = FakeBlocks::default();
         let mut s = loaded(&blocks);
-        assert_eq!(s.take_messages(), ["Schematics: tower, 3 x 2 x 1, placed where you stand."]);
+        assert_eq!(
+            s.take_messages(),
+            ["Schematics: tower, 3 x 2 x 1, placed where you stand."]
+        );
         let look = Look::default();
         assert_eq!(
             ghosts(&s, &look, &blocks),
@@ -637,25 +712,53 @@ mod tests {
         );
         let mut boxes = Vec::new();
         s.boxes([100.0, 64.0, 200.0], &look, &mut boxes);
-        assert_eq!(boxes, [WorldBox { min: [100, 64, 200], max: [103, 66, 201], argb: 0xFF55AAFF, fill: 0 }]);
+        assert_eq!(
+            boxes,
+            [WorldBox {
+                min: [100, 64, 200],
+                max: [103, 66, 201],
+                argb: 0xFF55AAFF,
+                fill: 0
+            }]
+        );
     }
 
     #[test]
     fn built_blocks_stop_being_ghosts_and_wrong_ones_are_boxed() {
         let blocks = FakeBlocks::default();
         let mut s = loaded(&blocks);
-        let look = Look { outline: false, ..Look::default() };
+        let look = Look {
+            outline: false,
+            ..Look::default()
+        };
         blocks.set(100, 64, 200, "minecraft:stone");
         blocks.set(101, 64, 200, "minecraft:dirt");
         blocks.set(102, 64, 200, "minecraft:oak_stairs[facing=south]");
         blocks.set(100, 65, 200, "minecraft:torch");
         ticks(&mut s, verifier::NEAR_TICKS + 1, &blocks, &look);
-        assert_eq!(ghosts(&s, &look, &blocks), ["minecraft:glass at 102,65,200"]);
+        assert_eq!(
+            ghosts(&s, &look, &blocks),
+            ["minecraft:glass at 102,65,200"]
+        );
         let mut boxes = Vec::new();
         s.boxes([100.0, 64.0, 200.0], &look, &mut boxes);
         let drawn: Vec<([i32; 3], u32)> = boxes.iter().map(|b| (b.min, b.argb)).collect();
-        assert_eq!(drawn, [([101, 64, 200], 0xFFFF3333), ([102, 64, 200], 0xFFFFAA00), ([100, 65, 200], 0xFFFF55FF)]);
-        s.boxes([100.0, 64.0, 200.0], &Look { highlight: false, ..look }, &mut boxes);
+        assert_eq!(
+            drawn,
+            [
+                ([101, 64, 200], 0xFFFF3333),
+                ([102, 64, 200], 0xFFFFAA00),
+                ([100, 65, 200], 0xFFFF55FF)
+            ]
+        );
+        s.boxes(
+            [100.0, 64.0, 200.0],
+            &Look {
+                highlight: false,
+                ..look
+            },
+            &mut boxes,
+        );
         assert!(boxes.is_empty());
     }
 
@@ -669,7 +772,10 @@ mod tests {
         let g = ghosts(&s, &look, &blocks);
         assert!(g.contains(&"minecraft:stone at 100,64,200".to_owned()));
         assert!(g.contains(&"minecraft:stone at 100,64,201".to_owned()));
-        assert!(g.contains(&"minecraft:oak_stairs[facing=east] at 100,64,202".to_owned()), "{g:?}");
+        assert!(
+            g.contains(&"minecraft:oak_stairs[facing=east] at 100,64,202".to_owned()),
+            "{g:?}"
+        );
         assert_eq!(s.ghost_bounds(), Some(([100, 64, 200], [101, 66, 203])));
         s.act(Action::Mirror, &blocks, Some(PLAYER), &look);
         assert_eq!(s.loaded().unwrap().placement.mirror(), Mirror::X);
@@ -685,7 +791,15 @@ mod tests {
         // Yaw 0 faces south (+z); 90 west (-x).
         s.act(Action::Nudge(false), &blocks, Some(PLAYER), &look);
         assert_eq!(s.loaded().unwrap().placement.min(), [100, 64, 201]);
-        s.act(Action::Nudge(true), &blocks, Some(Player { yaw: 90.0, ..PLAYER }), &look);
+        s.act(
+            Action::Nudge(true),
+            &blocks,
+            Some(Player {
+                yaw: 90.0,
+                ..PLAYER
+            }),
+            &look,
+        );
         assert_eq!(s.loaded().unwrap().placement.min(), [101, 64, 201]);
         s.act(Action::Raise(2), &blocks, Some(PLAYER), &look);
         assert_eq!(s.loaded().unwrap().placement.min(), [101, 66, 201]);
@@ -693,10 +807,19 @@ mod tests {
         s.act(Action::Layer(5), &blocks, Some(PLAYER), &look);
         assert!(s.wants_one_layer);
         assert_eq!(s.layer(), 67);
-        let one = Look { layers: Layers::One, ..look };
+        let one = Look {
+            layers: Layers::One,
+            ..look
+        };
         assert!(s.shows(67, &one) && !s.shows(66, &one));
-        let keys = Keys { turn: crate::input::Key::from_name("key.keyboard.r"), ..Keys::default() };
-        assert_eq!(keys.action(crate::input::Key::from_name("key.keyboard.r"), true), Some(Action::Turn(-1)));
+        let keys = Keys {
+            turn: crate::input::Key::from_name("key.keyboard.r"),
+            ..Keys::default()
+        };
+        assert_eq!(
+            keys.action(crate::input::Key::from_name("key.keyboard.r"), true),
+            Some(Action::Turn(-1))
+        );
         assert_eq!(keys.action(crate::input::Key::None, false), None);
     }
 
@@ -722,8 +845,15 @@ mod tests {
         let blocks = FakeBlocks::default();
         let mut s = Session::default();
         s.load("junk.schem", b"junk", stored_inflate, &blocks, Some(PLAYER));
-        assert_eq!(s.take_messages(), ["Schematics: Couldn't load junk.schem: Not a schematic, or a broken one"]);
-        assert!(button("schematics", "turn") && !button("schematics", "choose") && !button("zoom", "turn"));
+        assert_eq!(
+            s.take_messages(),
+            ["Schematics: Couldn't load junk.schem: Not a schematic, or a broken one"]
+        );
+        assert!(
+            button("schematics", "turn")
+                && !button("schematics", "choose")
+                && !button("zoom", "turn")
+        );
         assert_eq!(Action::of_button("unload"), Some(Action::Unload));
     }
 }

@@ -56,7 +56,13 @@ impl List {
         let tx = (w / 2.0 - title_w / 2.0).floor();
         cx.p.text(title, tx, ty, th.text, true);
         if badge {
-            cx.p.icon(crate::icons::Icon::Incari, tx - 14.0, ty - 2.0, 11.0, th.accent);
+            cx.p.icon(
+                crate::icons::Icon::Incari,
+                tx - 14.0,
+                ty - 2.0,
+                11.0,
+                th.accent,
+            );
         }
         if !caption.is_empty() {
             let shown = cx.p.fit(caption, w - 40.0).into_owned();
@@ -68,8 +74,21 @@ impl List {
         let row_w = ROW_WIDTH.min(w - 2.0 * EDGE).max(0.0);
         let area = [0.0, HEADER_HEIGHT, w, h - HEADER_HEIGHT - FOOTER_HEIGHT];
         let rx = (w / 2.0 - row_w / 2.0).floor();
-        panels::panel(cx.p, rx - 12.0, HEADER_HEIGHT + 4.0, row_w + 24.0, area[3] - 8.0, 1.0);
-        ui::scroll(cx.ui, area, &mut self.scroll, self.content + 8.0, ROW_HEIGHT);
+        panels::panel(
+            cx.p,
+            rx - 12.0,
+            HEADER_HEIGHT + 4.0,
+            row_w + 24.0,
+            area[3] - 8.0,
+            1.0,
+        );
+        ui::scroll(
+            cx.ui,
+            area,
+            &mut self.scroll,
+            self.content + 8.0,
+            ROW_HEIGHT,
+        );
         let mut r = Rows {
             x: rx,
             width: row_w,
@@ -82,7 +101,12 @@ impl List {
         rows(cx, &mut r);
         cx.p.clip_end();
         self.content = r.y - r.top;
-        ui::scrollbar(cx.p, [rx + row_w + 6.0, area[1], 0.0, area[3]], self.content + 8.0, self.scroll);
+        ui::scrollbar(
+            cx.p,
+            [rx + row_w + 6.0, area[1], 0.0, area[3]],
+            self.content + 8.0,
+            self.scroll,
+        );
         // The footer's buttons.
         let width = width.unwrap_or(FOOTER_BUTTON_WIDTH);
         let y = h - FOOTER_HEIGHT + ((FOOTER_HEIGHT - CONTROL_HEIGHT) / 2.0).floor();
@@ -115,13 +139,25 @@ impl Rows {
         if let Some(r) = self.take(ROW_HEIGHT) {
             let shown = cx.p.fit(text, r[2]).into_owned();
             let accent = cx.p.theme.accent;
-            cx.p.centered(&shown, r[0] + r[2] / 2.0, r[1] + r[3] - 9.0 - 2.0, accent, false);
+            cx.p.centered(
+                &shown,
+                r[0] + r[2] / 2.0,
+                r[1] + r[3] - 9.0 - 2.0,
+                accent,
+                false,
+            );
         }
     }
 
     /// A labelled row with controls `widths` wide at its right: their rectangles, right to
     /// left order undone (left first), or None when it's out of view.
-    pub fn row(&mut self, cx: &mut Cx, label: &str, tooltip: &str, widths: &[f32]) -> Option<Vec<Rect>> {
+    pub fn row(
+        &mut self,
+        cx: &mut Cx,
+        label: &str,
+        tooltip: &str,
+        widths: &[f32],
+    ) -> Option<Vec<Rect>> {
         let r = self.take(ROW_HEIGHT)?;
         let y = r[1] + ((r[3] - CONTROL_HEIGHT) / 2.0).floor();
         let mut x = r[0] + r[2];
@@ -160,7 +196,11 @@ impl Rows {
             (0..count)
                 .map(|i| {
                     let x = r[0] + i as f32 * (each + GAP);
-                    let w = if i == count - 1 { r[0] + r[2] - x } else { each };
+                    let w = if i == count - 1 {
+                        r[0] + r[2] - x
+                    } else {
+                        each
+                    };
                     [x, r[1] + padding, w, height]
                 })
                 .collect(),

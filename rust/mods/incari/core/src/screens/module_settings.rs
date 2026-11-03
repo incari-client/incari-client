@@ -58,7 +58,11 @@ impl Screen for ModuleSettings {
         let done = cx.host.translate("gui.done");
         labels.push(&done);
         // Three buttons share the footer's width when the module has a HUD element to place.
-        let width = if hud { (FOOTER_BUTTON_WIDTH * 2.0 / 3.0).floor() } else { FOOTER_BUTTON_WIDTH };
+        let width = if hud {
+            (FOOTER_BUTTON_WIDTH * 2.0 / 3.0).floor()
+        } else {
+            FOOTER_BUTTON_WIDTH
+        };
         let module = self.module;
         let capturing = self.capturing;
         let mut capture = None;
@@ -69,7 +73,11 @@ impl Screen for ModuleSettings {
             description,
             false,
             |cx, rows| {
-                let settings = cx.modules.module(module).map(|m| m.settings.clone()).unwrap_or_default();
+                let settings = cx
+                    .modules
+                    .module(module)
+                    .map(|m| m.settings.clone())
+                    .unwrap_or_default();
                 if let Some(c) = rows_for(cx, rows, module, None, &settings, capturing, typing) {
                     capture = Some(c);
                 }
@@ -81,7 +89,9 @@ impl Screen for ModuleSettings {
                 for (i, (element, settings)) in elements.into_iter().enumerate() {
                     if settings.any_shown() {
                         rows.heading(cx, &format!("HUD: {element}"));
-                        if let Some(c) = rows_for(cx, rows, module, Some(i), &settings, capturing, typing) {
+                        if let Some(c) =
+                            rows_for(cx, rows, module, Some(i), &settings, capturing, typing)
+                        {
                             capture = Some(c);
                         }
                     }
@@ -117,7 +127,12 @@ impl ModuleSettings {
         let Some((element, id)) = self.capturing else {
             return;
         };
-        let key = if let Some(i) = cx.ui.keys.iter().position(|(k, _)| *k != Key::Keyboard(keys::ESCAPE)) {
+        let key = if let Some(i) = cx
+            .ui
+            .keys
+            .iter()
+            .position(|(k, _)| *k != Key::Keyboard(keys::ESCAPE))
+        {
             Some(cx.ui.keys.remove(i).0)
         } else if let Some(at) = cx.ui.pressed_anywhere() {
             cx.ui.eat_press();
@@ -137,7 +152,12 @@ impl ModuleSettings {
 }
 
 /// The setting `id` of module `module` (or of its HUD element `element`).
-fn setting_mut<'a>(cx: &'a mut Cx, module: &str, element: Option<usize>, id: &str) -> Option<&'a mut Setting> {
+fn setting_mut<'a>(
+    cx: &'a mut Cx,
+    module: &str,
+    element: Option<usize>,
+    id: &str,
+) -> Option<&'a mut Setting> {
     let m = cx.modules.module_mut(module)?;
     match element {
         Some(i) => m.hud.get_mut(i)?.settings.get_mut(id),
@@ -163,7 +183,12 @@ fn rows_for(
         let control_id = ui::id(module, element.map_or(0, |e| e + 1) * 1000 + n);
         if let Kind::Action { label } = s.kind {
             // As wide as another row's control and its Reset together: it holds nothing to reset.
-            let Some(r) = rows.row(cx, s.name, s.description, &[CONTROL_WIDTH + GAP + SMALL_BUTTON_WIDTH]) else {
+            let Some(r) = rows.row(
+                cx,
+                s.name,
+                s.description,
+                &[CONTROL_WIDTH + GAP + SMALL_BUTTON_WIDTH],
+            ) else {
                 continue;
             };
             if ui::button(cx.p, cx.ui, r[0], label, true) {
@@ -171,7 +196,12 @@ fn rows_for(
             }
             continue;
         }
-        let Some(r) = rows.row(cx, s.name, s.description, &[CONTROL_WIDTH, SMALL_BUTTON_WIDTH]) else {
+        let Some(r) = rows.row(
+            cx,
+            s.name,
+            s.description,
+            &[CONTROL_WIDTH, SMALL_BUTTON_WIDTH],
+        ) else {
             continue;
         };
         let mut set: Option<Val> = None;
@@ -201,11 +231,14 @@ fn rows_for(
                     set = Some(Val::Choice((s.as_choice() + 1) % choices.len()));
                 }
                 if cx.ui.right_clicked(r[0]) {
-                    set = Some(Val::Choice((s.as_choice() + choices.len() - 1) % choices.len()));
+                    set = Some(Val::Choice(
+                        (s.as_choice() + choices.len() - 1) % choices.len(),
+                    ));
                 }
             }
             Kind::Color { alpha, .. } => {
-                set = color_field(cx, control_id, r[0], s.as_color(), *alpha, typing).map(Val::Color);
+                set =
+                    color_field(cx, control_id, r[0], s.as_color(), *alpha, typing).map(Val::Color);
             }
             Kind::Key { .. } => {
                 let waiting = capturing == Some((element, s.id));
@@ -269,12 +302,26 @@ fn color_field(
     }
     let mut text = std::mem::take(&mut typing[at].1);
     let field = [r[0], r[1], r[2] - 20.0, r[3]];
-    let changed = ui::text_field(cx.p, cx.ui, id, field, &mut text, "", if with_alpha { 9 } else { 7 });
+    let changed = ui::text_field(
+        cx.p,
+        cx.ui,
+        id,
+        field,
+        &mut text,
+        "",
+        if with_alpha { 9 } else { 7 },
+    );
     let parsed = color::parse_hex(&text).filter(|_| text.len() == if with_alpha { 9 } else { 7 });
     typing[at].1 = text;
     let (sx, sy) = (r[0] + r[2] - 16.0, r[1] + 4.0);
     let muted = cx.p.theme.muted;
     cx.p.fill(sx - 1.0, sy - 1.0, 14.0, 14.0, muted);
-    cx.p.fill(sx, sy, 12.0, 12.0, argb | if with_alpha { 0 } else { 0xFF00_0000 });
+    cx.p.fill(
+        sx,
+        sy,
+        12.0,
+        12.0,
+        argb | if with_alpha { 0 } else { 0xFF00_0000 },
+    );
     if changed { parsed } else { None }
 }

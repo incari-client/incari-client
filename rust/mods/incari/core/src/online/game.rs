@@ -63,7 +63,12 @@ pub const CHAT_BUTTON_TOOLTIP: &str = "Friends and messages (O)";
 
 /// Where it goes: under the chat box's last line (40 above the bottom), over the input field.
 pub fn chat_button_rect(p: &Painter, screen: [f32; 2]) -> [f32; 4] {
-    [2.0, screen[1] - 33.0, 18.0 + p.width(CHAT_BUTTON_LABEL) + 8.0, CHAT_BUTTON_HEIGHT]
+    [
+        2.0,
+        screen[1] - 33.0,
+        18.0 + p.width(CHAT_BUTTON_LABEL) + 8.0,
+        CHAT_BUTTON_HEIGHT,
+    ]
 }
 
 /// Draws it, hot under the pointer at `mouse`, with `count` unread (`super::unread_count`).
@@ -71,22 +76,50 @@ pub fn draw_chat_button(p: &mut Painter, screen: [f32; 2], mouse: [f32; 2], coun
     let th = p.theme;
     let [x, y, w, h] = chat_button_rect(p, screen);
     let hot = crate::draw::contains([x, y, w, h], mouse);
-    p.round(x, y, w, h, h / 2.0, if hot { 0xCC2A_3542 } else { 0x9916_1C24 });
-    p.icon(Icon::Chat, x + 5.0, y + 3.0, 8.0, if hot { th.accent } else { th.text });
+    p.round(
+        x,
+        y,
+        w,
+        h,
+        h / 2.0,
+        if hot { 0xCC2A_3542 } else { 0x9916_1C24 },
+    );
+    p.icon(
+        Icon::Chat,
+        x + 5.0,
+        y + 3.0,
+        8.0,
+        if hot { th.accent } else { th.text },
+    );
     p.text(CHAT_BUTTON_LABEL, x + 17.0, y + 3.0, th.text, false);
     if count > 0 {
-        let label = if count > 9 { "9+".to_owned() } else { count.to_string() };
+        let label = if count > 9 {
+            "9+".to_owned()
+        } else {
+            count.to_string()
+        };
         let lw = p.width(&label);
         let badge = (lw + 5.0).max(10.0);
         let bx = (x + w - badge / 2.0 - 1.0).floor();
         p.round(bx, y - 3.0, badge, 10.0, 5.0, 0xFFE0_565B);
-        p.text(&label, bx + ((badge - lw) / 2.0).floor() + 1.0, y - 2.0, th.text, false);
+        p.text(
+            &label,
+            bx + ((badge - lw) / 2.0).floor() + 1.0,
+            y - 2.0,
+            th.text,
+            false,
+        );
     }
 }
 
 /// The game's chat screen shows: draws the button into `client.list` (cleared first), for the
 /// game side to replay over the chat screen.
-pub fn chat_button_frame(client: &mut crate::client::Client, measure: &dyn crate::paint::Measure, size: [f32; 2], scale: f32) {
+pub fn chat_button_frame(
+    client: &mut crate::client::Client,
+    measure: &dyn crate::paint::Measure,
+    size: [f32; 2],
+    scale: f32,
+) {
     client.list.clear();
     let mouse = client.ui.mouse;
     let count = super::unread_count();
@@ -132,17 +165,29 @@ mod tests {
         assert!(c.online.started());
         c.settle(&mut fake);
         let mut reads = 0;
-        tracker.tick(&mut c.online, false, Some(1), Some(("a.example", "Me")), || {
-            reads += 1;
-            HashMap::new()
-        });
+        tracker.tick(
+            &mut c.online,
+            false,
+            Some(1),
+            Some(("a.example", "Me")),
+            || {
+                reads += 1;
+                HashMap::new()
+            },
+        );
         assert!(c.online.in_world());
         assert_eq!(reads, 1);
         for _ in 0..TAB_LIST_TICKS - 1 {
-            tracker.tick(&mut c.online, false, Some(1), Some(("a.example", "Me")), || {
-                reads += 1;
-                HashMap::new()
-            });
+            tracker.tick(
+                &mut c.online,
+                false,
+                Some(1),
+                Some(("a.example", "Me")),
+                || {
+                    reads += 1;
+                    HashMap::new()
+                },
+            );
         }
         assert_eq!(reads, 1, "once a second");
         tracker.tick(&mut c.online, false, Some(2), None, HashMap::new);

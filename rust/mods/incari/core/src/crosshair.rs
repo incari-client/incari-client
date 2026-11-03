@@ -62,7 +62,11 @@ fn set_choice(s: &mut Settings, id: &str, key: &str) {
 /// The crosshair centred on (`cx`, `cy`) in GUI units.
 pub fn draw(p: &mut Painter, s: &Settings, on_target: bool, cx: f32, cy: f32) {
     let alpha = ((s.int("opacity") as f32 * 2.55).round() as u32) << 24;
-    let rgb = if s.bool("target-color") && on_target { s.color("on-target-color") } else { s.color("color") } & 0xFF_FFFF;
+    let rgb = if s.bool("target-color") && on_target {
+        s.color("on-target-color")
+    } else {
+        s.color("color")
+    } & 0xFF_FFFF;
     let (argb, shade) = (alpha | rgb, alpha);
     if s.choice("style") == "grid" {
         // In GUI units, as the game's own crosshair is drawn.
@@ -71,7 +75,13 @@ pub fn draw(p: &mut Painter, s: &Settings, on_target: bool, cx: f32, cy: f32) {
             _ => return,
         };
         let (ox, oy) = (cx - GRID as f32 / 2.0, cy - GRID as f32 / 2.0);
-        let row = |y: i32| if y < 0 || y >= GRID as i32 { 0 } else { rows[y as usize] << 1 };
+        let row = |y: i32| {
+            if y < 0 || y >= GRID as i32 {
+                0
+            } else {
+                rows[y as usize] << 1
+            }
+        };
         if s.bool("outline") {
             for y in -1..=GRID as i32 {
                 let around = row(y - 1) | row(y + 1) | row(y) << 1 | row(y) >> 1;
@@ -85,12 +95,17 @@ pub fn draw(p: &mut Painter, s: &Settings, on_target: bool, cx: f32, cy: f32) {
     }
     // In screen pixels, around the middle.
     let px = 1.0 / p.scale;
-    p.push((cx * p.scale).round() * px, (cy * p.scale).round() * px, px, |p| {
-        if s.bool("outline") {
-            shapes(p, s, shade, 1.0);
-        }
-        shapes(p, s, argb, 0.0);
-    });
+    p.push(
+        (cx * p.scale).round() * px,
+        (cy * p.scale).round() * px,
+        px,
+        |p| {
+            if s.bool("outline") {
+                shapes(p, s, shade, 1.0);
+            }
+            shapes(p, s, argb, 0.0);
+        },
+    );
 }
 
 fn shapes(p: &mut Painter, s: &Settings, argb: u32, grow: f32) {
@@ -99,7 +114,9 @@ fn shapes(p: &mut Painter, s: &Settings, argb: u32, grow: f32) {
     let g = s.int("gap") as f32;
     let l = s.int("length") as f32;
     let style = s.choice("style");
-    let mut rect = |x: f32, y: f32, w: f32, h: f32| p.fill(x - grow, y - grow, w + grow * 2.0, h + grow * 2.0, argb);
+    let mut rect = |x: f32, y: f32, w: f32, h: f32| {
+        p.fill(x - grow, y - grow, w + grow * 2.0, h + grow * 2.0, argb)
+    };
     match style {
         "cross" | "t" => {
             rect(-g - l, -half, l, t);
@@ -116,7 +133,13 @@ fn shapes(p: &mut Painter, s: &Settings, argb: u32, grow: f32) {
         p.ring(0.0, 0.0, r, t + grow * 2.0, argb);
     }
     if s.bool("dot") || style == "dot" {
-        p.fill(-half - grow, -half - grow, t + grow * 2.0, t + grow * 2.0, argb);
+        p.fill(
+            -half - grow,
+            -half - grow,
+            t + grow * 2.0,
+            t + grow * 2.0,
+            argb,
+        );
     }
 }
 
@@ -143,7 +166,10 @@ mod tests {
 
     #[test]
     fn presets_load_and_a_moved_slider_makes_custom() {
-        let mut m = crate::modules::all().into_iter().find(|m| m.id == "crosshair").unwrap();
+        let mut m = crate::modules::all()
+            .into_iter()
+            .find(|m| m.id == "crosshair")
+            .unwrap();
         set_choice(&mut m.settings, "preset", "competitive");
         changed(&mut m.settings, "preset");
         assert_eq!((m.settings.int("length"), m.settings.int("gap")), (6, 3));

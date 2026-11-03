@@ -114,7 +114,10 @@ pub mod fake {
             if name.starts_with("missing:") {
                 return UNKNOWN;
             }
-            let spec = super::spec::BlockSpec { name: name.into(), properties: properties.to_vec() };
+            let spec = super::spec::BlockSpec {
+                name: name.into(),
+                properties: properties.to_vec(),
+            };
             self.id(&spec.to_string())
         }
 

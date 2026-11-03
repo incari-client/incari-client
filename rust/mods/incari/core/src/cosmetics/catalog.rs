@@ -14,7 +14,14 @@ pub enum Slot {
 }
 
 impl Slot {
-    pub const ALL: [Slot; 6] = [Slot::Cape, Slot::Hat, Slot::Back, Slot::Nametag, Slot::Trail, Slot::Emote];
+    pub const ALL: [Slot; 6] = [
+        Slot::Cape,
+        Slot::Hat,
+        Slot::Back,
+        Slot::Nametag,
+        Slot::Trail,
+        Slot::Emote,
+    ];
 
     /// The ids' prefix: `cape` in `cape.frost`.
     pub fn prefix(self) -> &'static str {
@@ -64,7 +71,12 @@ pub struct Cosmetic {
 }
 
 const fn free(id: &'static str, slot: Slot, name: &'static str) -> Cosmetic {
-    Cosmetic { id, slot, name, free: true }
+    Cosmetic {
+        id,
+        slot,
+        name,
+        free: true,
+    }
 }
 
 use Slot::*;
@@ -143,8 +155,16 @@ mod tests {
     #[test]
     fn ids_are_unique_and_in_their_slot() {
         for (i, c) in ALL.iter().enumerate() {
-            assert!(c.id.starts_with(&format!("{}.", c.slot.prefix())), "{}", c.id);
-            assert!(ALL[..i].iter().all(|o| o.id != c.id), "two cosmetics are {}", c.id);
+            assert!(
+                c.id.starts_with(&format!("{}.", c.slot.prefix())),
+                "{}",
+                c.id
+            );
+            assert!(
+                ALL[..i].iter().all(|o| o.id != c.id),
+                "two cosmetics are {}",
+                c.id
+            );
             assert_eq!(index(c), i);
         }
         let counts: Vec<usize> = Slot::ALL.iter().map(|s| in_slot(*s).count()).collect();

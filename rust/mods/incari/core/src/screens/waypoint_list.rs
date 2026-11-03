@@ -9,8 +9,8 @@ use crate::client::HostFiles;
 use crate::color::alpha;
 use crate::draw::{Rect, intersect};
 use crate::icons::Icon;
-use crate::panels;
 use crate::paint::{Painter, Shape};
+use crate::panels;
 use crate::screen::{Cx, Go, Screen};
 use crate::theme::{CONTROL_HEIGHT, GAP as THEME_GAP};
 use crate::ui;
@@ -55,17 +55,27 @@ impl WaypointList {
         self.made = Some((revision, self.query.clone()));
         self.lines.clear();
         let player = waypoint::player();
-        let here = player.as_ref().map_or(waypoint::OVERWORLD, |p| p.dimension.as_str());
+        let here = player
+            .as_ref()
+            .map_or(waypoint::OVERWORLD, |p| p.dimension.as_str());
         let needle = self.query.trim().to_lowercase();
-        let matching = all.iter().filter(|w| needle.is_empty() || w.name().to_lowercase().contains(&needle));
+        let matching = all
+            .iter()
+            .filter(|w| needle.is_empty() || w.name().to_lowercase().contains(&needle));
         // This dimension's first, nearest first; then each other dimension's, by name.
-        let (mut local, mut elsewhere): (Vec<&Waypoint>, Vec<&Waypoint>) = matching.partition(|w| w.dimension == here);
+        let (mut local, mut elsewhere): (Vec<&Waypoint>, Vec<&Waypoint>) =
+            matching.partition(|w| w.dimension == here);
         if let Some(p) = &player {
             local.sort_by(|a, b| {
-                a.distance_squared(p.x, p.y, p.z).total_cmp(&b.distance_squared(p.x, p.y, p.z))
+                a.distance_squared(p.x, p.y, p.z)
+                    .total_cmp(&b.distance_squared(p.x, p.y, p.z))
             });
         }
-        elsewhere.sort_by(|a, b| a.dimension.cmp(&b.dimension).then_with(|| a.name().cmp(b.name())));
+        elsewhere.sort_by(|a, b| {
+            a.dimension
+                .cmp(&b.dimension)
+                .then_with(|| a.name().cmp(b.name()))
+        });
         let place = |w: &Waypoint| format!("{}, {}, {}", w.x, w.y, w.z);
         for w in local {
             let detail = match &player {
@@ -82,9 +92,15 @@ impl WaypointList {
         for w in elsewhere {
             if dimension != Some(w.dimension.as_str()) {
                 dimension = Some(&w.dimension);
-                self.lines.push(Line::Heading(format!("In {}", waypoint::dimension_name(&w.dimension))));
+                self.lines.push(Line::Heading(format!(
+                    "In {}",
+                    waypoint::dimension_name(&w.dimension)
+                )));
             }
-            self.lines.push(Line::Row { id: w.id(), detail: place(w) });
+            self.lines.push(Line::Row {
+                id: w.id(),
+                detail: place(w),
+            });
         }
     }
 }
@@ -92,7 +108,8 @@ impl WaypointList {
 /// The screen an action setting's button opens: the Waypoints module's Manage... (for the client's
 /// frame, which hears the press through `ModuleSystem::actions`).
 pub fn for_action(module: &str, setting: &str) -> Option<Box<dyn Screen>> {
-    (module == "waypoints" && setting == "manage").then(|| Box::new(WaypointList::new()) as Box<dyn Screen>)
+    (module == "waypoints" && setting == "manage")
+        .then(|| Box::new(WaypointList::new()) as Box<dyn Screen>)
 }
 
 /// The rectangles of a row's eye, pencil and bin.
@@ -114,42 +131,96 @@ impl Screen for WaypointList {
         let py = ((h - ph) / 2.0).floor();
         panels::panel(cx.p, px, py, pw, ph, 1.0);
         let th = cx.p.theme;
-        let (all, revision) = waypoint::with(|s| (s.all().to_vec(), s.revision())).unwrap_or_default();
-        if self.made.as_ref().is_none_or(|(r, q)| *r != revision || *q != self.query) {
+        let (all, revision) =
+            waypoint::with(|s| (s.all().to_vec(), s.revision())).unwrap_or_default();
+        if self
+            .made
+            .as_ref()
+            .is_none_or(|(r, q)| *r != revision || *q != self.query)
+        {
             self.rebuild(&all, revision);
         }
         let player = waypoint::player();
 
         // The title and the count.
         cx.p.text("Waypoints", px + PADDING, py + PADDING, th.text, false);
-        let count = if all.len() == 1 { "1 waypoint".to_owned() } else { format!("{} waypoints", all.len()) };
+        let count = if all.len() == 1 {
+            "1 waypoint".to_owned()
+        } else {
+            format!("{} waypoints", all.len())
+        };
         let cw = cx.p.width(&count);
-        cx.p.text(&count, px + pw - PADDING - cw, py + PADDING, th.muted, false);
+        cx.p.text(
+            &count,
+            px + pw - PADDING - cw,
+            py + PADDING,
+            th.muted,
+            false,
+        );
 
         // Search, and New waypoint.
         let top = py + PADDING + 14.0;
         let new_w = 24.0 + cx.p.width(NEW) + 10.0;
         let new_r = [px + pw - PADDING - new_w, top, new_w, CONTROL_HEIGHT];
-        if ui::menu_button(cx.p, cx.ui, new_r, NEW, Some(Icon::Plus), "", player.is_some())
-            && let Some(p) = &player
+        if ui::menu_button(
+            cx.p,
+            cx.ui,
+            new_r,
+            NEW,
+            Some(Icon::Plus),
+            "",
+            player.is_some(),
+        ) && let Some(p) = &player
         {
             let [x, y, z] = p.block();
-            cx.open(WaypointEdit::new(waypoint::draft(&all, x, y, z, &p.dimension), true));
+            cx.open(WaypointEdit::new(
+                waypoint::draft(&all, x, y, z, &p.dimension),
+                true,
+            ));
         }
-        let search = [px + PADDING, top, pw - 2.0 * PADDING - new_w - THEME_GAP, CONTROL_HEIGHT];
-        if ui::text_field(cx.p, cx.ui, ui::id("waypoint-search", 0), search, &mut self.query, "Search waypoints", 64) {
+        let search = [
+            px + PADDING,
+            top,
+            pw - 2.0 * PADDING - new_w - THEME_GAP,
+            CONTROL_HEIGHT,
+        ];
+        if ui::text_field(
+            cx.p,
+            cx.ui,
+            ui::id("waypoint-search", 0),
+            search,
+            &mut self.query,
+            "Search waypoints",
+            64,
+        ) {
             self.scroll = 0.0;
         }
 
         // Done.
         let done_y = py + ph - PADDING - CONTROL_HEIGHT;
         let done = cx.host.translate("gui.done");
-        if ui::button(cx.p, cx.ui, [px + ((pw - 120.0) / 2.0).floor(), done_y, 120.0, CONTROL_HEIGHT], &done, true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [
+                px + ((pw - 120.0) / 2.0).floor(),
+                done_y,
+                120.0,
+                CONTROL_HEIGHT,
+            ],
+            &done,
+            true,
+        ) {
             cx.go(Go::Back);
         }
 
         // The rows, scrolled inside the list's clip.
-        let list = [px + PADDING, top + CONTROL_HEIGHT + 8.0, pw - 2.0 * PADDING, 0.0];
+        let list = [
+            px + PADDING,
+            top + CONTROL_HEIGHT + 8.0,
+            pw - 2.0 * PADDING,
+            0.0,
+        ];
         let area = [list[0], list[1], list[2], (done_y - 8.0 - list[1]).max(0.0)];
         ui::scroll(cx.ui, area, &mut self.scroll, self.content, SCROLL_STEP);
         let now = cx.host.now_ms();
@@ -231,14 +302,23 @@ impl WaypointList {
             return;
         }
         cx.p.shape(Shape::Diamond, center, y - 10.0, 14.0, th.accent);
-        cx.p.centered("No waypoints in this world yet", center, y + 6.0, th.text, true);
+        cx.p.centered(
+            "No waypoints in this world yet",
+            center,
+            y + 6.0,
+            th.text,
+            true,
+        );
         let key = cx
             .modules
             .module("waypoints")
             .map(|m| m.settings.key("new"))
             .filter(|k| k.is_bound());
         let hint = match key {
-            Some(k) => format!("Press {} in a world, or New waypoint, to mark your spot.", k.label()),
+            Some(k) => format!(
+                "Press {} in a world, or New waypoint, to mark your spot.",
+                k.label()
+            ),
             None => "Press New waypoint to mark your spot.".to_owned(),
         };
         let hint = cx.p.fit(&hint, area[2]).into_owned();
@@ -248,7 +328,14 @@ impl WaypointList {
 
 /// One waypoint's row: the card, its icon, name and detail, and its three buttons. Returns the
 /// part pressed: 0 the eye, 1 the pencil (or the row), 2 the bin.
-fn row(cx: &mut Cx, wp: &Waypoint, detail: &str, r: Rect, area: Rect, confirming: bool) -> Option<usize> {
+fn row(
+    cx: &mut Cx,
+    wp: &Waypoint,
+    detail: &str,
+    r: Rect,
+    area: Rect,
+    confirming: bool,
+) -> Option<usize> {
     let th = cx.p.theme;
     let shown = wp.visible;
     let buttons = row_buttons(r);
@@ -258,13 +345,32 @@ fn row(cx: &mut Cx, wp: &Waypoint, detail: &str, r: Rect, area: Rect, confirming
     } else {
         None
     };
-    panels::card(cx.p, r[0], r[1], r[2], r[3], cx.ui.over(visible(r)) && hover.is_none(), false, 1.0);
-    let color = if shown { wp.argb() } else { alpha(wp.argb(), 0.4) };
+    panels::card(
+        cx.p,
+        r[0],
+        r[1],
+        r[2],
+        r[3],
+        cx.ui.over(visible(r)) && hover.is_none(),
+        false,
+        1.0,
+    );
+    let color = if shown {
+        wp.argb()
+    } else {
+        alpha(wp.argb(), 0.4)
+    };
     cx.p.shape(wp.icon, r[0] + 15.0, r[1] + ROW / 2.0, 13.0, color);
     let text_x = r[0] + 30.0;
     let name_right = buttons[0][0] - 8.0;
     let name = cx.p.fit(wp.name(), name_right - text_x).into_owned();
-    cx.p.text(&name, text_x, r[1] + 6.0, if shown { th.text } else { th.muted }, false);
+    cx.p.text(
+        &name,
+        text_x,
+        r[1] + 6.0,
+        if shown { th.text } else { th.muted },
+        false,
+    );
     if wp.beam && shown {
         // A sliver of the beam's colour after the name: this one has a beam.
         let beam_x = text_x + cx.p.width(&name) + 5.0;
@@ -280,11 +386,25 @@ fn row(cx: &mut Cx, wp: &Waypoint, detail: &str, r: Rect, area: Rect, confirming
         format!("{detail}  ·  hidden")
     };
     let second = cx.p.fit(&second, name_right - text_x).into_owned();
-    cx.p.text(&second, text_x, r[1] + 17.0, if confirming { th.negative } else { th.muted }, false);
-    let icons = [if shown { Icon::Eye } else { Icon::EyeOff }, Icon::Pencil, Icon::Trash];
+    cx.p.text(
+        &second,
+        text_x,
+        r[1] + 17.0,
+        if confirming { th.negative } else { th.muted },
+        false,
+    );
+    let icons = [
+        if shown { Icon::Eye } else { Icon::EyeOff },
+        Icon::Pencil,
+        Icon::Trash,
+    ];
     for (i, b) in buttons.iter().enumerate() {
         let hot = hover == Some(i) || i == 2 && confirming;
-        let hot_color = if i == 2 && confirming { th.negative } else { th.accent };
+        let hot_color = if i == 2 && confirming {
+            th.negative
+        } else {
+            th.accent
+        };
         icon(cx.p, *b, icons[i], hot, hot_color);
     }
     if let Some(i) = hover {
@@ -310,7 +430,13 @@ fn icon(p: &mut Painter, r: Rect, icon: Icon, hot: bool, hot_color: u32) {
     }
     let size = 10.0;
     let color = if hot { hot_color } else { alpha(th.muted, 0.9) };
-    p.icon(icon, r[0] + ((BUTTON - size) / 2.0).floor(), r[1] + ((BUTTON - size) / 2.0).floor(), size, color);
+    p.icon(
+        icon,
+        r[0] + ((BUTTON - size) / 2.0).floor(),
+        r[1] + ((BUTTON - size) / 2.0).floor(),
+        size,
+        color,
+    );
 }
 
 #[cfg(test)]
@@ -334,7 +460,10 @@ mod tests {
             .iter()
             .map(|l| match l {
                 Line::Heading(h) => h.clone(),
-                Line::Row { id, detail } => format!("{} ({detail})", all.iter().find(|w| w.id() == *id).unwrap().name()),
+                Line::Row { id, detail } => format!(
+                    "{} ({detail})",
+                    all.iter().find(|w| w.id() == *id).unwrap().name()
+                ),
             })
             .collect();
         assert_eq!(
@@ -358,6 +487,8 @@ mod tests {
         let b = row_buttons([10.0, 20.0, 300.0, ROW]);
         assert_eq!(b[2], [10.0 + 300.0 - 8.0 - 16.0, 27.0, 16.0, 16.0]);
         assert_eq!(b[0][0], 310.0 - 8.0 - 48.0 - 8.0);
-        assert!(for_action("waypoints", "manage").is_some() && for_action("waypoints", "new").is_none());
+        assert!(
+            for_action("waypoints", "manage").is_some() && for_action("waypoints", "new").is_none()
+        );
     }
 }

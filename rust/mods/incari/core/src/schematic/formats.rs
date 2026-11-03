@@ -24,7 +24,8 @@ const SPONGE_V1_DATA: i32 = 1631;
 
 /// The schematic in `bytes`, a file called `file_name`; Err says why not in the player's words.
 pub fn read(file_name: &str, bytes: &[u8], inflate: Inflate) -> Result<Schematic, String> {
-    let root = nbt::read(bytes, inflate).map_err(|_| "Not a schematic, or a broken one".to_owned())?;
+    let root =
+        nbt::read(bytes, inflate).map_err(|_| "Not a schematic, or a broken one".to_owned())?;
     let name = base_name(file_name);
     if root.compound("Regions").is_some() {
         return litematic(&root, name);
@@ -45,7 +46,9 @@ pub fn read(file_name: &str, bytes: &[u8], inflate: Inflate) -> Result<Schematic
 pub fn base_name(file_name: &str) -> &str {
     let name = file_name.rsplit(['/', '\\']).next().unwrap_or(file_name);
     match name.rfind('.') {
-        Some(dot) if dot > 0 && EXTENSIONS.contains(&name[dot..].to_ascii_lowercase().as_str()) => &name[..dot],
+        Some(dot) if dot > 0 && EXTENSIONS.contains(&name[dot..].to_ascii_lowercase().as_str()) => {
+            &name[..dot]
+        }
         _ => name,
     }
 }
@@ -64,16 +67,25 @@ fn xyz(tag: Option<&Compound>) -> Option<[i32; 3]> {
 /// A palette entry: `Name` and `Properties`, or the newer `id` and `properties`.
 fn spec(entry: &Compound) -> BlockSpec {
     let name = entry.string("Name", entry.string("id", "minecraft:air"));
-    let props = entry.compound("Properties").or_else(|| entry.compound("properties"));
+    let props = entry
+        .compound("Properties")
+        .or_else(|| entry.compound("properties"));
     let properties = props
-        .map(|p| p.0.iter().filter_map(|(k, v)| Some((k.clone(), v.text()?))).collect())
+        .map(|p| {
+            p.0.iter()
+                .filter_map(|(k, v)| Some((k.clone(), v.text()?)))
+                .collect()
+        })
         .unwrap_or_default();
     BlockSpec::of(name, properties)
 }
 
 fn named<'a>(metadata: Option<&'a Compound>, fallback: &'a str) -> (&'a str, &'a str) {
     let name = metadata.map_or("", |m| m.string("Name", "").trim());
-    (if name.is_empty() { fallback } else { name }, metadata.map_or("", |m| m.string("Author", "")))
+    (
+        if name.is_empty() { fallback } else { name },
+        metadata.map_or("", |m| m.string("Author", "")),
+    )
 }
 
 struct Region<'a> {
@@ -83,22 +95,33 @@ struct Region<'a> {
 }
 
 fn litematic(root: &Compound, fallback: &str) -> Result<Schematic, String> {
-    let regions = root.compound("Regions").ok_or("Not a litematic: no regions")?;
+    let regions = root
+        .compound("Regions")
+        .ok_or("Not a litematic: no regions")?;
     let mut boxes = Vec::new();
     let (mut lo, mut hi) = ([i64::MAX; 3], [i64::MIN; 3]);
     for (name, tag) in &regions.0 {
         let Tag::Compound(region) = tag else {
             continue;
         };
-        let (Some(position), Some(size)) = (xyz(region.compound("Position")), xyz(region.compound("Size"))) else {
+        let (Some(position), Some(size)) = (
+            xyz(region.compound("Position")),
+            xyz(region.compound("Size")),
+        ) else {
             return Err(format!("Region {name} has no position or size"));
         };
         if size.contains(&0) {
             continue;
         }
         // The lower end on each axis: the position, or past it when the size is negative.
-        let min: [i64; 3] =
-            std::array::from_fn(|i| i64::from(position[i]) + if size[i] < 0 { i64::from(size[i]) + 1 } else { 0 });
+        let min: [i64; 3] = std::array::from_fn(|i| {
+            i64::from(position[i])
+                + if size[i] < 0 {
+                    i64::from(size[i]) + 1
+                } else {
+                    0
+                }
+        });
         let abs = size.map(|s| s.unsigned_abs() as i32);
         if abs.iter().map(|&s| s as u64).product::<u64>() > MAX_VOLUME {
             return Err(format!("Region {name} is too big to load"));
@@ -107,7 +130,11 @@ fn litematic(root: &Compound, fallback: &str) -> Result<Schematic, String> {
             lo[i] = lo[i].min(min[i]);
             hi[i] = hi[i].max(min[i] + i64::from(abs[i]));
         }
-        boxes.push(Region { min, size: abs, tag: region });
+        boxes.push(Region {
+            min,
+            size: abs,
+            tag: region,
+        });
     }
     if boxes.is_empty() {
         return Err("It has no blocks".into());
@@ -118,7 +145,12 @@ fn litematic(root: &Compound, fallback: &str) -> Result<Schematic, String> {
     }
     let mut b = Builder::new(span[0] as i32, span[1] as i32, span[2] as i32)?;
     let (name, author) = named(root.compound("Metadata"), fallback);
-    b.describe(name, author, "Litematic", root.int("MinecraftDataVersion", 0));
+    b.describe(
+        name,
+        author,
+        "Litematic",
+        root.int("MinecraftDataVersion", 0),
+    );
     for r in &boxes {
         let offset: [i32; 3] = std::array::from_fn(|i| (r.min[i] - lo[i]) as i32);
         region(&mut b, r, offset)?;
@@ -142,8 +174,9 @@ fn region(b: &mut Builder, r: &Region, offset: [i32; 3]) -> Result<(), String> {
     let volume = sx as usize * sy as usize * sz as usize;
     let bits = super::packed::bits_for(indices.len(), 2);
     let states = r.tag.longs("BlockStates").unwrap_or(&[]);
-    let packed = super::packed::Packed::over(bits, volume, states.iter().map(|&l| l as u64).collect())
-        .ok_or("A region's blocks are cut short")?;
+    let packed =
+        super::packed::Packed::over(bits, volume, states.iter().map(|&l| l as u64).collect())
+            .ok_or("A region's blocks are cut short")?;
     let mut i = 0;
     for y in 0..sy {
         for z in 0..sz {
@@ -173,7 +206,11 @@ fn sponge_body(root: &Compound) -> Option<&Compound> {
 fn sponge(body: &Compound, fallback: &str) -> Result<Schematic, String> {
     // Sizes are unsigned shorts: a 40000-long schematic reads as negative.
     let unsigned = |v: i32| if v < 0 { v & 0xFFFF } else { v };
-    let (w, h, l) = (unsigned(body.int("Width", 0)), unsigned(body.int("Height", 0)), unsigned(body.int("Length", 0)));
+    let (w, h, l) = (
+        unsigned(body.int("Width", 0)),
+        unsigned(body.int("Height", 0)),
+        unsigned(body.int("Length", 0)),
+    );
     let blocks = body.compound("Blocks");
     let palette = blocks.map_or_else(|| body.compound("Palette"), |b| b.compound("Palette"));
     let data = blocks.map_or_else(|| body.bytes("BlockData"), |b| b.bytes("Data"));
@@ -186,8 +223,18 @@ fn sponge(body: &Compound, fallback: &str) -> Result<Schematic, String> {
         return Err(format!("Sponge version {version} isn't known"));
     }
     let (name, author) = named(body.compound("Metadata"), fallback);
-    b.describe(name, author, "Sponge", body.int("DataVersion", SPONGE_V1_DATA));
-    let highest = palette.0.iter().map(|(_, v)| v.number().unwrap_or(-1)).max().unwrap_or(-1);
+    b.describe(
+        name,
+        author,
+        "Sponge",
+        body.int("DataVersion", SPONGE_V1_DATA),
+    );
+    let highest = palette
+        .0
+        .iter()
+        .map(|(_, v)| v.number().unwrap_or(-1))
+        .max()
+        .unwrap_or(-1);
     if !(0..=1 << 20).contains(&highest) {
         return Err("Its palette is empty or broken".into());
     }
@@ -229,7 +276,10 @@ fn sponge(body: &Compound, fallback: &str) -> Result<Schematic, String> {
 }
 
 fn structure(root: &Compound, name: &str) -> Result<Schematic, String> {
-    let size = root.ints("size").filter(|s| s.len() == 3).ok_or("It has no size")?;
+    let size = root
+        .ints("size")
+        .filter(|s| s.len() == 3)
+        .ok_or("It has no size")?;
     let mut palette = root.list("palette");
     if palette.is_empty()
         && let Some(Tag::List(first)) = root.list("palettes").first()
@@ -240,7 +290,12 @@ fn structure(root: &Compound, name: &str) -> Result<Schematic, String> {
         return Err("It has no palette".into());
     }
     let mut b = Builder::new(size[0], size[1], size[2])?;
-    b.describe(name, root.string("author", ""), "Structure", root.int("DataVersion", 0));
+    b.describe(
+        name,
+        root.string("author", ""),
+        "Structure",
+        root.int("DataVersion", 0),
+    );
     let indices: Vec<usize> = palette
         .iter()
         .map(|e| match e {
@@ -293,21 +348,39 @@ pub mod fixtures {
         if props.is_empty() {
             c(vec![("Name", s(name))])
         } else {
-            c(vec![("Name", s(name)), ("Properties", c(props.iter().map(|(k, v)| (*k, s(v))).collect()))])
+            c(vec![
+                ("Name", s(name)),
+                (
+                    "Properties",
+                    c(props.iter().map(|(k, v)| (*k, s(v))).collect()),
+                ),
+            ])
         }
     }
 
     fn xyz(v: [i32; 3]) -> Tag {
-        c(vec![("x", Tag::Int(v[0])), ("y", Tag::Int(v[1])), ("z", Tag::Int(v[2]))])
+        c(vec![
+            ("x", Tag::Int(v[0])),
+            ("y", Tag::Int(v[1])),
+            ("z", Tag::Int(v[2])),
+        ])
     }
 
     /// A litematic region: palette `[air, ...]`, blocks given by index in `(y*sz+z)*sx+x` order.
-    pub fn region(position: [i32; 3], size: [i32; 3], palette: &[(&str, &[(&str, &str)])], blocks: &[u32]) -> Tag {
+    pub fn region(
+        position: [i32; 3],
+        size: [i32; 3],
+        palette: &[(&str, &[(&str, &str)])],
+        blocks: &[u32],
+    ) -> Tag {
         let bits = super::super::packed::bits_for(palette.len(), 2);
         c(vec![
             ("Position", xyz(position)),
             ("Size", xyz(size)),
-            ("BlockStatePalette", Tag::List(palette.iter().map(|(n, p)| entry(n, p)).collect())),
+            (
+                "BlockStatePalette",
+                Tag::List(palette.iter().map(|(n, p)| entry(n, p)).collect()),
+            ),
             ("BlockStates", Tag::Longs(pack(blocks, bits))),
             ("TileEntities", Tag::List(vec![])),
         ])
@@ -317,13 +390,21 @@ pub mod fixtures {
         gzip(&file(&root(c(vec![
             ("Version", Tag::Int(6)),
             ("MinecraftDataVersion", Tag::Int(4556)),
-            ("Metadata", c(vec![("Name", s(name)), ("Author", s("Tester"))])),
+            (
+                "Metadata",
+                c(vec![("Name", s(name)), ("Author", s("Tester"))]),
+            ),
             ("Regions", c(regions)),
         ]))))
     }
 
     /// A Sponge v`version` schematic, `w` x `h` x `l`, blocks as palette numbers.
-    pub fn sponge(version: i32, size: [i32; 3], palette: &[(&str, i32)], blocks: &[u32]) -> Vec<u8> {
+    pub fn sponge(
+        version: i32,
+        size: [i32; 3],
+        palette: &[(&str, i32)],
+        blocks: &[u32],
+    ) -> Vec<u8> {
         let mut data = Vec::new();
         for &v in blocks {
             let mut v = v;
@@ -347,7 +428,10 @@ pub mod fixtures {
         ];
         let body = if version == 3 {
             let mut f = sizes;
-            f.push(("Blocks", c(vec![("Palette", pal), ("Data", Tag::Bytes(data))])));
+            f.push((
+                "Blocks",
+                c(vec![("Palette", pal), ("Data", Tag::Bytes(data))]),
+            ));
             c(vec![("Schematic", c(f))])
         } else {
             let mut f = sizes;
@@ -360,11 +444,21 @@ pub mod fixtures {
     }
 
     /// A structure `.nbt` (not gzipped: the game's are, but either reads).
-    pub fn structure(size: [i32; 3], palette: &[(&str, &[(&str, &str)])], blocks: &[([i32; 3], i32)]) -> Vec<u8> {
+    pub fn structure(
+        size: [i32; 3],
+        palette: &[(&str, &[(&str, &str)])],
+        blocks: &[([i32; 3], i32)],
+    ) -> Vec<u8> {
         file(&root(c(vec![
             ("DataVersion", Tag::Int(3953)),
-            ("size", Tag::List(size.iter().map(|&v| Tag::Int(v)).collect())),
-            ("palette", Tag::List(palette.iter().map(|(n, p)| entry(n, p)).collect())),
+            (
+                "size",
+                Tag::List(size.iter().map(|&v| Tag::Int(v)).collect()),
+            ),
+            (
+                "palette",
+                Tag::List(palette.iter().map(|(n, p)| entry(n, p)).collect()),
+            ),
             (
                 "blocks",
                 Tag::List(
@@ -397,7 +491,9 @@ mod tests {
     #[test]
     fn packed_entries_match_the_packer() {
         for bits in 1..=32 {
-            let values: Vec<u32> = (0..300u64).map(|i| ((i * 2654435761) & ((1 << bits) - 1)) as u32).collect();
+            let values: Vec<u32> = (0..300u64)
+                .map(|i| ((i * 2654435761) & ((1 << bits) - 1)) as u32)
+                .collect();
             let words: Vec<u64> = pack(&values, bits).into_iter().map(|w| w as u64).collect();
             let p = super::super::packed::Packed::over(bits, values.len(), words).unwrap();
             for (i, &v) in values.iter().enumerate() {
@@ -414,16 +510,31 @@ mod tests {
         let a = region(
             [0, 0, 0],
             [2, 1, 2],
-            &[("minecraft:air", STONE), ("minecraft:stone", STONE), ("minecraft:oak_stairs", STAIRS)],
+            &[
+                ("minecraft:air", STONE),
+                ("minecraft:stone", STONE),
+                ("minecraft:oak_stairs", STAIRS),
+            ],
             &[1, 2, 0, 1],
         );
-        let b = region([3, 0, 0], [-1, 2, 1], &[("minecraft:air", STONE), ("dirt", STONE)], &[1, 1]);
+        let b = region(
+            [3, 0, 0],
+            [-1, 2, 1],
+            &[("minecraft:air", STONE), ("dirt", STONE)],
+            &[1, 1],
+        );
         let bytes = litematic("Castle", vec![("Main", a), ("Tower", b)]);
         let s = read("x/castle.litematic", &bytes, stored_inflate).unwrap();
-        assert_eq!((s.name.as_str(), s.author.as_str(), s.format, s.data_version), ("Castle", "Tester", "Litematic", 4556));
+        assert_eq!(
+            (s.name.as_str(), s.author.as_str(), s.format, s.data_version),
+            ("Castle", "Tester", "Litematic", 4556)
+        );
         assert_eq!(s.size, [4, 2, 2]);
         assert_eq!(name_at(&s, 0, 0, 0), "minecraft:stone");
-        assert_eq!(name_at(&s, 1, 0, 0), "minecraft:oak_stairs[facing=east,half=bottom]");
+        assert_eq!(
+            name_at(&s, 1, 0, 0),
+            "minecraft:oak_stairs[facing=east,half=bottom]"
+        );
         assert_eq!(name_at(&s, 0, 0, 1), "minecraft:air");
         assert_eq!(name_at(&s, 3, 1, 0), "minecraft:dirt");
         // Between the regions, and above the first: nothing wanted.
@@ -434,10 +545,19 @@ mod tests {
 
     #[test]
     fn reads_sponge_versions_and_a_structure() {
-        let palette = [("minecraft:air", 0), ("minecraft:oak_log[axis=y]", 1), ("minecraft:glass", 200)];
+        let palette = [
+            ("minecraft:air", 0),
+            ("minecraft:oak_log[axis=y]", 1),
+            ("minecraft:glass", 200),
+        ];
         // 200 takes two bytes as a variable-length number.
         for version in [1, 2, 3] {
-            let s = read("hut.schem", &sponge(version, [2, 1, 2], &palette, &[1, 200, 0, 1]), stored_inflate).unwrap();
+            let s = read(
+                "hut.schem",
+                &sponge(version, [2, 1, 2], &palette, &[1, 200, 0, 1]),
+                stored_inflate,
+            )
+            .unwrap();
             assert_eq!(s.size, [2, 1, 2]);
             assert_eq!(name_at(&s, 0, 0, 0), "minecraft:oak_log[axis=y]");
             assert_eq!(name_at(&s, 1, 0, 0), "minecraft:glass");
@@ -446,7 +566,11 @@ mod tests {
             assert_eq!(s.format, "Sponge");
         }
         const NONE: &[(&str, &str)] = &[];
-        let bytes = structure([2, 2, 1], &[("minecraft:stone", NONE), ("minecraft:torch", NONE)], &[([0, 0, 0], 0), ([1, 1, 0], 1)]);
+        let bytes = structure(
+            [2, 2, 1],
+            &[("minecraft:stone", NONE), ("minecraft:torch", NONE)],
+            &[([0, 0, 0], 0), ([1, 1, 0], 1)],
+        );
         let s = read("well.nbt", &bytes, stored_inflate).unwrap();
         assert_eq!((s.name.as_str(), s.format), ("well", "Structure"));
         assert_eq!(name_at(&s, 1, 1, 0), "minecraft:torch");
@@ -455,18 +579,48 @@ mod tests {
 
     #[test]
     fn refuses_what_it_cant_read() {
-        let old = gzip(&file(&root(c(vec![("Materials", super::super::nbt::write::s("Alpha")), ("Blocks", Tag::Bytes(vec![]))]))));
-        assert!(read("old.schematic", &old, stored_inflate).unwrap_err().contains("before 1.13"));
-        assert!(read("a.nbt", b"hello", stored_inflate).unwrap_err().contains("broken"));
+        let old = gzip(&file(&root(c(vec![
+            ("Materials", super::super::nbt::write::s("Alpha")),
+            ("Blocks", Tag::Bytes(vec![])),
+        ]))));
+        assert!(
+            read("old.schematic", &old, stored_inflate)
+                .unwrap_err()
+                .contains("before 1.13")
+        );
+        assert!(
+            read("a.nbt", b"hello", stored_inflate)
+                .unwrap_err()
+                .contains("broken")
+        );
         let other = file(&root(c(vec![("Data", Tag::Int(1))])));
-        assert!(read("a.nbt", &other, stored_inflate).unwrap_err().contains("knows"));
+        assert!(
+            read("a.nbt", &other, stored_inflate)
+                .unwrap_err()
+                .contains("knows")
+        );
         // Blocks past the palette, a structure block outside its size, blocks cut short.
         let bad = region([0, 0, 0], [1, 1, 1], &[("minecraft:air", &[])], &[3]);
-        assert!(read("a.litematic", &litematic("A", vec![("R", bad)]), stored_inflate).is_err());
+        assert!(
+            read(
+                "a.litematic",
+                &litematic("A", vec![("R", bad)]),
+                stored_inflate
+            )
+            .is_err()
+        );
         let outside = structure([1, 1, 1], &[("minecraft:stone", &[])], &[([1, 0, 0], 0)]);
-        assert!(read("a.nbt", &outside, stored_inflate).unwrap_err().contains("outside"));
+        assert!(
+            read("a.nbt", &outside, stored_inflate)
+                .unwrap_err()
+                .contains("outside")
+        );
         let short = sponge(2, [2, 2, 2], &[("minecraft:stone", 0)], &[0, 0]);
-        assert!(read("a.schem", &short, stored_inflate).unwrap_err().contains("cut short"));
+        assert!(
+            read("a.schem", &short, stored_inflate)
+                .unwrap_err()
+                .contains("cut short")
+        );
     }
 
     #[test]

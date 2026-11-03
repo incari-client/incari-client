@@ -128,7 +128,14 @@ mod tests {
         let at = chat_positions(text, |n| n == "Steve");
         assert_eq!(at, [10]);
         let pieces = badged_pieces(&[text], &at);
-        assert_eq!(pieces, [Piece::Text(0, "§6[VIP] §e".into()), Piece::Badge, Piece::Text(0, "§6§eSteve: yo".into())]);
+        assert_eq!(
+            pieces,
+            [
+                Piece::Text(0, "§6[VIP] §e".into()),
+                Piece::Badge,
+                Piece::Text(0, "§6§eSteve: yo".into())
+            ]
+        );
         assert!(chat_positions("a_name_far_too_long_for_minecraft", |_| true).is_empty());
     }
 }

@@ -130,7 +130,9 @@ impl Wardrobe {
 
     /// The emotes the player owns, in the catalog's order: the emote wheel's.
     pub fn emotes(&self) -> Vec<&'static Cosmetic> {
-        catalog::in_slot(Slot::Emote).filter(|c| self.owns(c)).collect()
+        catalog::in_slot(Slot::Emote)
+            .filter(|c| self.owns(c))
+            .collect()
     }
 
     /// The saved outfits, oldest first.
@@ -183,15 +185,25 @@ impl Wardrobe {
             trimmed = format!("Outfit {}", self.outfits.len() + 1);
         }
         let worn = self.worn;
-        if let Some(o) = self.outfits.iter_mut().find(|o| o.name.to_lowercase() == trimmed.to_lowercase()) {
-            *o = Outfit { name: trimmed, loadout: worn };
+        if let Some(o) = self
+            .outfits
+            .iter_mut()
+            .find(|o| o.name.to_lowercase() == trimmed.to_lowercase())
+        {
+            *o = Outfit {
+                name: trimmed,
+                loadout: worn,
+            };
             self.saved();
             return true;
         }
         if self.outfits.len() >= MAX_OUTFITS {
             return false;
         }
-        self.outfits.push(Outfit { name: trimmed, loadout: worn });
+        self.outfits.push(Outfit {
+            name: trimmed,
+            loadout: worn,
+        });
         self.saved();
         true
     }
@@ -236,10 +248,18 @@ impl Wardrobe {
     /// when what's worn here should be sent.
     pub fn from_account(&mut self, owned: &[String], equipped: Loadout) -> bool {
         self.owned = owned.iter().cloned().collect();
-        let keep = if self.account_seen { self.unsent } else { equipped.is_empty() && !self.worn.is_empty() };
+        let keep = if self.account_seen {
+            self.unsent
+        } else {
+            equipped.is_empty() && !self.worn.is_empty()
+        };
         self.synced = true;
         self.account_seen = true;
-        self.worn = if keep { self.owned_filter(self.worn) } else { self.owned_filter(equipped) };
+        self.worn = if keep {
+            self.owned_filter(self.worn)
+        } else {
+            self.owned_filter(equipped)
+        };
         self.unsent = keep;
         self.saved();
         self.unsent
@@ -368,7 +388,10 @@ impl Wardrobe {
                     break;
                 }
                 if let Some(name) = each.get("name").and_then(Value::as_str) {
-                    self.outfits.push(Outfit { name: name.to_owned(), loadout: Loadout::of(&strings(each, "worn")) });
+                    self.outfits.push(Outfit {
+                        name: name.to_owned(),
+                        loadout: Loadout::of(&strings(each, "worn")),
+                    });
                 }
             }
         }
@@ -484,12 +507,18 @@ mod tests {
     fn the_account_wins_unless_it_wears_nothing() {
         let mut w = Wardrobe::default();
         w.wear(c("cape.frost"));
-        assert!(w.from_account(&[], Loadout::EMPTY), "the device's carries over");
+        assert!(
+            w.from_account(&[], Loadout::EMPTY),
+            "the device's carries over"
+        );
         assert_eq!(w.unsent(), Some(w.worn()));
         w.sent(w.worn(), w.worn());
         assert_eq!(w.unsent(), None);
         w.signed_out();
-        assert!(!w.from_account(&[], Loadout::of(&["hat.crown"])), "a new sign-in: the account's");
+        assert!(
+            !w.from_account(&[], Loadout::of(&["hat.crown"])),
+            "a new sign-in: the account's"
+        );
         assert_eq!(w.worn().ids(), ["hat.crown"]);
         // A reconnect: a change made while away wins.
         w.disconnected();
@@ -538,13 +567,21 @@ mod tests {
     #[test]
     fn sync_sends_once_a_second_and_follows_sign_outs() {
         let mut w = Wardrobe::default();
-        let mut s = Stub { status: Some(Status::SignedIn), name: Some("me".into()), ..Default::default() };
+        let mut s = Stub {
+            status: Some(Status::SignedIn),
+            name: Some("me".into()),
+            ..Default::default()
+        };
         w.wear(c("cape.tide"));
         s.wardrobe = Some((vec![], vec![]));
         s.serial = 1;
         w.sync(&mut s, 0.0);
         assert!(w.shared());
-        assert_eq!(s.sent, [vec!["cape.tide".to_owned()]], "the device's carried over");
+        assert_eq!(
+            s.sent,
+            [vec!["cape.tide".to_owned()]],
+            "the device's carried over"
+        );
         w.wear(c("cape.mono"));
         w.sync(&mut s, 100.0);
         assert_eq!(s.sent.len(), 1, "one at a time");

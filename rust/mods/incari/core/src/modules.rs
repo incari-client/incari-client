@@ -300,7 +300,8 @@ fn toggle_sprint() -> Module {
             .shown(Shown::When("show-status", true)),
     )
     .setting(
-        s::color("color", "Text color", 0xFFFFFF, false).shown(Shown::Both("show-status", "custom-color")),
+        s::color("color", "Text color", 0xFFFFFF, false)
+            .shown(Shown::Both("show-status", "custom-color")),
     )
     .element(HudElement::new("status", "Status", Anchor::TopLeft, 2, 2))
 }

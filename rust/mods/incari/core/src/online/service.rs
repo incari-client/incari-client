@@ -189,8 +189,16 @@ struct Saved {
 impl Saved {
     fn read(text: &str) -> Option<Self> {
         let json: Value = serde_json::from_str(text).ok()?;
-        let username = json.get("username").and_then(Value::as_str).unwrap_or("").to_owned();
-        let token = json.get("token").and_then(Value::as_str).unwrap_or("").to_owned();
+        let username = json
+            .get("username")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_owned();
+        let token = json
+            .get("token")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_owned();
         (!token.is_empty()).then_some(Self { username, token })
     }
 }
@@ -221,7 +229,11 @@ impl Backoff {
             self.failures = 0;
         }
         self.connected_at = None;
-        let ceiling = if self.failures >= 20 { Self::MAX } else { Self::MAX.min(Self::FIRST * f64::from(1u32 << self.failures)) };
+        let ceiling = if self.failures >= 20 {
+            Self::MAX
+        } else {
+            Self::MAX.min(Self::FIRST * f64::from(1u32 << self.failures))
+        };
         self.failures += 1;
         let half = (ceiling / 2.0).floor();
         half + (self.random() * (ceiling - half)).floor()
@@ -311,7 +323,11 @@ impl Online {
     pub fn new(url: &str, build: &str, session: Option<&str>, seed: u64) -> Self {
         let url = url.trim().to_owned();
         let off = url.is_empty();
-        let saved = if off { None } else { session.and_then(Saved::read) };
+        let saved = if off {
+            None
+        } else {
+            session.and_then(Saved::read)
+        };
         Self {
             url,
             build: build.to_owned(),
@@ -324,7 +340,11 @@ impl Online {
             reconnect_at: None,
             next_id: 1,
             pending: BTreeMap::new(),
-            backoff: Backoff { failures: 0, connected_at: None, seed: seed | 1 },
+            backoff: Backoff {
+                failures: 0,
+                connected_at: None,
+                seed: seed | 1,
+            },
             account_name: saved.as_ref().map(|s| s.username.clone()),
             saved,
             featured: None,
@@ -499,7 +519,11 @@ impl Online {
 
     /// The Incari player with this UUID in the world, while signed in.
     pub fn player(&self, id: Uuid) -> Option<&IncariPlayer> {
-        if self.signed_in() { self.world.player(id) } else { None }
+        if self.signed_in() {
+            self.world.player(id)
+        } else {
+            None
+        }
     }
 
     /// The Incari players in the world by their name there.
@@ -643,8 +667,15 @@ impl Online {
                 o.finish(t, Err(f));
                 return;
             }
-            let text = answer.get("challenge").and_then(Value::as_str).unwrap_or("").to_owned();
-            let bits = answer.get("bits").and_then(Value::as_u64).unwrap_or(u64::MAX);
+            let text = answer
+                .get("challenge")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_owned();
+            let bits = answer
+                .get("bits")
+                .and_then(Value::as_u64)
+                .unwrap_or(u64::MAX);
             let work = rules::base64_url(&text)
                 .filter(|c| c.len() == 16 && bits <= 40)
                 .and_then(|c| rules::ProofOfWork::new(&c, bits as u32));
@@ -653,7 +684,14 @@ impl Online {
                 o.finish(t, Err(Failure::Unavailable));
                 return;
             };
-            o.solving = Some(Solving { run, work, challenge: text, username, password, ticket: t });
+            o.solving = Some(Solving {
+                run,
+                work,
+                challenge: text,
+                username,
+                password,
+                ticket: t,
+            });
         });
         t
     }
@@ -726,7 +764,11 @@ impl Online {
         self.send(form, true, move |o, answer| {
             let failure = o.failure(answer, Failure::WrongCredentials).map(|f| {
                 // A limited sign-in reads as a wrong one: the service means it to.
-                if f == Failure::RateLimited { Failure::WrongCredentials } else { f }
+                if f == Failure::RateLimited {
+                    Failure::WrongCredentials
+                } else {
+                    f
+                }
             });
             let outcome = match failure {
                 Some(f) => Err(f),
@@ -865,7 +907,12 @@ impl Online {
     }
 
     /// A signed-in request that gives nothing back: `then` runs when it worked.
-    fn simple(&mut self, form: Map<String, Value>, unauthorized: Failure, then: impl FnOnce(&mut Online) + 'static) -> Ticket {
+    fn simple(
+        &mut self,
+        form: Map<String, Value>,
+        unauthorized: Failure,
+        then: impl FnOnce(&mut Online) + 'static,
+    ) -> Ticket {
         let t = self.ticket();
         if !self.signed_in_and_connected(t) {
             return t;
@@ -932,16 +979,19 @@ impl Online {
                 o.finish(t, Err(f));
                 return;
             }
-            let blocks = answer.get("blocks").and_then(Value::as_array).and_then(|list| {
-                list.iter()
-                    .map(|b| {
-                        Some(Block {
-                            id: b.get("bid")?.as_str()?.to_owned(),
-                            label: b.get("label")?.as_str()?.to_owned(),
+            let blocks = answer
+                .get("blocks")
+                .and_then(Value::as_array)
+                .and_then(|list| {
+                    list.iter()
+                        .map(|b| {
+                            Some(Block {
+                                id: b.get("bid")?.as_str()?.to_owned(),
+                                label: b.get("label")?.as_str()?.to_owned(),
+                            })
                         })
-                    })
-                    .collect::<Option<Vec<_>>>()
-            });
+                        .collect::<Option<Vec<_>>>()
+                });
             match blocks {
                 Some(blocks) => o.finish(t, Ok(Answer::Blocks(blocks))),
                 None => {
@@ -1015,7 +1065,9 @@ impl Online {
                     o.finish(t, Err(Failure::Rejected));
                 }
                 Some(_) => {
-                    let f = o.failure(answer, Failure::Rejected).unwrap_or(Failure::Unavailable);
+                    let f = o
+                        .failure(answer, Failure::Rejected)
+                        .unwrap_or(Failure::Unavailable);
                     o.finish(t, Err(f));
                 }
             }
@@ -1026,7 +1078,10 @@ impl Online {
     /// The player plays emote `id` (`emote.<name>`): Incari players on the same server hear of it.
     /// False if it can't go yet (one every `EMOTE_INTERVAL_MILLIS`) or isn't an owned emote.
     pub fn play_emote(&mut self, id: &str) -> bool {
-        let owned = self.wardrobe.as_ref().is_none_or(|w| w.0.iter().any(|o| o == id));
+        let owned = self
+            .wardrobe
+            .as_ref()
+            .is_none_or(|w| w.0.iter().any(|o| o == id));
         if !id.starts_with("emote.") || !owned || self.now < self.next_emote {
             return false;
         }
@@ -1057,7 +1112,9 @@ impl Online {
             if let Some(e) = error(answer) {
                 // "bad_request": a service without cosmetics yet; what's worn stays this device's.
                 if e != "bad_request" && e != "offline" {
-                    o.warn(format!("The Incari service couldn't send the wardrobe ({e})"));
+                    o.warn(format!(
+                        "The Incari service couldn't send the wardrobe ({e})"
+                    ));
                 }
                 return;
             }
@@ -1206,24 +1263,54 @@ impl Online {
         }
         self.local_ids += 1;
         let local = format!("local-{}", self.local_ids);
-        let sending = Message { mid: local.clone(), mine: true, text: body.clone(), at: self.epoch, delivery: Delivery::Sending };
+        let sending = Message {
+            mid: local.clone(),
+            mine: true,
+            text: body.clone(),
+            at: self.epoch,
+            delivery: Delivery::Sending,
+        };
         self.social.message(peer, sending, true);
         let mut form = self.request("send");
-        form.insert(if peer.friend { "fid" } else { "pid" }.into(), json!(peer.id));
+        form.insert(
+            if peer.friend { "fid" } else { "pid" }.into(),
+            json!(peer.id),
+        );
         form.insert("text".into(), json!(body));
         let peer = peer.clone();
-        self.send(form, false, move |o, answer| match o.failure(answer, Failure::Rejected) {
-            None => {
-                let mid = answer.get("mid").and_then(Value::as_str).map_or(local.clone(), str::to_owned);
-                let at = answer.get("at").and_then(Value::as_i64).unwrap_or(o.epoch);
-                o.social.replace(&peer, &local, Message { mid, mine: true, text: body, at, delivery: Delivery::Sent });
-                o.finish(t, Ok(Answer::Done));
-            }
-            Some(f) => {
-                let failed = Message { mid: local.clone(), mine: true, text: body, at: o.epoch, delivery: Delivery::Failed };
-                o.social.replace(&peer, &local, failed);
-                let closed = error(answer).as_deref() == Some("closed");
-                o.finish(t, Err(if closed { Failure::Closed } else { f }));
+        self.send(form, false, move |o, answer| {
+            match o.failure(answer, Failure::Rejected) {
+                None => {
+                    let mid = answer
+                        .get("mid")
+                        .and_then(Value::as_str)
+                        .map_or(local.clone(), str::to_owned);
+                    let at = answer.get("at").and_then(Value::as_i64).unwrap_or(o.epoch);
+                    o.social.replace(
+                        &peer,
+                        &local,
+                        Message {
+                            mid,
+                            mine: true,
+                            text: body,
+                            at,
+                            delivery: Delivery::Sent,
+                        },
+                    );
+                    o.finish(t, Ok(Answer::Done));
+                }
+                Some(f) => {
+                    let failed = Message {
+                        mid: local.clone(),
+                        mine: true,
+                        text: body,
+                        at: o.epoch,
+                        delivery: Delivery::Failed,
+                    };
+                    o.social.replace(&peer, &local, failed);
+                    let closed = error(answer).as_deref() == Some("closed");
+                    o.finish(t, Err(if closed { Failure::Closed } else { f }));
+                }
             }
         });
         t
@@ -1245,7 +1332,11 @@ impl Online {
         let before = if newest {
             None
         } else {
-            conversation.messages().iter().find(|m| m.delivery == Delivery::Sent).map(|m| m.mid.clone())
+            conversation
+                .messages()
+                .iter()
+                .find(|m| m.delivery == Delivery::Sent)
+                .map(|m| m.mid.clone())
         };
         conversation.start_loading();
         let mut form = self.request("history");
@@ -1275,7 +1366,11 @@ impl Online {
             } else {
                 o.social.older(&peer, page, more);
             }
-            if newest && o.viewing.as_ref().is_some_and(|v| Social::same_peer(v, &peer)) {
+            if newest
+                && o.viewing
+                    .as_ref()
+                    .is_some_and(|v| Social::same_peer(v, &peer))
+            {
                 // Read up to the newest now that it's here (mark_read held it back while stale).
                 o.send_read(&peer);
             }
@@ -1305,10 +1400,13 @@ impl Online {
         if self.status != Status::SignedIn || self.link.is_none() {
             return;
         }
-        let last = self
-            .social
-            .existing(peer)
-            .and_then(|c| c.messages().iter().rev().find(|m| !m.mine).map(|m| m.mid.clone()));
+        let last = self.social.existing(peer).and_then(|c| {
+            c.messages()
+                .iter()
+                .rev()
+                .find(|m| !m.mine)
+                .map(|m| m.mid.clone())
+        });
         let mut form = self.request("read");
         form.insert("fid".into(), json!(peer.id));
         if let Some(last) = last {
@@ -1327,26 +1425,36 @@ impl Online {
                 Some(_) => return,
                 None => {}
             }
-            let list = answer.get("friends").and_then(Value::as_array).and_then(|list| {
-                list.iter()
-                    .map(|json| {
-                        let f = friend(json)?;
-                        let unread = json.get("unread").and_then(Value::as_u64).unwrap_or(0) as u32;
-                        Some((f, unread))
-                    })
-                    .collect::<Option<Vec<_>>>()
-            });
+            let list = answer
+                .get("friends")
+                .and_then(Value::as_array)
+                .and_then(|list| {
+                    list.iter()
+                        .map(|json| {
+                            let f = friend(json)?;
+                            let unread =
+                                json.get("unread").and_then(Value::as_u64).unwrap_or(0) as u32;
+                            Some((f, unread))
+                        })
+                        .collect::<Option<Vec<_>>>()
+                });
             let requests = match answer.get("requests") {
                 None => Some(Vec::new()),
-                Some(r) => r.as_array().and_then(|list| list.iter().map(request).collect::<Option<Vec<_>>>()),
+                Some(r) => r
+                    .as_array()
+                    .and_then(|list| list.iter().map(request).collect::<Option<Vec<_>>>()),
             };
             let (Some(list), Some(requests)) = (list, requests) else {
                 o.warn("The Incari service sent a friend list this client can't read");
                 return;
             };
-            let unread: Vec<(String, u32)> =
-                list.iter().filter(|(_, n)| *n > 0).map(|(f, n)| (f.fid.clone(), *n)).collect();
-            o.social.set_loaded(list.into_iter().map(|(f, _)| f).collect(), requests, unread);
+            let unread: Vec<(String, u32)> = list
+                .iter()
+                .filter(|(_, n)| *n > 0)
+                .map(|(f, n)| (f.fid.clone(), *n))
+                .collect();
+            o.social
+                .set_loaded(list.into_iter().map(|(f, _)| f).collect(), requests, unread);
             o.social.set_available(true);
             if let Some(open) = o.viewing.clone().filter(|p| p.friend) {
                 // The conversation on screen catches up with what came while disconnected.
@@ -1366,12 +1474,22 @@ impl Online {
         };
         let peer = match json.get("fid").and_then(Value::as_str) {
             Some(fid) => {
-                let label = self.social.friend(fid).map_or("A friend".to_owned(), |f| f.username.clone());
+                let label = self
+                    .social
+                    .friend(fid)
+                    .map_or("A friend".to_owned(), |f| f.username.clone());
                 Peer::new(true, fid, label)
             }
-            None => Peer::new(false, json.get("pid")?.as_str()?, json.get("name")?.as_str()?),
+            None => Peer::new(
+                false,
+                json.get("pid")?.as_str()?,
+                json.get("name")?.as_str()?,
+            ),
         };
-        let shown = self.viewing.as_ref().is_some_and(|v| Social::same_peer(v, &peer));
+        let shown = self
+            .viewing
+            .as_ref()
+            .is_some_and(|v| Social::same_peer(v, &peer));
         self.social.message(&peer, body, shown);
         if shown {
             self.mark_read(&peer);
@@ -1392,7 +1510,10 @@ impl Online {
         // `id` counts from 1 on each connection.
         self.next_id = 1;
         self.open_deadline = Some(self.now + OPEN_TIMEOUT_MILLIS);
-        self.effects.push(Effect::Connect { connection: self.generation, url: self.url.clone() });
+        self.effects.push(Effect::Connect {
+            connection: self.generation,
+            url: self.url.clone(),
+        });
     }
 
     fn say_hello(&mut self) {
@@ -1402,7 +1523,9 @@ impl Online {
         self.send(hello, false, |o, answer| {
             match error(answer).as_deref() {
                 Some("update") => {
-                    o.warn(format!("The Incari service no longer speaks protocol {PROTOCOL}; update the client"));
+                    o.warn(format!(
+                        "The Incari service no longer speaks protocol {PROTOCOL}; update the client"
+                    ));
                     o.close_connection();
                     o.set_status(Status::UpdateNeeded);
                     return;
@@ -1446,7 +1569,9 @@ impl Online {
                         o.set_status(Status::SignedOut);
                     }
                     Some(e) if o.link.is_some() => {
-                        o.warn(format!("The Incari service couldn't resume the session ({e})"));
+                        o.warn(format!(
+                            "The Incari service couldn't resume the session ({e})"
+                        ));
                         o.drop_connection(None);
                     }
                     // The connection went already (its requests fail as it closes).
@@ -1460,7 +1585,10 @@ impl Online {
     /// `hello`'s `release` and `featured`.
     fn read_hello(&mut self, answer: &Value) {
         if let Some(named) = answer.get("release").and_then(Value::as_object)
-            && let Some(version) = named.get("version").and_then(Value::as_str).and_then(crate::release::valid)
+            && let Some(version) = named
+                .get("version")
+                .and_then(Value::as_str)
+                .and_then(crate::release::valid)
         {
             let notes: Vec<String> = named
                 .get("notes")
@@ -1486,8 +1614,10 @@ impl Online {
                 .filter_map(|s| {
                     let name = s.get("name")?.as_str()?;
                     let address = s.get("address")?.as_str()?;
-                    rules::valid_featured(name, address)
-                        .then(|| Featured { name: name.trim().to_owned(), address: address.trim().to_owned() })
+                    rules::valid_featured(name, address).then(|| Featured {
+                        name: name.trim().to_owned(),
+                        address: address.trim().to_owned(),
+                    })
                 })
                 .take(4)
                 .collect();
@@ -1556,7 +1686,10 @@ impl Online {
                 if let Some(player) = self.world.uuid(pid)
                     && emote.starts_with("emote.")
                 {
-                    self.emotes.push(PlayedEmote { player, emote: emote.to_owned() });
+                    self.emotes.push(PlayedEmote {
+                        player,
+                        emote: emote.to_owned(),
+                    });
                 }
             }
             // Ended elsewhere: Sign Out Everywhere, a new password, the account deleted or banned.
@@ -1610,7 +1743,12 @@ impl Online {
     }
 
     fn expire_requests(&mut self, now: f64) {
-        let expired: Vec<u64> = self.pending.iter().filter(|(_, p)| now >= p.deadline).map(|(id, _)| *id).collect();
+        let expired: Vec<u64> = self
+            .pending
+            .iter()
+            .filter(|(_, p)| now >= p.deadline)
+            .map(|(id, _)| *id)
+            .collect();
         if expired.is_empty() {
             return;
         }
@@ -1640,14 +1778,26 @@ impl Online {
     }
 
     /// Sends a request; `answer` hears the service's answer, or an `offline` error.
-    fn send(&mut self, message: Map<String, Value>, signs_in: bool, answer: impl FnOnce(&mut Online, &Value) + 'static) {
+    fn send(
+        &mut self,
+        message: Map<String, Value>,
+        signs_in: bool,
+        answer: impl FnOnce(&mut Online, &Value) + 'static,
+    ) {
         let id = message.get("id").and_then(Value::as_u64).unwrap_or(0);
         let text = Value::Object(message).to_string();
         let Some(connection) = self.link.filter(|_| text.len() <= MAX_MESSAGE) else {
             answer(self, &offline());
             return;
         };
-        self.pending.insert(id, Pending { deadline: self.now + REQUEST_TIMEOUT_MILLIS, answer: Box::new(answer), signs_in });
+        self.pending.insert(
+            id,
+            Pending {
+                deadline: self.now + REQUEST_TIMEOUT_MILLIS,
+                answer: Box::new(answer),
+                signs_in,
+            },
+        );
         self.effects.push(Effect::Send { connection, text });
     }
 
@@ -1691,8 +1841,13 @@ impl Online {
             self.social.settings(from, requests);
         }
         if let Some(token) = token {
-            let saved = Saved { username: name.clone(), token };
-            self.effects.push(Effect::SaveSession(json!({"username": saved.username, "token": saved.token}).to_string()));
+            let saved = Saved {
+                username: name.clone(),
+                token,
+            };
+            self.effects.push(Effect::SaveSession(
+                json!({"username": saved.username, "token": saved.token}).to_string(),
+            ));
             self.saved = Some(saved);
         }
         self.account_name = Some(name);
@@ -1749,7 +1904,16 @@ impl Online {
             self.presence_grace_until = None;
         }
         let wanted = place.as_ref().map_or(String::new(), |p| {
-            format!("{}\n{}\n{}", p.server_hash, p.name, if self.share_server { p.address.as_str() } else { "" })
+            format!(
+                "{}\n{}\n{}",
+                p.server_hash,
+                p.name,
+                if self.share_server {
+                    p.address.as_str()
+                } else {
+                    ""
+                }
+            )
         });
         if wanted == self.presence_held {
             return;
@@ -1786,16 +1950,21 @@ impl Online {
             match o.failure(answer, Failure::Unavailable) {
                 Some(Failure::Rejected) => {
                     // Sending it again won't change the answer: wait for the next place.
-                    o.warn(format!("The Incari service turned down the player's server ({e})"));
+                    o.warn(format!(
+                        "The Incari service turned down the player's server ({e})"
+                    ));
                     o.presence_held = wanted;
                 }
                 Some(Failure::SignedOut | Failure::Update) => {}
                 f => {
                     if !matches!(f, Some(Failure::RateLimited | Failure::Offline)) {
-                        o.warn(format!("The Incari service didn't take the player's server ({e})"));
+                        o.warn(format!(
+                            "The Incari service didn't take the player's server ({e})"
+                        ));
                     }
                     o.presence_retry_at = o.now + o.presence_retry_delay;
-                    o.presence_retry_delay = (o.presence_retry_delay * 2.0).min(PRESENCE_RETRY_MAX_MILLIS);
+                    o.presence_retry_delay =
+                        (o.presence_retry_delay * 2.0).min(PRESENCE_RETRY_MAX_MILLIS);
                 }
             }
         });
@@ -1838,7 +2007,11 @@ impl Online {
         if self.status == Status::SignedOut {
             return true;
         }
-        let f = if self.status == Status::UpdateNeeded { Failure::Update } else { Failure::Offline };
+        let f = if self.status == Status::UpdateNeeded {
+            Failure::Update
+        } else {
+            Failure::Offline
+        };
         self.finish(t, Err(f));
         false
     }
@@ -1894,7 +2067,13 @@ fn error(answer: &Value) -> Option<String> {
     if answer.get("t").and_then(Value::as_str) == Some("ok") {
         return None;
     }
-    Some(answer.get("code").and_then(Value::as_str).unwrap_or("unavailable").to_owned())
+    Some(
+        answer
+            .get("code")
+            .and_then(Value::as_str)
+            .unwrap_or("unavailable")
+            .to_owned(),
+    )
 }
 
 /// What a request that never got its answer reads as.
@@ -1905,12 +2084,20 @@ fn offline() -> Value {
 fn strings(json: &Value, key: &str) -> Vec<String> {
     json.get(key)
         .and_then(Value::as_array)
-        .map(|list| list.iter().filter_map(Value::as_str).map(str::to_owned).collect())
+        .map(|list| {
+            list.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 fn codes(answer: &Value) -> Vec<String> {
-    strings(answer, "recoveryCodes").iter().map(|c| rules::display_code(c)).collect()
+    strings(answer, "recoveryCodes")
+        .iter()
+        .map(|c| rules::display_code(c))
+        .collect()
 }
 
 /// `text` cut to `max` characters.
@@ -1921,7 +2108,12 @@ fn cut(text: &str, max: usize) -> &str {
     }
 }
 
-type Settings = (Option<bool>, Option<bool>, Option<MessagesFrom>, Option<bool>);
+type Settings = (
+    Option<bool>,
+    Option<bool>,
+    Option<MessagesFrom>,
+    Option<bool>,
+);
 
 /// `account.settings`: shareServer, badge, messages, friendRequests, each optional (older
 /// services leave some out); None if one is the wrong type.
@@ -1937,7 +2129,12 @@ fn read_settings(s: &Value) -> Option<Settings> {
         None => None,
         Some(v) => Some(MessagesFrom::of(v.as_str()?)),
     };
-    Some((flag("shareServer")?, flag("badge")?, messages, flag("friendRequests")?))
+    Some((
+        flag("shareServer")?,
+        flag("badge")?,
+        messages,
+        flag("friendRequests")?,
+    ))
 }
 
 fn friend(json: &Value) -> Option<Friend> {
@@ -1945,7 +2142,10 @@ fn friend(json: &Value) -> Option<Friend> {
         fid: json.get("fid")?.as_str()?.to_owned(),
         username: json.get("username")?.as_str()?.to_owned(),
         online: json.get("online").and_then(Value::as_bool).unwrap_or(false),
-        server: json.get("server").and_then(Value::as_str).map(str::to_owned),
+        server: json
+            .get("server")
+            .and_then(Value::as_str)
+            .map(str::to_owned),
     })
 }
 

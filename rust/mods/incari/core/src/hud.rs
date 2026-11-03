@@ -65,7 +65,8 @@ impl HudCanvas<'_, '_> {
 
     /// A sprite of the game's atlas (an effect's icon), `w` by `h`.
     pub fn sprite(&mut self, name: &str, x: f32, y: f32, w: f32, h: f32) {
-        self.p.sprite(name, [0.0, 0.0, w, h], [x, y, w, h], 0xFFFF_FFFF);
+        self.p
+            .sprite(name, [0.0, 0.0, w, h], [x, y, w, h], 0xFFFF_FFFF);
     }
 
     /// A ring around (`cx`, `cy`), `radius` to its outer edge, `width` thick.

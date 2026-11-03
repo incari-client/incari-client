@@ -29,7 +29,12 @@ pub fn styled(name: &str, style: &Cosmetic) -> Vec<(String, u32)> {
     let last = (count - 1) as f32;
     name.chars()
         .enumerate()
-        .map(|(i, c)| (c.to_string(), art::mix(colors[0], colors[1], i as f32 / last)))
+        .map(|(i, c)| {
+            (
+                c.to_string(),
+                art::mix(colors[0], colors[1], i as f32 / last),
+            )
+        })
         .collect()
 }
 
@@ -44,7 +49,10 @@ mod tests {
         assert_eq!(fade.len(), 5);
         assert_eq!(fade[0], ("S".into(), 0xFFB36A));
         assert_eq!(fade[4], ("e".into(), 0xFF6FA8));
-        assert_eq!(styled("Steve", by_id("nametag.gold").unwrap()), [("Steve".to_owned(), 0xFFD36A)]);
+        assert_eq!(
+            styled("Steve", by_id("nametag.gold").unwrap()),
+            [("Steve".to_owned(), 0xFFD36A)]
+        );
         assert_eq!(styled("A", by_id("nametag.aurora").unwrap()).len(), 1);
     }
 }

@@ -36,7 +36,13 @@ impl Screen for Profiles {
                         continue;
                     };
                     let chosen = *n == active;
-                    if ui::button(cx.p, cx.ui, r[0], if chosen { "Active" } else { "Switch" }, !chosen) {
+                    if ui::button(
+                        cx.p,
+                        cx.ui,
+                        r[0],
+                        if chosen { "Active" } else { "Switch" },
+                        !chosen,
+                    ) {
                         switch = Some(i);
                     }
                     if ui::button(cx.p, cx.ui, r[1], "Delete", names.len() > 1) {
@@ -45,7 +51,15 @@ impl Screen for Profiles {
                 }
                 rows.heading(cx, "New profile");
                 if let Some(r) = rows.row(cx, "Name", "", &[CONTROL_WIDTH, SMALL_BUTTON_WIDTH]) {
-                    ui::text_field(cx.p, cx.ui, ui::id("profile-name", 0), r[0], name, "Name", 24);
+                    ui::text_field(
+                        cx.p,
+                        cx.ui,
+                        ui::id("profile-name", 0),
+                        r[0],
+                        name,
+                        "Name",
+                        24,
+                    );
                     create = ui::button(cx.p, cx.ui, r[1], "Create", !name.trim().is_empty());
                 }
             },
@@ -65,7 +79,9 @@ impl Screen for Profiles {
                 self.name.clear();
                 self.problem = None;
             } else {
-                self.problem = Some(format!("Can't make \"{wanted}\": taken, or not a name a profile can have."));
+                self.problem = Some(format!(
+                    "Can't make \"{wanted}\": taken, or not a name a profile can have."
+                ));
             }
         }
         if pressed.is_some() {

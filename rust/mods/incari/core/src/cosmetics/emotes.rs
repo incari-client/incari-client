@@ -46,7 +46,10 @@ pub fn pose(emote: &str, elapsed: f32) -> Option<Pose> {
     }
     let weight = (elapsed / EASE).min((duration - elapsed) / EASE).min(1.0);
     let e = elapsed;
-    let mut p = Pose { weight, ..Pose::default() };
+    let mut p = Pose {
+        weight,
+        ..Pose::default()
+    };
     match emote {
         "emote.wave" => p.right_arm = Some([0.0, 0.0, 2.6 + 0.35 * (e * 0.6).sin()]),
         "emote.clap" => {
@@ -102,8 +105,15 @@ mod tests {
             assert_eq!(pose(e.id, d / 2.0).unwrap().weight, 1.0);
             assert!(pose(e.id, d).is_none() && pose(e.id, -1.0).is_none());
             let p = pose(e.id, d / 2.0).unwrap();
-            assert!(p.right_arm.is_some() || p.head.is_some(), "{} turns something", e.id);
+            assert!(
+                p.right_arm.is_some() || p.head.is_some(),
+                "{} turns something",
+                e.id
+            );
         }
-        assert_eq!(Pose::blend(0.5, [0.0, 2.0, 0.0], Some([1.0, 0.0, 0.0])), [0.5, 1.0, 0.0]);
+        assert_eq!(
+            Pose::blend(0.5, [0.0, 2.0, 0.0], Some([1.0, 0.0, 0.0])),
+            [0.5, 1.0, 0.0]
+        );
     }
 }

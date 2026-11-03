@@ -7,17 +7,41 @@ use serde_json::Value;
 /// What a setting holds, and its bounds.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Kind {
-    Bool { default: bool },
-    Int { min: i32, max: i32, default: i32 },
-    Float { min: f32, max: f32, step: f32, default: f32 },
+    Bool {
+        default: bool,
+    },
+    Int {
+        min: i32,
+        max: i32,
+        default: i32,
+    },
+    Float {
+        min: f32,
+        max: f32,
+        step: f32,
+        default: f32,
+    },
     /// Choices by key (as profiles store them, an enum's lowercase name) and label.
-    Choice { choices: &'static [(&'static str, &'static str)], default: usize },
-    Color { default: u32, alpha: bool },
-    Key { default: Key },
+    Choice {
+        choices: &'static [(&'static str, &'static str)],
+        default: usize,
+    },
+    Color {
+        default: u32,
+        alpha: bool,
+    },
+    Key {
+        default: Key,
+    },
     /// A button that does something, with its label; holds nothing.
-    Action { label: &'static str },
+    Action {
+        label: &'static str,
+    },
     /// A square grid of on/off cells (the crosshair editor's), rows as bits.
-    Grid { size: usize, default: &'static [u64] },
+    Grid {
+        size: usize,
+        default: &'static [u64],
+    },
 }
 
 /// A setting's value.
@@ -256,8 +280,10 @@ impl Setting {
             },
             (Kind::Action { .. }, _) => return true,
             (Kind::Grid { size, .. }, Value::String(s)) => {
-                let rows: Option<Vec<u64>> =
-                    s.split(',').map(|p| u64::from_str_radix(p, 16).ok()).collect();
+                let rows: Option<Vec<u64>> = s
+                    .split(',')
+                    .map(|p| u64::from_str_radix(p, 16).ok())
+                    .collect();
                 match rows {
                     Some(rows) if rows.len() == *size => Val::Grid(rows),
                     _ => return false,
@@ -281,9 +307,11 @@ fn default_of(kind: &Kind) -> Val {
         Kind::Int { default, .. } => Val::Int(*default),
         Kind::Float { default, .. } => Val::Float(*default),
         Kind::Choice { default, .. } => Val::Choice(*default),
-        Kind::Color { default, alpha } => {
-            Val::Color(if *alpha { *default } else { default | 0xFF00_0000 })
-        }
+        Kind::Color { default, alpha } => Val::Color(if *alpha {
+            *default
+        } else {
+            default | 0xFF00_0000
+        }),
         Kind::Key { default } => Val::Key(*default),
         Kind::Action { .. } => Val::None,
         Kind::Grid { default, .. } => Val::Grid(default.to_vec()),
@@ -309,7 +337,12 @@ pub fn trim(value: f64, decimals: usize) -> String {
     if decimals == 0 {
         return format!("{sign}{rounded}");
     }
-    format!("{sign}{}.{:0width$}", rounded / scale, rounded % scale, width = decimals)
+    format!(
+        "{sign}{}.{:0width$}",
+        rounded / scale,
+        rounded % scale,
+        width = decimals
+    )
 }
 
 /// A module's or a HUD element's settings, in the order the menu shows them.
@@ -320,7 +353,11 @@ pub struct Settings {
 
 impl Settings {
     pub fn add(&mut self, setting: Setting) -> usize {
-        debug_assert!(self.index(setting.id).is_none(), "two settings {}", setting.id);
+        debug_assert!(
+            self.index(setting.id).is_none(),
+            "two settings {}",
+            setting.id
+        );
         self.all.push(setting);
         self.all.len() - 1
     }
@@ -428,7 +465,16 @@ pub fn float(
     step: f32,
     default: f32,
 ) -> Setting {
-    Setting::new(id, name, Kind::Float { min, max, step, default })
+    Setting::new(
+        id,
+        name,
+        Kind::Float {
+            min,
+            max,
+            step,
+            default,
+        },
+    )
 }
 
 pub fn choice(
@@ -442,7 +488,14 @@ pub fn choice(
 }
 
 pub fn color(id: &'static str, name: &'static str, argb: u32, alpha: bool) -> Setting {
-    Setting::new(id, name, Kind::Color { default: argb, alpha })
+    Setting::new(
+        id,
+        name,
+        Kind::Color {
+            default: argb,
+            alpha,
+        },
+    )
 }
 
 pub fn key(id: &'static str, name: &'static str, default: Key) -> Setting {
@@ -493,8 +546,15 @@ mod tests {
         settings.read_json(stored.as_object());
         assert_eq!(settings.key("toggle"), Key::Keyboard(229));
         assert_eq!(settings.choice("sprint"), "toggle");
-        assert!(settings.bool("show-status"), "a value of the wrong kind is the default");
-        assert_eq!(settings.color("color"), 0xFFFF_0000, "an opaque colour stays opaque");
+        assert!(
+            settings.bool("show-status"),
+            "a value of the wrong kind is the default"
+        );
+        assert_eq!(
+            settings.color("color"),
+            0xFFFF_0000,
+            "an opaque colour stays opaque"
+        );
         let written = serde_json::Value::Object(settings.to_json());
         assert_eq!(written["sprint"], "toggle");
         assert_eq!(written["color"], "#FFFF0000");
@@ -505,10 +565,14 @@ mod tests {
     fn shows_settings_by_the_others() {
         let mut settings = Settings::default();
         settings.add(bool("custom-color", "Custom color", false));
-        settings.add(color("color", "Color", 0xFFFFFF, false).shown(Shown::When("custom-color", true)));
+        settings
+            .add(color("color", "Color", 0xFFFFFF, false).shown(Shown::When("custom-color", true)));
         let c = settings.get("color").unwrap().clone();
         assert!(!settings.is_visible(&c));
-        settings.get_mut("custom-color").unwrap().set(Val::Bool(true));
+        settings
+            .get_mut("custom-color")
+            .unwrap()
+            .set(Val::Bool(true));
         assert!(settings.is_visible(&c));
     }
 }

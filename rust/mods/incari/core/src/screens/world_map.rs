@@ -14,8 +14,8 @@ use super::waypoint_list::WaypointList;
 use crate::draw::Rect;
 use crate::icons::Icon;
 use crate::map_memory::{HostBytes, MapSource, REGION_BLOCKS, Region, Remembered};
-use crate::panels;
 use crate::paint::Shape;
+use crate::panels;
 use crate::screen::{Cx, Go, Screen};
 use crate::theme::{CONTROL_HEIGHT, GAP};
 use crate::ui;
@@ -70,7 +70,9 @@ fn runs(region: &Region, cell: i32) -> Vec<(u16, u16, u16, u32)> {
                 .color(col * cell + cell / 2, row * cell + cell / 2)
                 .filter(|c| c >> 24 != 0);
             match (run, color) {
-                (Some((start, len, c)), Some(color)) if c == color => run = Some((start, len + 1, c)),
+                (Some((start, len, c)), Some(color)) if c == color => {
+                    run = Some((start, len + 1, c))
+                }
                 (_, color) => {
                     if let Some((start, len, c)) = run {
                         out.push((row as u16, start, len, c));
@@ -186,26 +188,42 @@ impl WorldMap {
         for rz in rz0..=rz1 {
             for rx in rx0..=rx1 {
                 let key = (rx, rz);
-                if self.missing.get(&key).is_some_and(|t| now - t < MISSING_MILLIS) {
+                if self
+                    .missing
+                    .get(&key)
+                    .is_some_and(|t| now - t < MISSING_MILLIS)
+                {
                     continue;
                 }
-                let kept = self.regions.get(&key).map(|r| (r.revision, r.cell, r.made_at));
+                let kept = self
+                    .regions
+                    .get(&key)
+                    .map(|r| (r.revision, r.cell, r.made_at));
                 let mut found = false;
                 let mut made: Option<Runs> = None;
                 let can_build = builds < BUILDS_A_FRAME;
-                self.source.region(&mut files, &self.dimension, rx, rz, &mut |r| {
-                    let Some(r) = r else {
-                        return;
-                    };
-                    found = true;
-                    let stale = match kept {
-                        None => true,
-                        Some((revision, c, at)) => c != cell || revision != r.revision && now - at > REMAKE_MILLIS,
-                    };
-                    if stale && can_build {
-                        made = Some(Runs { revision: r.revision, cell, made_at: now, used_at: 0, runs: runs(r, cell) });
-                    }
-                });
+                self.source
+                    .region(&mut files, &self.dimension, rx, rz, &mut |r| {
+                        let Some(r) = r else {
+                            return;
+                        };
+                        found = true;
+                        let stale = match kept {
+                            None => true,
+                            Some((revision, c, at)) => {
+                                c != cell || revision != r.revision && now - at > REMAKE_MILLIS
+                            }
+                        };
+                        if stale && can_build {
+                            made = Some(Runs {
+                                revision: r.revision,
+                                cell,
+                                made_at: now,
+                                used_at: 0,
+                                runs: runs(r, cell),
+                            });
+                        }
+                    });
                 if !found {
                     self.missing.insert(key, now);
                     continue;
@@ -270,10 +288,18 @@ impl WorldMap {
     }
 
     /// The shown waypoint whose icon is under `at`, nearest first.
-    fn waypoint_at<'w>(&self, all: &'w [Waypoint], at: [f32; 2], size: [f32; 2]) -> Option<&'w Waypoint> {
+    fn waypoint_at<'w>(
+        &self,
+        all: &'w [Waypoint],
+        at: [f32; 2],
+        size: [f32; 2],
+    ) -> Option<&'w Waypoint> {
         let mut best = None;
         let mut best_d = 8.0 * 8.0;
-        for w in all.iter().filter(|w| w.visible && w.dimension == self.dimension) {
+        for w in all
+            .iter()
+            .filter(|w| w.visible && w.dimension == self.dimension)
+        {
             let dx = self.screen_x(w.x as f64 + 0.5, size[0]) - at[0];
             let dy = self.screen_y(w.z as f64 + 0.5, size[1]) - at[1];
             let d = dx * dx + dy * dy;
@@ -294,7 +320,10 @@ impl WorldMap {
             self.tag(cx, hw, true);
         }
         for wp in all {
-            if !wp.visible || wp.dimension != self.dimension || hovered.is_some_and(|h| h.id() == wp.id()) {
+            if !wp.visible
+                || wp.dimension != self.dimension
+                || hovered.is_some_and(|h| h.id() == wp.id())
+            {
                 continue;
             }
             let x = self.screen_x(wp.x as f64 + 0.5, w);
@@ -306,7 +335,10 @@ impl WorldMap {
             self.tag(cx, wp, false);
         }
         if let Some(hw) = hovered {
-            let (x, y) = (self.screen_x(hw.x as f64 + 0.5, w), self.screen_y(hw.z as f64 + 0.5, h));
+            let (x, y) = (
+                self.screen_x(hw.x as f64 + 0.5, w),
+                self.screen_y(hw.z as f64 + 0.5, h),
+            );
             cx.p.shape(hw.icon, x, y, 12.0, hw.argb());
         }
     }
@@ -316,12 +348,21 @@ impl WorldMap {
         let tw = cx.p.width(wp.name()) + 8.0;
         let tx = (self.screen_x(wp.x as f64 + 0.5, cx.size[0]) - tw / 2.0).round();
         let ty = (self.screen_y(wp.z as f64 + 0.5, cx.size[1]) - 20.0).round();
-        let covers = |o: &[f32; 4]| tx < o[2] + 2.0 && tx + tw > o[0] - 2.0 && ty < o[3] + 1.0 && ty + 12.0 > o[1] - 1.0;
+        let covers = |o: &[f32; 4]| {
+            tx < o[2] + 2.0 && tx + tw > o[0] - 2.0 && ty < o[3] + 1.0 && ty + 12.0 > o[1] - 1.0
+        };
         if self.tags.iter().any(covers) {
             return;
         }
         self.tags.push([tx, ty, tx + tw, ty + 12.0]);
-        cx.p.round(tx, ty, tw, 12.0, th.radius, if hot { th.floating } else { th.background });
+        cx.p.round(
+            tx,
+            ty,
+            tw,
+            12.0,
+            th.radius,
+            if hot { th.floating } else { th.background },
+        );
         if hot {
             cx.p.outline(tx, ty, tw, 12.0, th.radius, wp.argb());
         }
@@ -330,7 +371,10 @@ impl WorldMap {
 
     /// The player: an arrow the way they face, ringed so it's found at a glance.
     fn player(&self, cx: &mut Cx, p: &Player) {
-        let (x, y) = (self.screen_x(p.x, cx.size[0]), self.screen_y(p.z, cx.size[1]));
+        let (x, y) = (
+            self.screen_x(p.x, cx.size[0]),
+            self.screen_y(p.z, cx.size[1]),
+        );
         let accent = cx.p.theme.accent;
         let text = cx.p.theme.text;
         cx.p.ring(x, y, 9.0, 9.0, 0x8C0E_1319);
@@ -343,7 +387,10 @@ impl WorldMap {
     fn add_at(&self, cx: &mut Cx, all: &[Waypoint], p: &Player, at: [f32; 2]) {
         let [x, z] = self.world(at, cx.size).map(|v| v.floor() as i32);
         let y = self.source.surface(x, z).unwrap_or(p.y.floor() as i32);
-        cx.open(WaypointEdit::new(waypoint::draft(all, x, y, z, &p.dimension), true));
+        cx.open(WaypointEdit::new(
+            waypoint::draft(all, x, y, z, &p.dimension),
+            true,
+        ));
     }
 
     /// A menu button `label` wide enough for its text, right of `right`: its rectangle.
@@ -429,7 +476,13 @@ impl Screen for WorldMap {
         let text_y = (BAR_HEIGHT / 2.0).floor() - 4.0;
         cx.p.text(TITLE, 26.0, text_y, th.text, false);
         let tw = cx.p.width(TITLE);
-        cx.p.text(&waypoint::dimension_name(&self.dimension), 30.0 + tw, text_y, th.muted, false);
+        cx.p.text(
+            &waypoint::dimension_name(&self.dimension),
+            30.0 + tw,
+            text_y,
+            th.muted,
+            false,
+        );
         let done = cx.host.translate("gui.done");
         let done_r = [w - 8.0 - 60.0, 6.0, 60.0, CONTROL_HEIGHT];
         if ui::button(cx.p, cx.ui, done_r, &done, true) {
@@ -440,13 +493,24 @@ impl Screen for WorldMap {
             cx.open(WaypointList::new());
         }
         let center_r = Self::bar_button(cx, list_r[0] - GAP, "Center");
-        if ui::menu_button(cx.p, cx.ui, center_r, "Center", Some(Icon::Target), "", true) {
+        if ui::menu_button(
+            cx.p,
+            cx.ui,
+            center_r,
+            "Center",
+            Some(Icon::Target),
+            "",
+            true,
+        ) {
             self.center = [player.x, player.z];
         }
 
         // Along the bottom: where the pointer is, and how to use the map.
         let [mx, mz] = self.world(mouse, size).map(|v| v.floor() as i64);
-        let where_ = format!("X {mx}   Z {mz}   ·   Zoom {}%", (self.scale * 100.0).round() as i32);
+        let where_ = format!(
+            "X {mx}   Z {mz}   ·   Zoom {}%",
+            (self.scale * 100.0).round() as i32
+        );
         let hint = match &hovered {
             Some(wp) => format!("Click to edit {}", wp.name()),
             None => "Drag to move  ·  Scroll to zoom  ·  Right-click to add a waypoint".to_owned(),
@@ -456,9 +520,18 @@ impl Screen for WorldMap {
         cx.p.round(6.0, bar_y, where_w, 14.0, th.radius, th.floating);
         cx.p.text(&where_, 12.0, bar_y + 3.0, th.text, false);
         // On a narrow screen the hint is cut short of the position, not drawn over it.
-        let hint = cx.p.fit(&hint, w - 6.0 - (6.0 + where_w + 6.0) - 12.0).into_owned();
+        let hint =
+            cx.p.fit(&hint, w - 6.0 - (6.0 + where_w + 6.0) - 12.0)
+                .into_owned();
         let hint_w = cx.p.width(&hint) + 12.0;
-        cx.p.round(w - 6.0 - hint_w, bar_y, hint_w, 14.0, th.radius, th.floating);
+        cx.p.round(
+            w - 6.0 - hint_w,
+            bar_y,
+            hint_w,
+            14.0,
+            th.radius,
+            th.floating,
+        );
         cx.p.text(&hint, w - hint_w, bar_y + 3.0, th.muted, false);
 
         // Presses on the map, below the bar (the buttons took theirs).

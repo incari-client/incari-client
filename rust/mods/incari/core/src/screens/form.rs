@@ -61,12 +61,34 @@ enum Item {
     Text(String, Tone),
     Centred(String, Tone),
     Gap(f32),
-    Field { label: String, max: usize, kind: FieldKind },
-    Button { label: String, id: usize, active: bool },
-    Row { labels: Vec<String>, id: usize },
-    Entry { label: String, buttons: Vec<String>, id: usize },
-    Toggle { label: String, on: bool, id: usize },
-    Choice { label: String, id: usize },
+    Field {
+        label: String,
+        max: usize,
+        kind: FieldKind,
+    },
+    Button {
+        label: String,
+        id: usize,
+        active: bool,
+    },
+    Row {
+        labels: Vec<String>,
+        id: usize,
+    },
+    Entry {
+        label: String,
+        buttons: Vec<String>,
+        id: usize,
+    },
+    Toggle {
+        label: String,
+        on: bool,
+        id: usize,
+    },
+    Choice {
+        label: String,
+        id: usize,
+    },
     Status,
     /// Room the screen draws in itself: its top comes back in `Shown::spaces`.
     Space(f32),
@@ -105,15 +127,27 @@ impl Stack {
 
     /// A labelled text field across the panel; its text is the form's, by label.
     pub fn field(&mut self, label: &str, max: usize) {
-        self.items.push(Item::Field { label: label.into(), max, kind: FieldKind::Plain });
+        self.items.push(Item::Field {
+            label: label.into(),
+            max,
+            kind: FieldKind::Plain,
+        });
     }
 
     pub fn username_field(&mut self, label: &str) {
-        self.items.push(Item::Field { label: label.into(), max: online::rules::MAX_USERNAME, kind: FieldKind::Username });
+        self.items.push(Item::Field {
+            label: label.into(),
+            max: online::rules::MAX_USERNAME,
+            kind: FieldKind::Username,
+        });
     }
 
     pub fn password_field(&mut self, label: &str) {
-        self.items.push(Item::Field { label: label.into(), max: online::rules::MAX_PASSWORD, kind: FieldKind::Password });
+        self.items.push(Item::Field {
+            label: label.into(),
+            max: online::rules::MAX_PASSWORD,
+            kind: FieldKind::Password,
+        });
     }
 
     /// A button across the panel: its id.
@@ -123,14 +157,21 @@ impl Stack {
 
     pub fn button_active(&mut self, label: &str, active: bool) -> usize {
         let id = self.id(1);
-        self.items.push(Item::Button { label: label.into(), id, active });
+        self.items.push(Item::Button {
+            label: label.into(),
+            id,
+            active,
+        });
         id
     }
 
     /// Buttons side by side across the panel: the first one's id, the others' following.
     pub fn row(&mut self, labels: &[&str]) -> usize {
         let id = self.id(labels.len());
-        self.items.push(Item::Row { labels: labels.iter().map(|l| (*l).to_owned()).collect(), id });
+        self.items.push(Item::Row {
+            labels: labels.iter().map(|l| (*l).to_owned()).collect(),
+            id,
+        });
         id
     }
 
@@ -148,14 +189,21 @@ impl Stack {
     /// A setting: its name on the left, an on/off switch on the right. Pressed when it's flipped.
     pub fn toggle(&mut self, label: &str, on: bool) -> usize {
         let id = self.id(1);
-        self.items.push(Item::Toggle { label: label.into(), on, id });
+        self.items.push(Item::Toggle {
+            label: label.into(),
+            on,
+            id,
+        });
         id
     }
 
     /// A button that steps through choices, showing the current one (`Ui.choice`).
     pub fn choice(&mut self, current: &str) -> usize {
         let id = self.id(1);
-        self.items.push(Item::Choice { label: current.into(), id });
+        self.items.push(Item::Choice {
+            label: current.into(),
+            id,
+        });
         id
     }
 
@@ -206,7 +254,10 @@ pub struct Form {
 impl Form {
     /// The text in the field labelled `label`.
     pub fn value(&self, label: &str) -> &str {
-        self.fields.iter().find(|(l, _)| l == label).map_or("", |(_, v)| v.as_str())
+        self.fields
+            .iter()
+            .find(|(l, _)| l == label)
+            .map_or("", |(_, v)| v.as_str())
     }
 
     pub fn set_value(&mut self, label: &str, value: &str) {
@@ -294,7 +345,10 @@ impl Form {
                 Item::Gap(h) | Item::Space(h) => *h,
                 Item::Field { .. } => LINE + CONTROL_HEIGHT + GAP,
                 Item::Entry { .. } => CONTROL_HEIGHT + GAP - 2.0,
-                Item::Button { .. } | Item::Row { .. } | Item::Toggle { .. } | Item::Choice { .. } => CONTROL_HEIGHT + GAP,
+                Item::Button { .. }
+                | Item::Row { .. }
+                | Item::Toggle { .. }
+                | Item::Choice { .. } => CONTROL_HEIGHT + GAP,
                 Item::Status => 2.0 * LINE + GAP,
             };
         }
@@ -309,7 +363,14 @@ impl Form {
         }
         self.scroll = self.scroll.clamp(0.0, max_scroll);
         let panel_top = top - self.scroll;
-        panels::panel(cx.p, left - PADDING, panel_top, CONTENT_WIDTH + 2.0 * PADDING, panel_height, 1.0);
+        panels::panel(
+            cx.p,
+            left - PADDING,
+            panel_top,
+            CONTENT_WIDTH + 2.0 * PADDING,
+            panel_height,
+            1.0,
+        );
         let th = cx.p.theme;
         cx.p.centered(title, width / 2.0, panel_top + PADDING, th.text, false);
 
@@ -330,7 +391,9 @@ impl Form {
             }
         }
         if !field_ids.is_empty() && cx.ui.key(keys::TAB) {
-            let at = field_ids.iter().position(|(id, _)| Some(*id) == cx.ui.focus);
+            let at = field_ids
+                .iter()
+                .position(|(id, _)| Some(*id) == cx.ui.focus);
             let next = match at {
                 Some(i) if cx.ui.shift => (i + field_ids.len() - 1) % field_ids.len(),
                 Some(i) => (i + 1) % field_ids.len(),
@@ -377,7 +440,13 @@ impl Form {
                     y += CONTROL_HEIGHT + GAP;
                 }
                 Item::Button { label, id, active } => {
-                    if ui::button(cx.p, cx.ui, [left, y, CONTENT_WIDTH, CONTROL_HEIGHT], &label, active) {
+                    if ui::button(
+                        cx.p,
+                        cx.ui,
+                        [left, y, CONTENT_WIDTH, CONTROL_HEIGHT],
+                        &label,
+                        active,
+                    ) {
                         shown.pressed = Some(id);
                     }
                     y += CONTROL_HEIGHT + GAP;
@@ -387,7 +456,11 @@ impl Form {
                     let each = ((CONTENT_WIDTH - (n - 1.0) * THEME_GAP) / n).floor();
                     for (i, label) in labels.iter().enumerate() {
                         let x = left + i as f32 * (each + THEME_GAP);
-                        let w = if i + 1 == labels.len() { CONTENT_WIDTH - i as f32 * (each + THEME_GAP) } else { each };
+                        let w = if i + 1 == labels.len() {
+                            CONTENT_WIDTH - i as f32 * (each + THEME_GAP)
+                        } else {
+                            each
+                        };
                         if ui::button(cx.p, cx.ui, [x, y, w, CONTROL_HEIGHT], label, true) {
                             shown.pressed = Some(id + i);
                         }
@@ -397,10 +470,19 @@ impl Form {
                 Item::Entry { label, buttons, id } => {
                     let n = buttons.len() as f32;
                     let buttons_width = n * ITEM_BUTTON + (n - 1.0) * THEME_GAP;
-                    let shown_label = cx.p.fit(&label, CONTENT_WIDTH - buttons_width - 6.0).into_owned();
-                    cx.p.text(&shown_label, left, y + ((CONTROL_HEIGHT - 8.0) / 2.0).floor(), th.text, false);
+                    let shown_label =
+                        cx.p.fit(&label, CONTENT_WIDTH - buttons_width - 6.0)
+                            .into_owned();
+                    cx.p.text(
+                        &shown_label,
+                        left,
+                        y + ((CONTROL_HEIGHT - 8.0) / 2.0).floor(),
+                        th.text,
+                        false,
+                    );
                     for (i, b) in buttons.iter().enumerate() {
-                        let x = left + CONTENT_WIDTH - buttons_width + i as f32 * (ITEM_BUTTON + THEME_GAP);
+                        let x = left + CONTENT_WIDTH - buttons_width
+                            + i as f32 * (ITEM_BUTTON + THEME_GAP);
                         if ui::button(cx.p, cx.ui, [x, y, ITEM_BUTTON, CONTROL_HEIGHT], b, true) {
                             shown.pressed = Some(id + i);
                         }
@@ -408,8 +490,19 @@ impl Form {
                     y += CONTROL_HEIGHT + GAP - 2.0;
                 }
                 Item::Toggle { label, on, id } => {
-                    cx.p.text(&label, left, y + ((CONTROL_HEIGHT - 8.0) / 2.0).floor(), th.text, false);
-                    let r = [left + CONTENT_WIDTH - TOGGLE_WIDTH, y, TOGGLE_WIDTH, CONTROL_HEIGHT];
+                    cx.p.text(
+                        &label,
+                        left,
+                        y + ((CONTROL_HEIGHT - 8.0) / 2.0).floor(),
+                        th.text,
+                        false,
+                    );
+                    let r = [
+                        left + CONTENT_WIDTH - TOGGLE_WIDTH,
+                        y,
+                        TOGGLE_WIDTH,
+                        CONTROL_HEIGHT,
+                    ];
                     if ui::switch(cx.p, cx.ui, r, on) {
                         shown.pressed = Some(id);
                     }
@@ -430,7 +523,9 @@ impl Form {
                 Item::Status => {
                     if !self.status.is_empty() {
                         let color = self.tone.unwrap_or(Tone::Muted).color(cx.p);
-                        for (i, line) in cx.p.wrap(&self.status, CONTENT_WIDTH, 2).iter().enumerate() {
+                        for (i, line) in
+                            cx.p.wrap(&self.status, CONTENT_WIDTH, 2).iter().enumerate()
+                        {
                             cx.p.centered(line, width / 2.0, y + i as f32 * LINE, color, false);
                         }
                     }
@@ -452,7 +547,16 @@ impl Form {
 /// A one-line field editing `text`: click to focus; typing, Backspace, Delete, the arrows, Home,
 /// End and Ctrl+V (Ctrl+C too, but not from a password). Enter and Tab are left for the form.
 /// True when the text changed.
-pub fn field(p: &mut Painter, ui: &mut Ui, id: u64, r: Rect, text: &mut String, hint: &str, max: usize, kind: FieldKind) -> bool {
+pub fn field(
+    p: &mut Painter,
+    ui: &mut Ui,
+    id: u64,
+    r: Rect,
+    text: &mut String,
+    hint: &str,
+    max: usize,
+    kind: FieldKind,
+) -> bool {
     if ui.clicked(r) {
         ui.focus = Some(id);
         ui.caret = text.chars().count();
@@ -470,9 +574,18 @@ pub fn field(p: &mut Painter, ui: &mut Ui, id: u64, r: Rect, text: &mut String, 
     };
     p.clip_start(r);
     if text.is_empty() && !focused {
-        p.text(hint, r[0] + 4.0, ty, crate::color::alpha(th.muted, 0.8), false);
+        p.text(
+            hint,
+            r[0] + 4.0,
+            ty,
+            crate::color::alpha(th.muted, 0.8),
+            false,
+        );
     } else {
-        let before: String = shown.chars().take(ui.caret.min(text.chars().count())).collect();
+        let before: String = shown
+            .chars()
+            .take(ui.caret.min(text.chars().count()))
+            .collect();
         let caret_x = p.width(&before);
         let shift = (caret_x - room + 2.0).max(0.0);
         p.text(&shown, r[0] + 4.0 - shift, ty, th.text, false);
@@ -493,7 +606,10 @@ fn insert(ui: &mut Ui, text: &mut String, c: char, max: usize, kind: FieldKind) 
     if !allowed(kind, c) || text.chars().count() >= max {
         return false;
     }
-    let at = text.char_indices().nth(ui.caret).map_or(text.len(), |(i, _)| i);
+    let at = text
+        .char_indices()
+        .nth(ui.caret)
+        .map_or(text.len(), |(i, _)| i);
     text.insert(at, c);
     ui.caret += 1;
     true

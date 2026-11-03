@@ -31,7 +31,8 @@ const EMPTY_WIDTH: f32 = 224.0;
 const EMPTY_HEIGHT: f32 = 96.0;
 const UNDO_LIMIT: usize = 64;
 const MERGE_MILLIS: f64 = 700.0;
-const HINT: &str = "Drag to move  ·  Scroll to resize  ·  Shift places freely  ·  Right-click for settings";
+const HINT: &str =
+    "Drag to move  ·  Scroll to resize  ·  Shift places freely  ·  Right-click for settings";
 const SHORT_HINT: &str = "Drag to move  ·  Scroll to resize";
 /// The size an element is taken to have before it has drawn.
 const UNKNOWN: [f32; 2] = [40.0, 12.0];
@@ -99,7 +100,9 @@ impl Screen for HudEditor {
         }
         let mouse = cx.ui.mouse;
         let hovered = if self.drag == Drag::None {
-            shown.iter().rposition(|e| crate::draw::contains(frame(e.rect), mouse))
+            shown
+                .iter()
+                .rposition(|e| crate::draw::contains(frame(e.rect), mouse))
         } else {
             self.selected
         };
@@ -124,13 +127,27 @@ impl Screen for HudEditor {
         for (i, e) in shown.iter().enumerate() {
             let [x, y, fw, fh] = frame(e.rect);
             let (fill, glow) = if Some(i) == self.selected {
-                (alpha(th.accent, 0.16), if th.normal() { crate::theme::GLOW } else { 0.0 })
+                (
+                    alpha(th.accent, 0.16),
+                    if th.normal() { crate::theme::GLOW } else { 0.0 },
+                )
             } else if Some(i) == hovered {
                 (alpha(th.accent, 0.1), 0.0)
             } else {
                 (0x1FFF_FFFF, 0.0)
             };
-            cx.p.round_box(x, y, fw, fh, th.radius, fill, 0, glow, 0.0, alpha(th.accent, 0.3));
+            cx.p.round_box(
+                x,
+                y,
+                fw,
+                fh,
+                th.radius,
+                fill,
+                0,
+                glow,
+                0.0,
+                alpha(th.accent, 0.3),
+            );
             let edge = if Some(i) == self.selected {
                 th.accent
             } else if Some(i) == hovered {
@@ -140,9 +157,14 @@ impl Screen for HudEditor {
             };
             cx.p.outline(x, y, fw, fh, th.radius, edge);
             if Some(i) == self.selected {
-                let hot = self.drag == Drag::Scale || (self.drag == Drag::None && over_handle(e.rect, mouse));
+                let hot = self.drag == Drag::Scale
+                    || (self.drag == Drag::None && over_handle(e.rect, mouse));
                 let [hx, hy] = handle(e.rect);
-                let (f, o) = if hot { (th.accent, th.text) } else { (th.text, th.accent) };
+                let (f, o) = if hot {
+                    (th.accent, th.text)
+                } else {
+                    (th.text, th.accent)
+                };
                 cx.p.round_box(hx, hy, HANDLE, HANDLE, HANDLE / 2.0, f, o, 0.0, 0.0, 0);
             }
         }
@@ -158,7 +180,14 @@ impl Screen for HudEditor {
         // fades away while an element is dragged across it.
         let title = "HUD Layout";
         let snap_w = 12.0 + cx.p.width("Snap") + 6.0 + panels::SWITCH_WIDTH;
-        let bar_w = BAR_PADDING + 12.0 + 5.0 + cx.p.width(title) + 14.0 + snap_w + 10.0 + 2.0 * BUTTON_WIDTH
+        let bar_w = BAR_PADDING
+            + 12.0
+            + 5.0
+            + cx.p.width(title)
+            + 14.0
+            + snap_w
+            + 10.0
+            + 2.0 * BUTTON_WIDTH
             + CONTROL_GAP
             + 4.0;
         let bar = [((w - bar_w) / 2.0).floor(), 6.0, bar_w, BAR_HEIGHT];
@@ -170,28 +199,69 @@ impl Screen for HudEditor {
         let fade = if over_bar { 0.15 } else { 1.0 };
         panels::panel(cx.p, bar[0], bar[1], bar[2], bar[3], fade);
         let ty = bar[1] + ((BAR_HEIGHT - 7.0) / 2.0).floor();
-        cx.p.icon(Icon::Layout, bar[0] + BAR_PADDING, bar[1] + ((BAR_HEIGHT - 12.0) / 2.0).floor(), 12.0, alpha(th.accent, fade));
-        cx.p.text(title, bar[0] + BAR_PADDING + 17.0, ty, alpha(th.text, fade), false);
+        cx.p.icon(
+            Icon::Layout,
+            bar[0] + BAR_PADDING,
+            bar[1] + ((BAR_HEIGHT - 12.0) / 2.0).floor(),
+            12.0,
+            alpha(th.accent, fade),
+        );
+        cx.p.text(
+            title,
+            bar[0] + BAR_PADDING + 17.0,
+            ty,
+            alpha(th.text, fade),
+            false,
+        );
         let cy = bar[1] + ((BAR_HEIGHT - CONTROL_HEIGHT) / 2.0).floor();
         let mut x = bar[0] + bar_w - 4.0 - BUTTON_WIDTH;
         cx.p.fade = fade;
         let done = cx.host.translate("gui.done");
-        if ui::button(cx.p, cx.ui, [x, cy, BUTTON_WIDTH, CONTROL_HEIGHT], &done, true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [x, cy, BUTTON_WIDTH, CONTROL_HEIGHT],
+            &done,
+            true,
+        ) {
             cx.go(Go::Back);
         }
         x -= CONTROL_GAP + BUTTON_WIDTH;
-        let reset = if self.selected.is_some() { "Reset" } else { "Reset all" };
-        if ui::button(cx.p, cx.ui, [x, cy, BUTTON_WIDTH, CONTROL_HEIGHT], reset, true) {
+        let reset = if self.selected.is_some() {
+            "Reset"
+        } else {
+            "Reset all"
+        };
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [x, cy, BUTTON_WIDTH, CONTROL_HEIGHT],
+            reset,
+            true,
+        ) {
             self.reset(cx, &shown);
         }
         x -= 10.0 + snap_w;
         let snap_r = [x, cy, snap_w, CONTROL_HEIGHT];
         let hot = cx.ui.over(snap_r);
         if hot || self.snapping {
-            cx.p.round(snap_r[0], snap_r[1], snap_r[2], snap_r[3], th.radius, if hot { th.button } else { 0 });
+            cx.p.round(
+                snap_r[0],
+                snap_r[1],
+                snap_r[2],
+                snap_r[3],
+                th.radius,
+                if hot { th.button } else { 0 },
+            );
         }
         cx.p.text("Snap", x + 6.0, ty, th.text, false);
-        panels::toggle(cx.p, x + snap_w - 6.0 - panels::SWITCH_WIDTH, cy + 5.0, self.snapping, fade);
+        panels::toggle(
+            cx.p,
+            x + snap_w - 6.0 - panels::SWITCH_WIDTH,
+            cy + 5.0,
+            self.snapping,
+            fade,
+        );
         if hot {
             cx.ui.tooltip(
                 "Snap to the screen's sides and middle and to other elements. Hold Shift while \
@@ -219,7 +289,12 @@ impl HudEditor {
                 continue;
             }
             for (ei, e) in m.hud.iter().enumerate() {
-                let size = cx.modules.sizes.get(&(m.id, e.id)).copied().unwrap_or(UNKNOWN);
+                let size = cx
+                    .modules
+                    .sizes
+                    .get(&(m.id, e.id))
+                    .copied()
+                    .unwrap_or(UNKNOWN);
                 let size = [size[0].max(1.0), size[1].max(1.0)];
                 out.push(Shown {
                     at: (mi, ei),
@@ -240,8 +315,16 @@ impl HudEditor {
         {
             self.undo(cx);
         }
-        if let Some(i) = self.selected.filter(|&i| i < shown.len() && self.drag == Drag::None) {
-            for (code, dx, dy) in [(keys::LEFT, -1.0, 0.0), (keys::RIGHT, 1.0, 0.0), (keys::UP, 0.0, -1.0), (keys::DOWN, 0.0, 1.0)] {
+        if let Some(i) = self
+            .selected
+            .filter(|&i| i < shown.len() && self.drag == Drag::None)
+        {
+            for (code, dx, dy) in [
+                (keys::LEFT, -1.0, 0.0),
+                (keys::RIGHT, 1.0, 0.0),
+                (keys::UP, 0.0, -1.0),
+                (keys::DOWN, 0.0, 1.0),
+            ] {
                 if let Some(mods) = cx.ui.key_with(code) {
                     let step = if mods & input::SHIFT != 0 { 10.0 } else { 1.0 };
                     self.remember(cx, shown[i].at, Some(Drag::Move));
@@ -286,8 +369,17 @@ impl HudEditor {
                 let r = shown[i].rect;
                 let (cxm, cym) = (r[0] + r[2] / 2.0, r[1] + r[3] / 2.0);
                 let scale = e.scale();
-                let (nw, nh) = ((shown[i].size[0] * scale).round(), (shown[i].size[1] * scale).round());
-                self.resized(cx, shown, i, (cxm - nw / 2.0).floor(), (cym - nh / 2.0).floor());
+                let (nw, nh) = (
+                    (shown[i].size[0] * scale).round(),
+                    (shown[i].size[1] * scale).round(),
+                );
+                self.resized(
+                    cx,
+                    shown,
+                    i,
+                    (cxm - nw / 2.0).floor(),
+                    (cym - nh / 2.0).floor(),
+                );
             }
         }
         // Press: the handle resizes, an element moves, nothing chooses nothing.
@@ -295,10 +387,16 @@ impl HudEditor {
             && let Some(at) = cx.ui.pressed_anywhere()
             && at[1] > 6.0 + BAR_HEIGHT + 22.0
         {
-            if let Some(i) = self.selected.filter(|&i| i < shown.len() && over_handle(shown[i].rect, at)) {
+            if let Some(i) = self
+                .selected
+                .filter(|&i| i < shown.len() && over_handle(shown[i].rect, at))
+            {
                 cx.ui.eat_press();
                 self.pick_up(cx, Drag::Scale, shown, i, at);
-            } else if let Some(i) = shown.iter().rposition(|e| crate::draw::contains(frame(e.rect), at)) {
+            } else if let Some(i) = shown
+                .iter()
+                .rposition(|e| crate::draw::contains(frame(e.rect), at))
+            {
                 cx.ui.eat_press();
                 self.pick_up(cx, Drag::Move, shown, i, at);
             } else if !shown.is_empty() {
@@ -306,7 +404,9 @@ impl HudEditor {
             }
         }
         // Dragging.
-        if self.drag != Drag::None && let Some(i) = self.selected.filter(|&i| i < shown.len()) {
+        if self.drag != Drag::None
+            && let Some(i) = self.selected.filter(|&i| i < shown.len())
+        {
             if !cx.ui.down {
                 self.drag = Drag::None;
                 self.guide = [None; 2];
@@ -314,7 +414,10 @@ impl HudEditor {
             }
             if self.drag == Drag::Move {
                 let free = !self.snapping || cx.ui.shift;
-                let (x, y) = ((mouse[0] - self.grab[0]).round(), (mouse[1] - self.grab[1]).round());
+                let (x, y) = (
+                    (mouse[0] - self.grab[0]).round(),
+                    (mouse[1] - self.grab[1]).round(),
+                );
                 self.move_to(cx, shown, i, x, y, free);
             } else {
                 // The corner follows the pointer; the top left stays put.
@@ -364,7 +467,10 @@ impl HudEditor {
         let (mi, ei) = shown[i].at;
         let e = &mut cx.modules.modules[mi].hud[ei];
         let s = e.scale();
-        let (w, h) = ((shown[i].size[0] * s).round(), (shown[i].size[1] * s).round());
+        let (w, h) = (
+            (shown[i].size[0] * s).round(),
+            (shown[i].size[1] * s).round(),
+        );
         let x = x.min(cx.size[0] - w).max(0.0);
         let y = y.min(cx.size[1] - h).max(0.0);
         e.place(x as i32, y as i32, w as i32, h as i32, cx.size);
@@ -391,7 +497,9 @@ impl HudEditor {
         let now = cx.p.motion.now;
         let flat = at.0 * 1000 + at.1;
         let merges = kind.is_some()
-            && self.merge.is_some_and(|(k, i, t)| Some(k) == kind && i == flat && now - t < MERGE_MILLIS);
+            && self
+                .merge
+                .is_some_and(|(k, i, t)| Some(k) == kind && i == flat && now - t < MERGE_MILLIS);
         self.merge = kind.map(|k| (k, flat, now));
         if !merges {
             self.push(vec![placement(cx, at)]);
@@ -431,16 +539,35 @@ impl HudEditor {
         let color = alpha(cx.p.theme.accent, 0.9);
         let (column, row) = (anchor_index(anchor) % 3, anchor_index(anchor) / 3);
         if column == 1 && row == 1 {
-            cx.p.round((w / 2.0).floor() - 2.0, (h / 2.0).floor() - 2.0, 4.0, 4.0, 2.0, color);
+            cx.p.round(
+                (w / 2.0).floor() - 2.0,
+                (h / 2.0).floor() - 2.0,
+                4.0,
+                4.0,
+                2.0,
+                color,
+            );
             return;
         }
         let bx = [0.0, ((w - ANCHOR_BAR) / 2.0).floor(), w - ANCHOR_BAR][column];
         let by = [0.0, ((h - ANCHOR_BAR) / 2.0).floor(), h - ANCHOR_BAR][row];
         if row != 1 {
-            cx.p.fill(bx, if row == 0 { 0.0 } else { h - 1.0 }, ANCHOR_BAR, 1.0, color);
+            cx.p.fill(
+                bx,
+                if row == 0 { 0.0 } else { h - 1.0 },
+                ANCHOR_BAR,
+                1.0,
+                color,
+            );
         }
         if column != 1 {
-            cx.p.fill(if column == 0 { 0.0 } else { w - 1.0 }, by, 1.0, ANCHOR_BAR, color);
+            cx.p.fill(
+                if column == 0 { 0.0 } else { w - 1.0 },
+                by,
+                1.0,
+                ANCHOR_BAR,
+                color,
+            );
         }
     }
 
@@ -450,13 +577,28 @@ impl HudEditor {
         let name = tag_text(cx, e.at);
         let tw = cx.p.width(&name) + 10.0;
         let [ex, ey, ew, eh] = e.rect;
-        let x = (ex + ((ew - tw) / 2.0).floor()).min(cx.size[0] - tw - 2.0).max(2.0);
+        let x = (ex + ((ew - tw) / 2.0).floor())
+            .min(cx.size[0] - tw - 2.0)
+            .max(2.0);
         let mut y = ey - FRAME - 3.0 - TAG_HEIGHT;
         if y < 2.0 {
             y = ey + eh + FRAME + 3.0;
         }
-        cx.p.round(x, y, tw, TAG_HEIGHT, TAG_HEIGHT / 2.0, if chosen { th.accent } else { th.floating });
-        cx.p.text(&name, x + 5.0, y + 2.0, if chosen { th.on_accent } else { th.text }, false);
+        cx.p.round(
+            x,
+            y,
+            tw,
+            TAG_HEIGHT,
+            TAG_HEIGHT / 2.0,
+            if chosen { th.accent } else { th.floating },
+        );
+        cx.p.text(
+            &name,
+            x + 5.0,
+            y + 2.0,
+            if chosen { th.on_accent } else { th.text },
+            false,
+        );
     }
 
     /// A line under the toolbar: how to use the editor, or where the element in hand is going.
@@ -467,16 +609,26 @@ impl HudEditor {
             (Drag::Move, Some(e)) => {
                 let el = &cx.modules.modules[e.at.0].hud[e.at.1];
                 let label = ANCHORS[anchor_index(el.anchor())].1;
-                format!("{label}  ·  {}, {}", el.settings.int("x"), el.settings.int("y"))
+                format!(
+                    "{label}  ·  {}, {}",
+                    el.settings.int("x"),
+                    el.settings.int("y")
+                )
             }
             (Drag::Scale, Some(e)) => {
                 let el = &cx.modules.modules[e.at.0].hud[e.at.1];
-                format!("Size {}", crate::framework::hud::format_scale(el.scale() as f64))
+                format!(
+                    "Size {}",
+                    crate::framework::hud::format_scale(el.scale() as f64)
+                )
             }
             (_, Some(e)) => {
                 let el = &cx.modules.modules[e.at.0].hud[e.at.1];
                 let label = ANCHORS[anchor_index(el.anchor())].1;
-                format!("{}  ·  {label}  ·  Arrows nudge  ·  Ctrl+Z undoes", tag_text(cx, e.at))
+                format!(
+                    "{}  ·  {label}  ·  Arrows nudge  ·  Ctrl+Z undoes",
+                    tag_text(cx, e.at)
+                )
             }
             _ if cx.p.width(HINT) + 24.0 <= cx.size[0] => HINT.to_owned(),
             _ => SHORT_HINT.to_owned(),
@@ -504,7 +656,12 @@ impl HudEditor {
         for (i, line) in lines.iter().enumerate() {
             cx.p.text(line, x + 12.0, y + 31.0 + i as f32 * 10.0, th.muted, false);
         }
-        let r = [x + (EMPTY_WIDTH - 96.0) / 2.0, y + EMPTY_HEIGHT - 10.0 - CONTROL_HEIGHT, 96.0, CONTROL_HEIGHT];
+        let r = [
+            x + (EMPTY_WIDTH - 96.0) / 2.0,
+            y + EMPTY_HEIGHT - 10.0 - CONTROL_HEIGHT,
+            96.0,
+            CONTROL_HEIGHT,
+        ];
         if ui::button(cx.p, cx.ui, r, "Modules", true) {
             cx.go(Go::Replace(Box::new(super::modules::ModuleList::default())));
         }
@@ -520,12 +677,19 @@ fn placement(cx: &Cx, at: (usize, usize)) -> Placement {
 fn tag_text(cx: &Cx, at: (usize, usize)) -> String {
     let m = &cx.modules.modules[at.0];
     let e = &m.hud[at.1];
-    let name = if m.hud.len() > 1 { format!("{} · {}", m.name, e.name) } else { m.name.to_owned() };
+    let name = if m.hud.len() > 1 {
+        format!("{} · {}", m.name, e.name)
+    } else {
+        m.name.to_owned()
+    };
     let scale = e.scale();
     if scale == 1.0 {
         name
     } else {
-        format!("{name}  {}", crate::framework::hud::format_scale(scale as f64))
+        format!(
+            "{name}  {}",
+            crate::framework::hud::format_scale(scale as f64)
+        )
     }
 }
 
@@ -534,11 +698,19 @@ fn anchor_index(a: Anchor) -> usize {
 }
 
 fn frame(r: [f32; 4]) -> [f32; 4] {
-    [r[0] - FRAME, r[1] - FRAME, r[2] + 2.0 * FRAME, r[3] + 2.0 * FRAME]
+    [
+        r[0] - FRAME,
+        r[1] - FRAME,
+        r[2] + 2.0 * FRAME,
+        r[3] + 2.0 * FRAME,
+    ]
 }
 
 fn handle(r: [f32; 4]) -> [f32; 2] {
-    [r[0] + r[2] + FRAME - HANDLE / 2.0, r[1] + r[3] + FRAME - HANDLE / 2.0]
+    [
+        r[0] + r[2] + FRAME - HANDLE / 2.0,
+        r[1] + r[3] + FRAME - HANDLE / 2.0,
+    ]
 }
 
 fn over_handle(r: [f32; 4], at: [f32; 2]) -> bool {
@@ -553,7 +725,14 @@ fn intersects(a: [f32; 4], b: [f32; 4]) -> bool {
 /// Element `i`'s start along one axis (0 across, 1 down), snapped to the nearest line within
 /// `SNAP`: the screen's sides and middle, the other elements' edges and middles, and `GAP` beside
 /// them. Returns the start and the line it snapped to.
-fn snap(shown: &[Shown], i: usize, start: f32, size: f32, screen: f32, axis: usize) -> (f32, Option<f32>) {
+fn snap(
+    shown: &[Shown],
+    i: usize,
+    start: f32,
+    size: f32,
+    screen: f32,
+    axis: usize,
+) -> (f32, Option<f32>) {
     let mut best = (start, SNAP + 1.0, None);
     let mut consider = |candidate: f32, guide: f32| {
         let d = (candidate - start).abs();
@@ -571,7 +750,10 @@ fn snap(shown: &[Shown], i: usize, start: f32, size: f32, screen: f32, axis: usi
         let (other, other_size) = (e.rect[axis], e.rect[2 + axis]);
         consider(other, other);
         consider(other + other_size - size, other + other_size);
-        consider(other + ((other_size - size) / 2.0).floor(), other + (other_size / 2.0).floor());
+        consider(
+            other + ((other_size - size) / 2.0).floor(),
+            other + (other_size / 2.0).floor(),
+        );
         consider(other + other_size + GAP, other + other_size + GAP / 2.0);
         consider(other - GAP - size, other - GAP / 2.0);
     }

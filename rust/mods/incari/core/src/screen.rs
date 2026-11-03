@@ -196,9 +196,15 @@ mod tests {
 
     #[test]
     fn reads_the_java_clients_look_and_settings() {
-        let prefs = Prefs::read(Some("preset=normal\n"), Some("copy-screenshots=true\nshow-badges=false\n"));
+        let prefs = Prefs::read(
+            Some("preset=normal\n"),
+            Some("copy-screenshots=true\nshow-badges=false\n"),
+        );
         assert_eq!(prefs.preset, Preset::Normal);
         assert!(prefs.copy_screenshots && !prefs.show_badges && prefs.usage_counts);
-        assert_eq!(Prefs::read(Some(&prefs.look_text()), Some(&prefs.settings_text())), prefs);
+        assert_eq!(
+            Prefs::read(Some(&prefs.look_text()), Some(&prefs.settings_text())),
+            prefs
+        );
     }
 }

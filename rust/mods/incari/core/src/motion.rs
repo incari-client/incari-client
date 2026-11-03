@@ -65,8 +65,13 @@ impl Motion {
                 slot.since = now;
             }
             let dt = (now - slot.updated).clamp(0.0, 200.0);
-            let value = slot.value + (target - slot.value) * (1.0 - (-dt / EASE_MILLIS).exp()) as f32;
-            slot.value = if (target - value).abs() < 0.002 { target } else { value };
+            let value =
+                slot.value + (target - slot.value) * (1.0 - (-dt / EASE_MILLIS).exp()) as f32;
+            slot.value = if (target - value).abs() < 0.002 {
+                target
+            } else {
+                value
+            };
             slot.updated = now;
         }
         self.last = i;

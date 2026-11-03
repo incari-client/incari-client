@@ -56,7 +56,8 @@ pub fn drawing(bounds: [f32; 4]) -> Option<([f32; 2], f32)> {
     with(|s| {
         s.bounds = Some(bounds);
         s.drawn = true;
-        s.target.map(|(at, scale)| (offset(bounds, at, scale), scale))
+        s.target
+            .map(|(at, scale)| (offset(bounds, at, scale), scale))
     })
 }
 
@@ -92,12 +93,23 @@ mod tests {
     #[test]
     fn follows_the_element_only_while_it_draws() {
         assert_eq!(frame(), None);
-        assert_eq!(drawing([250.0, 100.0, 69.0, 40.0]), None, "nothing placed yet");
+        assert_eq!(
+            drawing([250.0, 100.0, 69.0, 40.0]),
+            None,
+            "nothing placed yet"
+        );
         assert_eq!(frame(), Some([69.0, 40.0]));
         place([2.0, 2.0], 1.0);
-        assert_eq!(drawing([250.0, 100.0, 69.0, 40.0]), Some(([-248.0, -98.0], 1.0)));
+        assert_eq!(
+            drawing([250.0, 100.0, 69.0, 40.0]),
+            Some(([-248.0, -98.0], 1.0))
+        );
         assert_eq!(frame(), Some([69.0, 40.0]));
         assert_eq!(frame(), None, "no sidebar since");
-        assert_eq!(drawing([250.0, 100.0, 69.0, 40.0]), None, "the element didn't draw");
+        assert_eq!(
+            drawing([250.0, 100.0, 69.0, 40.0]),
+            None,
+            "the element didn't draw"
+        );
     }
 }

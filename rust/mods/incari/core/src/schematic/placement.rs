@@ -16,7 +16,12 @@ pub struct Placement {
 
 impl Placement {
     pub fn new(schematic: Rc<Schematic>, x: i32, y: i32, z: i32) -> Self {
-        Self { schematic, min: [x, y, z], mirror: Mirror::None, turns: 0 }
+        Self {
+            schematic,
+            min: [x, y, z],
+            mirror: Mirror::None,
+            turns: 0,
+        }
     }
 
     /// Puts the box's lowest corner at `x, y, z`.
@@ -55,7 +60,11 @@ impl Placement {
     /// The placed box's size: x and z swap after an odd number of turns.
     pub fn size(&self) -> [i32; 3] {
         let [sx, sy, sz] = self.schematic.size;
-        if self.turns & 1 == 0 { [sx, sy, sz] } else { [sz, sy, sx] }
+        if self.turns & 1 == 0 {
+            [sx, sy, sz]
+        } else {
+            [sz, sy, sx]
+        }
     }
 
     /// One past the box's last block.
@@ -86,8 +95,16 @@ impl Placement {
             0 if px < sx && pz < sz => (px, pz),
             _ => return 0,
         };
-        let lx = if self.mirror == Mirror::X { sx - 1 - mx } else { mx };
-        let lz = if self.mirror == Mirror::Z { sz - 1 - mz } else { mz };
+        let lx = if self.mirror == Mirror::X {
+            sx - 1 - mx
+        } else {
+            mx
+        };
+        let lz = if self.mirror == Mirror::Z {
+            sz - 1 - mz
+        } else {
+            mz
+        };
         self.schematic.at(lx, py, lz)
     }
 
@@ -95,8 +112,16 @@ impl Placement {
     /// inverse of `index_at`'s lookup.
     pub fn to_world(&self, lx: i32, ly: i32, lz: i32) -> [i32; 3] {
         let [sx, _, sz] = self.schematic.size;
-        let mx = if self.mirror == Mirror::X { sx - 1 - lx } else { lx };
-        let mz = if self.mirror == Mirror::Z { sz - 1 - lz } else { lz };
+        let mx = if self.mirror == Mirror::X {
+            sx - 1 - lx
+        } else {
+            lx
+        };
+        let mz = if self.mirror == Mirror::Z {
+            sz - 1 - lz
+        } else {
+            lz
+        };
         let (px, pz) = match self.turns {
             1 => (sz - 1 - mz, mx),
             2 => (sx - 1 - mx, sz - 1 - mz),

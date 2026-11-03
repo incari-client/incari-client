@@ -83,8 +83,10 @@ pub fn contents_lines(
         return None;
     }
     (1..lines.len().saturating_sub(len - 1)).find_map(|start| {
-        let all_named = (0..named).all(|j| is_count_line(count_format, counts[j], lines[start + j].as_ref()));
-        let ends = more == 0 || is_more_line(more_format, more as u32, lines[start + named].as_ref());
+        let all_named =
+            (0..named).all(|j| is_count_line(count_format, counts[j], lines[start + j].as_ref()));
+        let ends =
+            more == 0 || is_more_line(more_format, more as u32, lines[start + named].as_ref());
         (all_named && ends).then_some(start..start + len)
     })
 }
@@ -177,16 +179,42 @@ mod tests {
     #[test]
     fn finds_the_games_contents_lines() {
         let lines = ["Shulker Box", "3 x Diamond", "64 x Stone", "Lore"];
-        assert_eq!(contents_lines(&lines, &[3, 64], COUNT_FORMAT, MORE_FORMAT), Some(1..3));
-        assert_eq!(contents_lines(&lines, &[3, 63], COUNT_FORMAT, MORE_FORMAT), None);
-        let many = ["Box", "1 x A", "2 x B", "3 x C", "4 x D", "5 x E", "and 2 more...", "Lore"];
+        assert_eq!(
+            contents_lines(&lines, &[3, 64], COUNT_FORMAT, MORE_FORMAT),
+            Some(1..3)
+        );
+        assert_eq!(
+            contents_lines(&lines, &[3, 63], COUNT_FORMAT, MORE_FORMAT),
+            None
+        );
+        let many = [
+            "Box",
+            "1 x A",
+            "2 x B",
+            "3 x C",
+            "4 x D",
+            "5 x E",
+            "and 2 more...",
+            "Lore",
+        ];
         assert_eq!(
             contents_lines(&many, &[1, 2, 3, 4, 5, 6, 7], COUNT_FORMAT, MORE_FORMAT),
             Some(1..7)
         );
-        assert_eq!(contents_lines(&many[..6], &[1, 2, 3, 4, 5, 6, 7], COUNT_FORMAT, MORE_FORMAT), None);
+        assert_eq!(
+            contents_lines(
+                &many[..6],
+                &[1, 2, 3, 4, 5, 6, 7],
+                COUNT_FORMAT,
+                MORE_FORMAT
+            ),
+            None
+        );
         assert!(!is_count_line(COUNT_FORMAT, 3, "33 x Dirt"));
-        assert!(!is_count_line("%2$s ×%1$s", 3, "Dirt ×3"), "positional: left alone");
+        assert!(
+            !is_count_line("%2$s ×%1$s", 3, "Dirt ×3"),
+            "positional: left alone"
+        );
         assert!(is_more_line(MORE_FORMAT, 12, "and 12 more..."));
         assert!(!is_more_line(MORE_FORMAT, 12, "and 12 more... and"));
         assert!(shows(false, false) && shows(true, true) && !shows(true, false));

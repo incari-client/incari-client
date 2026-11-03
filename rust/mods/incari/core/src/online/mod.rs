@@ -98,7 +98,10 @@ impl crate::featured::FeaturedSource for Online {
     fn featured_servers(&self) -> Option<Vec<crate::featured::Entry>> {
         Online::featured_servers(self).map(|list| {
             list.iter()
-                .map(|f| crate::featured::Entry { name: f.name.clone(), address: f.address.clone() })
+                .map(|f| crate::featured::Entry {
+                    name: f.name.clone(),
+                    address: f.address.clone(),
+                })
                 .collect()
         })
     }

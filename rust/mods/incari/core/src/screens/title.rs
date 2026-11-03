@@ -44,8 +44,20 @@ impl Screen for Title {
         let normal = cx.p.theme.normal();
         let th = cx.p.theme;
         // The photo is drawn already (`Client::backdrop`): its tint, deeper toward the menu.
-        cx.p.fill(0.0, 0.0, width, height, if normal { 0x1E10_1822 } else { 0x4010_1822 });
-        cx.p.fade_right(0.0, 0.0, (width * 0.6).round(), height, if normal { 0x8C0C_131B } else { 0xB00C_131B });
+        cx.p.fill(
+            0.0,
+            0.0,
+            width,
+            height,
+            if normal { 0x1E10_1822 } else { 0x4010_1822 },
+        );
+        cx.p.fade_right(
+            0.0,
+            0.0,
+            (width * 0.6).round(),
+            height,
+            if normal { 0x8C0C_131B } else { 0xB00C_131B },
+        );
         if normal {
             self.snow.draw(cx, width, height);
         }
@@ -68,17 +80,34 @@ impl Screen for Title {
         let mut y = wordmark_y + WORDMARK_HEIGHT + 24.0;
         let p = &mut *cx.p;
         let singleplayer = cx.host.translate("menu.singleplayer");
-        if ui::menu_button(p, cx.ui, [column_x, y, column_width, ROW], &singleplayer, Some(Icon::Cube), "", true) {
+        if ui::menu_button(
+            p,
+            cx.ui,
+            [column_x, y, column_width, ROW],
+            &singleplayer,
+            Some(Icon::Cube),
+            "",
+            true,
+        ) {
             cx.go = Some(Go::Game("singleplayer"));
         }
         y += ROW + ROW_GAP;
         let multiplayer = cx.host.translate("menu.multiplayer");
-        if ui::menu_button(p, cx.ui, [column_x, y, column_width, ROW], &multiplayer, Some(Icon::Globe), "", true) {
+        if ui::menu_button(
+            p,
+            cx.ui,
+            [column_x, y, column_width, ROW],
+            &multiplayer,
+            Some(Icon::Globe),
+            "",
+            true,
+        ) {
             cx.go = Some(Go::Game("multiplayer"));
         }
         y += ROW + ROW_GAP;
         // Incari Settings and modules' own buttons on a row under Multiplayer.
-        let mut extra: Vec<(&str, &str, Option<Icon>)> = vec![("incari", "Incari Settings", Some(Icon::Incari))];
+        let mut extra: Vec<(&str, &str, Option<Icon>)> =
+            vec![("incari", "Incari Settings", Some(Icon::Incari))];
         for m in cx.modules.modules.iter().filter(|m| m.enabled) {
             for b in &m.menu_buttons {
                 extra.push((b.id, b.label, Icon::named(b.icon)));
@@ -94,12 +123,22 @@ impl Screen for Title {
             };
             let r = [column_x + i as f32 * (each + ROW_GAP), y, w, ROW];
             if ui::menu_button(p, cx.ui, r, label, *icon, "", true) && *id == "incari" {
-                cx.go = Some(Go::Open(Box::new(super::incari_settings::IncariSettings::default())));
+                cx.go = Some(Go::Open(Box::new(
+                    super::incari_settings::IncariSettings::default(),
+                )));
             }
         }
         y += ROW + ROW_GAP;
         let options = cx.host.translate("menu.options");
-        if ui::menu_button(p, cx.ui, [column_x, y, column_width, ROW], &options, Some(Icon::Gear), "", true) {
+        if ui::menu_button(
+            p,
+            cx.ui,
+            [column_x, y, column_width, ROW],
+            &options,
+            Some(Icon::Gear),
+            "",
+            true,
+        ) {
             cx.go = Some(Go::Game("options"));
         }
 
@@ -113,7 +152,12 @@ impl Screen for Title {
             cx.go = Some(Go::Game("language"));
         }
         let access = [width - ROW - 6.0, 6.0, ROW, ROW];
-        if icon_button(cx, access, "gui/sprites/icon/accessibility", "options.accessibility") {
+        if icon_button(
+            cx,
+            access,
+            "gui/sprites/icon/accessibility",
+            "options.accessibility",
+        ) {
             cx.go = Some(Go::Game("accessibility"));
         }
         // The copyright, a link to the credits, and the version.
@@ -129,10 +173,17 @@ impl Screen for Title {
             // Incari's credits, which lead on to the game's own (Credits & Attribution).
             let build = cx.host.build_info();
             let extras = cx.host.extras();
-            cx.go = Some(Go::Open(Box::new(super::credits::Credits::new(crate::credits::all(&build), extras))));
+            cx.go = Some(Go::Open(Box::new(super::credits::Credits::new(
+                crate::credits::all(&build),
+                extras,
+            ))));
         }
         let version = format!("Incari  ·  Minecraft {}", cx.host.game_version());
-        let vy = if 6.0 + cx.p.width(&version) + GAP * 2.0 > cr[0] { height - 24.0 } else { height - 12.0 };
+        let vy = if 6.0 + cx.p.width(&version) + GAP * 2.0 > cr[0] {
+            height - 24.0
+        } else {
+            height - 12.0
+        };
         cx.p.text(&version, 6.0, vy + 2.0, th.muted, false);
     }
 }
@@ -155,10 +206,17 @@ impl Title {
         cx.p.logo(x, y, WORDMARK_HEIGHT, 1.0);
         let mut lx = x + WORDMARK_HEIGHT + 9.0;
         for letter in NAME.chars() {
-            lx += cx.p.wordmark_letter(letter, lx, y + 3.0, WORDMARK_SIZE, th.text) + LETTER_SPACING;
+            lx +=
+                cx.p.wordmark_letter(letter, lx, y + 3.0, WORDMARK_SIZE, th.text) + LETTER_SPACING;
         }
         let subtitle = format!("CLIENT  ·  {}", cx.host.build_info().version);
-        cx.p.text(&subtitle, x + WORDMARK_HEIGHT + 10.0, y + WORDMARK_HEIGHT - 3.0, th.muted, false);
+        cx.p.text(
+            &subtitle,
+            x + WORDMARK_HEIGHT + 10.0,
+            y + WORDMARK_HEIGHT - 3.0,
+            th.muted,
+            false,
+        );
     }
 
     /// The player card on the right: their name, Edit Profile, Cosmetics and Incari Account.
@@ -166,12 +224,17 @@ impl Title {
         let th = cx.p.theme;
         let card_width = (width * 0.2).round().clamp(104.0, 132.0);
         let model_height = (height * 0.38).round().min(112.0);
-        let card_height = 12.0 + 9.0 + 8.0 + model_height + 8.0 + 9.0 + 8.0 + 3.0 * ROW + 2.0 * ROW_GAP + 12.0;
+        let card_height =
+            12.0 + 9.0 + 8.0 + model_height + 8.0 + 9.0 + 8.0 + 3.0 * ROW + 2.0 * ROW_GAP + 12.0;
         let card_x = width - column_x - card_width;
         if card_x < column_x + 168.0 + 24.0 || card_height > height - 40.0 {
             // A narrow screen: the profile's links in the top left corner instead.
             let mut x = 6.0;
-            for (label, go) in [("Edit Profile", "profile"), ("Cosmetics", ""), ("Incari Account", "")] {
+            for (label, go) in [
+                ("Edit Profile", "profile"),
+                ("Cosmetics", ""),
+                ("Incari Account", ""),
+            ] {
                 let w = cx.p.width(label) + 12.0;
                 if ui::button(cx.p, cx.ui, [x, 6.0, w, 14.0], label, true) {
                     if label == "Incari Account" {
@@ -190,19 +253,43 @@ impl Title {
         if th.normal() {
             // Normal's glass is light, made for a menu's dark tint: out here on the photo's
             // bright cloud its white text would wash out.
-            cx.p.round(card_x, card_y, card_width, card_height, th.panel_radius, alpha(0x800C_131B, eased));
+            cx.p.round(
+                card_x,
+                card_y,
+                card_width,
+                card_height,
+                th.panel_radius,
+                alpha(0x800C_131B, eased),
+            );
         }
         panels::panel(cx.p, card_x, card_y, card_width, card_height, 1.0);
-        cx.p.centered("OFFLINE MODE", card_x + card_width / 2.0, card_y + 12.0, th.muted, true);
+        cx.p.centered(
+            "OFFLINE MODE",
+            card_x + card_width / 2.0,
+            card_y + 12.0,
+            th.muted,
+            true,
+        );
         let model_top = card_y + 12.0 + 9.0 + 8.0;
         let model_bottom = model_top + model_height;
         let model_width = (model_height * 11.0 / 20.0).floor();
         crate::cosmetics::preview::draw_title(
             cx,
-            [card_x + ((card_width - model_width) / 2.0).floor(), model_top, model_width, model_height],
+            [
+                card_x + ((card_width - model_width) / 2.0).floor(),
+                model_top,
+                model_width,
+                model_height,
+            ],
         );
         let name = cx.host.player_name();
-        cx.p.centered(&name, card_x + card_width / 2.0, model_bottom + 8.0, th.text, true);
+        cx.p.centered(
+            &name,
+            card_x + card_width / 2.0,
+            model_bottom + 8.0,
+            th.text,
+            true,
+        );
         let bx = card_x + 12.0;
         let bw = card_width - 24.0;
         let mut by = model_bottom + 8.0 + 9.0 + 8.0;
@@ -225,7 +312,12 @@ impl Title {
 fn icon_button(cx: &mut Cx, r: [f32; 4], sprite: &str, tooltip_key: &str) -> bool {
     let hot = cx.ui.over(r);
     crate::skin::button(cx.p, r, false, hot, 1.0);
-    cx.p.sprite(sprite, [0.0, 0.0, 15.0, 15.0], [r[0] + 3.0, r[1] + 3.0, 15.0, 15.0], 0xFFFF_FFFF);
+    cx.p.sprite(
+        sprite,
+        [0.0, 0.0, 15.0, 15.0],
+        [r[0] + 3.0, r[1] + 3.0, 15.0, 15.0],
+        0xFFFF_FFFF,
+    );
     if hot {
         let tip = cx.host.translate(tooltip_key);
         cx.ui.tooltip(tip);
@@ -269,7 +361,11 @@ impl Snowfall {
 
     fn draw(&mut self, cx: &mut Cx, width: f32, height: f32) {
         let now = cx.p.motion.now;
-        let dt = if self.last == 0.0 { 0.0 } else { ((now - self.last) / 1000.0).min(0.1) as f32 };
+        let dt = if self.last == 0.0 {
+            0.0
+        } else {
+            ((now - self.last) / 1000.0).min(0.1) as f32
+        };
         self.last = now;
         let seconds = ((now % 600_000.0) / 1000.0) as f32;
         let scale = cx.p.scale;
@@ -286,7 +382,12 @@ impl Snowfall {
             let sway = (seconds * (0.5 + size * 0.4) + phase).sin() * 0.008;
             let a = (90.0 + size * 130.0).round() as u32;
             let px = ((1.5 + size * 3.5) * scale / 2.0).round().max(2.0);
-            cx.p.dot((x + sway) * width, y * height, px / scale, a << 24 | 0xFF_FFFF);
+            cx.p.dot(
+                (x + sway) * width,
+                y * height,
+                px / scale,
+                a << 24 | 0xFF_FFFF,
+            );
         }
     }
 }

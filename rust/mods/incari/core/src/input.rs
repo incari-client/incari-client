@@ -4,13 +4,32 @@
 /// One input event, positions in GUI units.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Input {
-    Move { at: [f32; 2] },
+    Move {
+        at: [f32; 2],
+    },
     /// GLFW's button numbers: 0 left, 1 right, 2 middle.
-    Button { button: i32, pressed: bool, at: [f32; 2], modifiers: u32 },
-    Scroll { dx: f32, dy: f32, at: [f32; 2] },
+    Button {
+        button: i32,
+        pressed: bool,
+        at: [f32; 2],
+        modifiers: u32,
+    },
+    Scroll {
+        dx: f32,
+        dy: f32,
+        at: [f32; 2],
+    },
     /// A key by the game's name (`key.keyboard.right.shift`).
-    Key { key: Key, name: String, pressed: bool, repeat: bool, modifiers: u32 },
-    Text { text: String },
+    Key {
+        key: Key,
+        name: String,
+        pressed: bool,
+        repeat: bool,
+        modifiers: u32,
+    },
+    Text {
+        text: String,
+    },
 }
 
 /// Modifier bits, GLFW's.
@@ -44,7 +63,10 @@ impl Key {
         }
         let (device, code) = text.split_once(':')?;
         match device {
-            "keyboard" => code.parse().ok().map(|c| if c == 0 { Key::None } else { Key::Keyboard(c) }),
+            "keyboard" => code
+                .parse()
+                .ok()
+                .map(|c| if c == 0 { Key::None } else { Key::Keyboard(c) }),
             "mouse" => code.parse().ok().map(Key::Mouse),
             _ => None,
         }
@@ -61,7 +83,9 @@ impl Key {
                 "left" => Key::Mouse(0),
                 "right" => Key::Mouse(1),
                 "middle" => Key::Mouse(2),
-                n => n.parse::<u8>().map_or(Key::None, |n| Key::Mouse(n.saturating_sub(1))),
+                n => n
+                    .parse::<u8>()
+                    .map_or(Key::None, |n| Key::Mouse(n.saturating_sub(1))),
             };
         }
         let Some(key) = name.strip_prefix("key.keyboard.") else {
@@ -81,10 +105,10 @@ impl Key {
             Key::Mouse(1) => "Right Button".into(),
             Key::Mouse(2) => "Middle Button".into(),
             Key::Mouse(n) => format!("Mouse {}", n + 1),
-            Key::Keyboard(code) => NAMES
-                .iter()
-                .find(|(c, _, _)| *c == code)
-                .map_or_else(|| format!("Key {code}"), |(_, _, label)| (*label).to_owned()),
+            Key::Keyboard(code) => NAMES.iter().find(|(c, _, _)| *c == code).map_or_else(
+                || format!("Key {code}"),
+                |(_, _, label)| (*label).to_owned(),
+            ),
         }
     }
 }
@@ -240,7 +264,10 @@ mod tests {
 
     #[test]
     fn names_keys_as_the_game_does() {
-        assert_eq!(Key::from_name("key.keyboard.right.shift"), Key::Keyboard(229));
+        assert_eq!(
+            Key::from_name("key.keyboard.right.shift"),
+            Key::Keyboard(229)
+        );
         assert_eq!(Key::from_name("key.keyboard.c"), Key::Keyboard(6));
         assert_eq!(Key::from_name("key.mouse.4"), Key::Mouse(3));
         assert_eq!(Key::Keyboard(229).label(), "Right Shift");

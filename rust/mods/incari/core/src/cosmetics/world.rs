@@ -35,7 +35,11 @@ pub struct Worn {
 }
 
 impl Worn {
-    pub const NONE: Worn = Worn { loadout: Loadout::EMPTY, emote: None, emote_start: 0.0 };
+    pub const NONE: Worn = Worn {
+        loadout: Loadout::EMPTY,
+        emote: None,
+        emote_start: 0.0,
+    };
 
     pub fn is_empty(&self) -> bool {
         self.loadout.is_empty() && self.emote.is_none()
@@ -91,7 +95,14 @@ impl World {
 
     /// What player `id` shows. `local`: the window's own player, who wears `own`. `incari`: the ids
     /// the service says they wear, when they're an Incari player.
-    pub fn worn_by(&mut self, id: u128, local: bool, own: Loadout, incari: Option<&[String]>, show_others: bool) -> Worn {
+    pub fn worn_by(
+        &mut self,
+        id: u128,
+        local: bool,
+        own: Loadout,
+        incari: Option<&[String]>,
+        show_others: bool,
+    ) -> Worn {
         let play = self.plays.get(&id).copied();
         let worn = |loadout: Loadout| Worn {
             loadout,
@@ -158,14 +169,28 @@ impl World {
 
     fn start(&mut self, id: u128, emote: &'static Cosmetic) {
         let ends_at = self.ticks + u64::from(emotes::duration(emote.id));
-        self.plays.insert(id, Play { emote, start: self.ticks, ends_at });
+        self.plays.insert(
+            id,
+            Play {
+                emote,
+                start: self.ticks,
+                ends_at,
+            },
+        );
     }
 
     /// Once a client tick. `in_world`: a world is open. `played`: the emotes Incari players played
     /// since the last tick (`Online::take_emotes`: UUID and id). `own_moving`: the player's keys
     /// move them, they jump or swing. `camera`: the view now. Returns the view to set when the
     /// player's own emote ended and turned the camera.
-    pub fn tick(&mut self, in_world: bool, show_others: bool, played: &[(u128, String)], own_moving: bool, camera: u8) -> Option<u8> {
+    pub fn tick(
+        &mut self,
+        in_world: bool,
+        show_others: bool,
+        played: &[(u128, String)],
+        own_moving: bool,
+        camera: u8,
+    ) -> Option<u8> {
         self.ticks += 1;
         self.trails_left = TRAIL_BUDGET;
         if !in_world {
@@ -220,7 +245,13 @@ impl World {
     /// The trail particle player `entity` (the game's entity id) leaves this tick wearing `trail`,
     /// `distance_sq` blocks² from the player and having moved `moved_sq` blocks² since the last
     /// tick; None when there's none to leave (every other tick, at most `TRAIL_BUDGET` a tick).
-    pub fn trail(&mut self, trail: &Cosmetic, entity: u32, distance_sq: f64, moved_sq: f64) -> Option<Particle> {
+    pub fn trail(
+        &mut self,
+        trail: &Cosmetic,
+        entity: u32,
+        distance_sq: f64,
+        moved_sq: f64,
+    ) -> Option<Particle> {
         if self.ticks & 1 != 0 || self.trails_left == 0 {
             return None;
         }
@@ -235,15 +266,27 @@ impl World {
         let mut r = || self.next_random();
         let (x, y, z) = ((r() - 0.5) * 0.5, 0.1 + r() * 0.2, (r() - 0.5) * 0.5);
         Some(match trail.id {
-            "trail.hearts" => Particle { kind: "minecraft:heart", offset: [x, y + 0.3, z], velocity: [0.0; 3] },
+            "trail.hearts" => Particle {
+                kind: "minecraft:heart",
+                offset: [x, y + 0.3, z],
+                velocity: [0.0; 3],
+            },
             "trail.sparkles" => Particle {
                 kind: "minecraft:end_rod",
                 offset: [x, y + 0.2, z],
                 velocity: [(r() - 0.5) * 0.02, 0.02, (r() - 0.5) * 0.02],
             },
             // A note's colour is its first speed (a pitch, 0 to 1).
-            "trail.notes" => Particle { kind: "minecraft:note", offset: [x, y + 0.4, z], velocity: [r(), 0.0, 0.0] },
-            _ => Particle { kind: "minecraft:snowflake", offset: [x, y, z], velocity: [0.0, 0.02, 0.0] },
+            "trail.notes" => Particle {
+                kind: "minecraft:note",
+                offset: [x, y + 0.4, z],
+                velocity: [r(), 0.0, 0.0],
+            },
+            _ => Particle {
+                kind: "minecraft:snowflake",
+                offset: [x, y, z],
+                velocity: [0.0, 0.02, 0.0],
+            },
         })
     }
 
@@ -281,21 +324,40 @@ mod tests {
         let mut w = World::default();
         let ids = vec!["hat.halo".to_owned()];
         assert_eq!(w.worn_by(7, false, Loadout::EMPTY, None, true), Worn::NONE);
-        assert_eq!(w.worn_by(7, false, Loadout::EMPTY, Some(&ids), true).loadout.ids(), ["hat.halo"]);
-        assert_eq!(w.worn_by(7, false, Loadout::EMPTY, Some(&ids), false), Worn::NONE);
+        assert_eq!(
+            w.worn_by(7, false, Loadout::EMPTY, Some(&ids), true)
+                .loadout
+                .ids(),
+            ["hat.halo"]
+        );
+        assert_eq!(
+            w.worn_by(7, false, Loadout::EMPTY, Some(&ids), false),
+            Worn::NONE
+        );
         let own = Loadout::of(&["cape.tide"]);
-        assert_eq!(w.worn_by(1, true, own, None, false).loadout, own, "your own always show");
+        assert_eq!(
+            w.worn_by(1, true, own, None, false).loadout,
+            own,
+            "your own always show"
+        );
     }
 
     #[test]
     fn your_emote_turns_the_camera_and_moving_ends_it() {
         let mut w = World::default();
-        assert_eq!(w.play_own(1, c("emote.wave"), FIRST_PERSON), Some(THIRD_PERSON_FRONT));
+        assert_eq!(
+            w.play_own(1, c("emote.wave"), FIRST_PERSON),
+            Some(THIRD_PERSON_FRONT)
+        );
         assert!(w.own_playing());
         let worn = w.worn_by(1, true, Loadout::EMPTY, None, true);
         assert!(worn.pose(w.now(0.5) + 10.0).is_some());
         assert_eq!(w.tick(true, true, &[], false, THIRD_PERSON_FRONT), None);
-        assert_eq!(w.tick(true, true, &[], true, THIRD_PERSON_FRONT), Some(FIRST_PERSON), "moved: back to first person");
+        assert_eq!(
+            w.tick(true, true, &[], true, THIRD_PERSON_FRONT),
+            Some(FIRST_PERSON),
+            "moved: back to first person"
+        );
         assert!(!w.own_playing());
         // Played out, with the camera moved by hand meanwhile: left where the player put it.
         w.play_own(1, c("emote.dab"), FIRST_PERSON);
@@ -309,11 +371,26 @@ mod tests {
     #[test]
     fn others_emotes_play_until_they_walk() {
         let mut w = World::default();
-        w.tick(true, true, &[(9, "emote.bow".into()), (8, "emote.nope".into())], false, 0);
-        assert!(w.worn_by(9, false, Loadout::EMPTY, None, true).emote.is_some(), "an emote shows on anyone named");
+        w.tick(
+            true,
+            true,
+            &[(9, "emote.bow".into()), (8, "emote.nope".into())],
+            false,
+            0,
+        );
+        assert!(
+            w.worn_by(9, false, Loadout::EMPTY, None, true)
+                .emote
+                .is_some(),
+            "an emote shows on anyone named"
+        );
         assert_eq!(w.worn_by(8, false, Loadout::EMPTY, None, true), Worn::NONE);
         w.walking(9, 0.5);
-        assert!(w.worn_by(9, false, Loadout::EMPTY, None, true).emote.is_none());
+        assert!(
+            w.worn_by(9, false, Loadout::EMPTY, None, true)
+                .emote
+                .is_none()
+        );
     }
 
     #[test]
@@ -322,7 +399,9 @@ mod tests {
         w.tick(true, true, &[], false, 0);
         w.tick(true, true, &[], false, 0);
         let snow = c("trail.snow");
-        let left = (0..20).filter(|_| w.trail(snow, 1, 4.0, 1.0).is_some()).count();
+        let left = (0..20)
+            .filter(|_| w.trail(snow, 1, 4.0, 1.0).is_some())
+            .count();
         assert_eq!(left as u32, TRAIL_BUDGET);
         w.tick(true, true, &[], false, 0);
         assert!(w.trail(snow, 1, 4.0, 1.0).is_none(), "every other tick");

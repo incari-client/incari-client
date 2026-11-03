@@ -19,13 +19,23 @@ pub fn cell(x: i32, y: i32, z: i32) -> u16 {
 /// The world block at `cell` of section `section`.
 pub fn cell_block(section: [i32; 3], cell: u16) -> [i32; 3] {
     let c = i32::from(cell);
-    [section[0] << 4 | (c & 15), section[1] << 4 | (c >> 8), section[2] << 4 | ((c >> 4) & 15)]
+    [
+        section[0] << 4 | (c & 15),
+        section[1] << 4 | (c >> 8),
+        section[2] << 4 | ((c >> 4) & 15),
+    ]
 }
 
 /// A box's twelve edges, from block corner `min` to `max`.
 pub fn box_edges(min: [i32; 3], max: [i32; 3]) -> [([f64; 3], [f64; 3]); 12] {
     let (a, b) = (min.map(f64::from), max.map(f64::from));
-    let p = |x: bool, y: bool, z: bool| [if x { b[0] } else { a[0] }, if y { b[1] } else { a[1] }, if z { b[2] } else { a[2] }];
+    let p = |x: bool, y: bool, z: bool| {
+        [
+            if x { b[0] } else { a[0] },
+            if y { b[1] } else { a[1] },
+            if z { b[2] } else { a[2] },
+        ]
+    };
     [
         // Along x.
         (p(false, false, false), p(true, false, false)),
@@ -86,14 +96,22 @@ mod tests {
     #[test]
     fn a_box_has_twelve_unit_long_edges() {
         let edges = box_edges([0, 0, 0], [1, 2, 3]);
-        let lengths: Vec<f64> =
-            edges.iter().map(|(a, b)| (0..3).map(|i| (b[i] - a[i]).abs()).sum()).collect();
-        assert_eq!(lengths, [1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0]);
+        let lengths: Vec<f64> = edges
+            .iter()
+            .map(|(a, b)| (0..3).map(|i| (b[i] - a[i]).abs()).sum())
+            .collect();
+        assert_eq!(
+            lengths,
+            [1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0]
+        );
     }
 
     #[test]
     fn names_and_worlds() {
-        assert_eq!(name_keys("minecraft:stone"), ["item.minecraft.stone", "block.minecraft.stone"]);
+        assert_eq!(
+            name_keys("minecraft:stone"),
+            ["item.minecraft.stone", "block.minecraft.stone"]
+        );
         let mut w = WorldWatch::default();
         assert!(!w.left(Some("world/a")));
         assert!(!w.left(Some("world/a")));

@@ -79,8 +79,18 @@ mod tests {
         assert_eq!(outline(0, 2.0), Some(Outline::Full));
         assert_eq!(outline(1, 2.0), None);
         assert_eq!(
-            [outline(0, 5.0), outline(1, 5.0), outline(2, 5.0), outline(3, 5.0)],
-            [Some(Outline::Full), Some(Outline::Full), Some(Outline::Half), None]
+            [
+                outline(0, 5.0),
+                outline(1, 5.0),
+                outline(2, 5.0),
+                outline(3, 5.0)
+            ],
+            [
+                Some(Outline::Full),
+                Some(Outline::Full),
+                Some(Outline::Half),
+                None
+            ]
         );
         assert_eq!(outline(9, 20.0), Some(Outline::Full));
     }

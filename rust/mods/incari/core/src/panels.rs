@@ -46,9 +46,19 @@ pub fn dark_panel(p: &mut Painter, x: f32, y: f32, w: f32, h: f32, fade: f32) {
 /// An on/off switch at (`x`, `y`): an ice-blue track with a dark knob at the right when on, a
 /// faint one with a grey knob at the left when off. In Normal the knob slides.
 pub fn toggle(p: &mut Painter, x: f32, y: f32, on: bool, fade: f32) {
-    let t = p.motion.ease(motion::key(x, y, SWITCH_WIDTH, -SWITCH_HEIGHT), if on { 1.0 } else { 0.0 });
+    let t = p.motion.ease(
+        motion::key(x, y, SWITCH_WIDTH, -SWITCH_HEIGHT),
+        if on { 1.0 } else { 0.0 },
+    );
     let track = mix(0x2EFF_FFFF, p.theme.accent, t);
-    p.round(x, y, SWITCH_WIDTH, SWITCH_HEIGHT, SWITCH_HEIGHT / 2.0, alpha(track, fade));
+    p.round(
+        x,
+        y,
+        SWITCH_WIDTH,
+        SWITCH_HEIGHT,
+        SWITCH_HEIGHT / 2.0,
+        alpha(track, fade),
+    );
     let knob = SWITCH_HEIGHT - 2.0;
     let knob_x = x + 1.0 + (t * (SWITCH_WIDTH - 2.0 - knob)).round();
     let color = mix(0xFFC9_D1D9, 0xFF0D_2233, t);
@@ -59,9 +69,15 @@ pub fn toggle(p: &mut Painter, x: f32, y: f32, on: bool, fade: f32) {
 /// `on`; in Normal, a glow under the pointer.
 pub fn card(p: &mut Painter, x: f32, y: f32, w: f32, h: f32, hot: bool, on: bool, fade: f32) {
     let th = p.theme;
-    let t = p.motion.ease(motion::key(x, y, w, h), if hot { 1.0 } else { 0.0 });
+    let t = p
+        .motion
+        .ease(motion::key(x, y, w, h), if hot { 1.0 } else { 0.0 });
     let normal = th.normal();
-    let mut edge = if on { th.accent & 0x8CFF_FFFF } else { th.panel_edge() };
+    let mut edge = if on {
+        th.accent & 0x8CFF_FFFF
+    } else {
+        th.panel_edge()
+    };
     if !normal && hot {
         edge = th.accent;
     }
@@ -73,7 +89,11 @@ pub fn card(p: &mut Painter, x: f32, y: f32, w: f32, h: f32, hot: bool, on: bool
         th.radius + 1.0,
         alpha(mix(th.button, th.button_hot, t * 0.7), fade),
         alpha(edge, fade),
-        if normal && t > 0.0 { crate::theme::GLOW } else { 0.0 },
+        if normal && t > 0.0 {
+            crate::theme::GLOW
+        } else {
+            0.0
+        },
         0.0,
         alpha(th.accent, 0.22 * t * fade),
     );

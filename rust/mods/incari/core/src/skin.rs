@@ -19,7 +19,10 @@ impl Skin {
     /// Draws sprite `name` over `rect` in the look and returns true, or false for the game to draw
     /// it. `color`'s alpha fades it.
     pub fn sprite(&mut self, p: &mut Painter, name: &str, rect: [f32; 4], color: u32) -> bool {
-        let Some(name) = name.strip_prefix("gui/sprites/").or_else(|| name.strip_prefix("gui/")) else {
+        let Some(name) = name
+            .strip_prefix("gui/sprites/")
+            .or_else(|| name.strip_prefix("gui/"))
+        else {
             return false;
         };
         let [x, y, w, h] = rect;
@@ -44,22 +47,48 @@ impl Skin {
             }
             "widget/checkbox_selected" | "widget/checkbox_selected_highlighted" => {
                 well(p, rect, th.field, name.ends_with("highlighted"), fade);
-                p.round(x + 4.0, y + 4.0, w - 8.0, h - 8.0, 2.0, alpha(th.accent, fade));
+                p.round(
+                    x + 4.0,
+                    y + 4.0,
+                    w - 8.0,
+                    h - 8.0,
+                    2.0,
+                    alpha(th.accent, fade),
+                );
             }
             "widget/scroller" => {
-                p.round(x + 2.0, y, (w - 4.0).max(2.0), h, 2.0, alpha(0xA6FF_FFFF, fade));
+                p.round(
+                    x + 2.0,
+                    y,
+                    (w - 4.0).max(2.0),
+                    h,
+                    2.0,
+                    alpha(0xA6FF_FFFF, fade),
+                );
             }
             "widget/scroller_background" => {
-                p.round(x + 2.0, y, (w - 4.0).max(2.0), h, 2.0, alpha(0x1AFF_FFFF, fade));
+                p.round(
+                    x + 2.0,
+                    y,
+                    (w - 4.0).max(2.0),
+                    h,
+                    2.0,
+                    alpha(0x1AFF_FFFF, fade),
+                );
             }
             "widget/tab" => tab(p, rect, false, false, fade),
             "widget/tab_highlighted" => tab(p, rect, false, true, fade),
             "widget/tab_selected" => tab(p, rect, true, false, fade),
             "widget/tab_selected_highlighted" => tab(p, rect, true, true, fade),
             // The game's tooltip sprites reach 9 units past the padded text on every side.
-            "tooltip/background" => {
-                p.round(x + 7.0, y + 7.0, w - 14.0, h - 14.0, th.radius, alpha(th.floating, fade))
-            }
+            "tooltip/background" => p.round(
+                x + 7.0,
+                y + 7.0,
+                w - 14.0,
+                h - 14.0,
+                th.radius,
+                alpha(th.floating, fade),
+            ),
             "tooltip/frame" => p.outline(
                 x + 7.0,
                 y + 7.0,
@@ -88,7 +117,14 @@ impl Skin {
             "hud/hotbar" => {
                 p.round_box(x, y, w, h, 4.0, th.background, 0x1FFF_FFFF, 0.0, 0.0, 0);
                 for i in 0..9 {
-                    p.round(x + 2.0 + i as f32 * 20.0, y + 2.0, 18.0, 18.0, 3.0, 0x14FF_FFFF);
+                    p.round(
+                        x + 2.0 + i as f32 * 20.0,
+                        y + 2.0,
+                        18.0,
+                        18.0,
+                        3.0,
+                        0x14FF_FFFF,
+                    );
                 }
             }
             // 24 by 23 around a slot whose well is 20 square, 2 in from the left and 3 from the top.
@@ -133,14 +169,37 @@ impl Skin {
                 );
             }
             "hud/effect_background" | "hud/effect_background_ambient" => {
-                let edge = if name.ends_with("ambient") { th.accent & 0x80FF_FFFF } else { 0x1FFF_FFFF };
-                p.round_box(x, y, w, h, 3.0, alpha(th.background, fade), alpha(edge, fade), 0.0, 0.0, 0);
+                let edge = if name.ends_with("ambient") {
+                    th.accent & 0x80FF_FFFF
+                } else {
+                    0x1FFF_FFFF
+                };
+                p.round_box(
+                    x,
+                    y,
+                    w,
+                    h,
+                    3.0,
+                    alpha(th.background, fade),
+                    alpha(edge, fade),
+                    0.0,
+                    0.0,
+                    0,
+                );
             }
             "popup/background" => panels::panel(p, x, y, w, h, fade),
             // Textures drawn by name: lists' wells, backgrounds, separators.
-            "menu_list_background" | "inworld_menu_list_background" => {
-                p.fill(x, y, w, h, if th.normal() { 0x1A00_0000 } else { 0x2E00_0000 })
-            }
+            "menu_list_background" | "inworld_menu_list_background" => p.fill(
+                x,
+                y,
+                w,
+                h,
+                if th.normal() {
+                    0x1A00_0000
+                } else {
+                    0x2E00_0000
+                },
+            ),
             "menu_background" | "inworld_menu_background" => {
                 // The backdrop is drawn already (the title's, or the world's blur under the tint):
                 // the game's dirt-dark texture becomes the tint.
@@ -154,7 +213,9 @@ impl Skin {
             "header_separator" | "inworld_header_separator" => {
                 p.hairline(x, y + h - 1.0, w, th.glass_edge_solid)
             }
-            "footer_separator" | "inworld_footer_separator" => p.hairline(x, y, w, th.glass_edge_solid),
+            "footer_separator" | "inworld_footer_separator" => {
+                p.hairline(x, y, w, th.glass_edge_solid)
+            }
             _ => return false,
         }
         true
@@ -169,7 +230,13 @@ impl Skin {
         if ty == y && th == h {
             let (left, right) = (tx + 4.0, tx + tw - 4.0);
             p.fill(left, line, right - left, 1.0, alpha(0x33FF_FFFF, fade));
-            p.fill(left, line, (value.min(right) - left).max(0.0), 1.0, alpha(p.theme.accent, fade));
+            p.fill(
+                left,
+                line,
+                (value.min(right) - left).max(0.0),
+                1.0,
+                alpha(p.theme.accent, fade),
+            );
         }
         let knob = if hot { 0xFFFF_FFFF } else { p.theme.accent };
         p.round(value - 2.0, line - 2.0, 5.0, 5.0, 3.0, alpha(knob, fade));
@@ -194,7 +261,9 @@ pub fn button(p: &mut Painter, [x, y, w, h]: [f32; 4], off: bool, hot: bool, fad
         );
         return;
     }
-    let t = p.motion.ease(motion::key(x, y, w, h), if hot { 1.0 } else { 0.0 });
+    let t = p
+        .motion
+        .ease(motion::key(x, y, w, h), if hot { 1.0 } else { 0.0 });
     let since = p.motion.since();
     let normal = th.normal();
     let edge = if normal {
@@ -212,7 +281,11 @@ pub fn button(p: &mut Painter, [x, y, w, h]: [f32; 4], off: bool, hot: bool, fad
         th.radius,
         alpha(mix(th.button, th.button_hot, t), fade),
         alpha(edge, fade),
-        if normal && t > 0.0 { crate::theme::GLOW } else { 0.0 },
+        if normal && t > 0.0 {
+            crate::theme::GLOW
+        } else {
+            0.0
+        },
         0.0,
         alpha(th.accent, 0.32 * t * fade),
     );
@@ -230,8 +303,23 @@ pub fn button(p: &mut Painter, [x, y, w, h]: [f32; 4], off: bool, hot: bool, fad
 
 /// A slider's track or a field's well, edged in the accent while focused or hovered.
 pub fn well(p: &mut Painter, [x, y, w, h]: [f32; 4], fill: u32, hot: bool, fade: f32) {
-    let edge = if hot { p.theme.accent } else { p.theme.panel_edge() };
-    p.round_box(x, y, w, h, p.theme.radius, alpha(fill, fade), alpha(edge, fade), 0.0, 0.0, 0);
+    let edge = if hot {
+        p.theme.accent
+    } else {
+        p.theme.panel_edge()
+    };
+    p.round_box(
+        x,
+        y,
+        w,
+        h,
+        p.theme.radius,
+        alpha(fill, fade),
+        alpha(edge, fade),
+        0.0,
+        0.0,
+        0,
+    );
 }
 
 /// A tab: the chosen one lit with an accent line under it.
@@ -245,7 +333,11 @@ fn tab(p: &mut Painter, [x, y, w, h]: [f32; 4], chosen: bool, hot: bool, fade: f
     } else {
         th.button_off
     };
-    let edge = if !chosen && hot && !th.normal() { alpha(th.accent, fade) } else { 0 };
+    let edge = if !chosen && hot && !th.normal() {
+        alpha(th.accent, fade)
+    } else {
+        0
+    };
     p.round_box(
         x + inset,
         y + inset,

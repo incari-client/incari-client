@@ -54,7 +54,11 @@ impl WorldPlayers {
     /// Joined a server through `address` as `name`; forgets the last world.
     pub fn join(&mut self, address: &str, name: &str) {
         self.clear();
-        self.place = Some(Place { server_hash: rules::server_hash(address), name: name.into(), address: address.into() });
+        self.place = Some(Place {
+            server_hash: rules::server_hash(address),
+            name: name.into(),
+            address: address.into(),
+        });
         self.revision += 1;
     }
 
@@ -155,7 +159,10 @@ impl WorldPlayers {
     /// player's (version 4 online mode, 3 offline), since copying NPCs use others; else the first.
     fn uuid_of(&self, name: &str) -> Option<Uuid> {
         let same = self.ids.get(name)?;
-        same.iter().copied().find(|u| matches!(version(*u), 3 | 4)).or_else(|| same.first().copied())
+        same.iter()
+            .copied()
+            .find(|u| matches!(version(*u), 3 | 4))
+            .or_else(|| same.first().copied())
     }
 
     /// The names to look up now (at most `MAX_LOOKUP`), empty if none or too soon. Taken: if the
@@ -187,7 +194,12 @@ impl WorldPlayers {
         if self.place.is_none() {
             return;
         }
-        let mut names: Vec<String> = self.ids.keys().filter(|n| !self.own_name(n)).cloned().collect();
+        let mut names: Vec<String> = self
+            .ids
+            .keys()
+            .filter(|n| !self.own_name(n))
+            .cloned()
+            .collect();
         names.sort();
         for name in names {
             self.ask(&name);
@@ -274,14 +286,20 @@ mod tests {
     const V2: Uuid = 2 << 76;
 
     fn player(pid: &str) -> IncariPlayer {
-        IncariPlayer { pid: pid.into(), friend: false, cosmetics: vec![], badge: true }
+        IncariPlayer {
+            pid: pid.into(),
+            friend: false,
+            cosmetics: vec![],
+            badge: true,
+        }
     }
 
     #[test]
     fn names_are_looked_up_once_and_not_the_players_own() {
         let mut w = WorldPlayers::default();
         w.join("play.example.com", "Me");
-        let tab: HashMap<Uuid, String> = [(V4 | 1, "Me".to_owned()), (V4 | 2, "Steve".to_owned())].into();
+        let tab: HashMap<Uuid, String> =
+            [(V4 | 1, "Me".to_owned()), (V4 | 2, "Steve".to_owned())].into();
         w.tab_list(&tab);
         assert_eq!(w.take_lookup(0.0), ["Steve"]);
         assert!(w.take_lookup(100.0).is_empty());
@@ -295,7 +313,8 @@ mod tests {
     fn an_npc_by_the_same_name_has_no_badge() {
         let mut w = WorldPlayers::default();
         w.join("a", "Me");
-        let tab: HashMap<Uuid, String> = [(V2 | 9, "Steve".to_owned()), (V4 | 2, "Steve".to_owned())].into();
+        let tab: HashMap<Uuid, String> =
+            [(V2 | 9, "Steve".to_owned()), (V4 | 2, "Steve".to_owned())].into();
         w.tab_list(&tab);
         w.seen("Steve", player("p1"));
         assert!(w.player(V2 | 9).is_none());

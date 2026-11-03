@@ -24,7 +24,10 @@ impl Screen for IncariSettings {
     fn draw(&mut self, cx: &mut Cx) {
         let caption = format!("Incari Client {}", cx.host.build_info().version);
         let recorder = cx.host.recorder();
-        let (record_text, record_on) = (crate::recorder::tile_text(recorder.as_ref()), recorder.supported());
+        let (record_text, record_on) = (
+            crate::recorder::tile_text(recorder.as_ref()),
+            recorder.supported(),
+        );
         let done = cx.host.translate("gui.done");
         let mut opened: Option<usize> = None;
         let pressed = self.list.draw(
@@ -35,19 +38,50 @@ impl Screen for IncariSettings {
             |cx, rows| {
                 rows.heading(cx, "Menus");
                 let tiles: [(Icon, &str, &str, bool); 7] = [
-                    (Icon::Grid, "Modules", "Turn modules on and off and change their settings.", true),
-                    (Icon::Layout, "Edit HUD", "Move and resize HUD elements.", true),
-                    (Icon::Hanger, "Cosmetics", "Capes, hats, wings, trails and emotes.", true),
-                    (Icon::Camera, "Screenshots", "View, rename and download screenshots.", true),
+                    (
+                        Icon::Grid,
+                        "Modules",
+                        "Turn modules on and off and change their settings.",
+                        true,
+                    ),
+                    (
+                        Icon::Layout,
+                        "Edit HUD",
+                        "Move and resize HUD elements.",
+                        true,
+                    ),
+                    (
+                        Icon::Hanger,
+                        "Cosmetics",
+                        "Capes, hats, wings, trails and emotes.",
+                        true,
+                    ),
+                    (
+                        Icon::Camera,
+                        "Screenshots",
+                        "View, rename and download screenshots.",
+                        true,
+                    ),
                     (Icon::Target, "Record Screen", record_text, record_on),
-                    (Icon::Chat, "Incari Chat", "Friends and messages with Incari players.", true),
-                    (Icon::Person, "Incari Account", crate::online::account_tile_text(), true),
+                    (
+                        Icon::Chat,
+                        "Incari Chat",
+                        "Friends and messages with Incari players.",
+                        true,
+                    ),
+                    (
+                        Icon::Person,
+                        "Incari Account",
+                        crate::online::account_tile_text(),
+                        true,
+                    ),
                 ];
                 for (pair, chunk) in tiles.chunks(2).enumerate() {
                     let Some(rects) = rows.across(chunk.len(), TILE) else {
                         continue;
                     };
-                    for (i, (r, (icon, title, text, active))) in rects.iter().zip(chunk).enumerate() {
+                    for (i, (r, (icon, title, text, active))) in rects.iter().zip(chunk).enumerate()
+                    {
                         let visible = rows.visible(*r);
                         if tile(cx, *r, visible, *icon, title, text, *active) {
                             opened = Some(pair * 2 + i);
@@ -86,8 +120,12 @@ impl Screen for IncariSettings {
                     // The account's own badge setting, kept by the service: after Show Incari badges.
                     if i == 1 {
                         let (shows, can) = crate::online::show_my_badge();
-                        if let Some(r) = rows.row(cx, crate::online::SHOW_MY_BADGE, crate::online::SHOW_MY_BADGE_TIP, &[half])
-                            && ui::button(cx.p, cx.ui, r[0], if shows { "ON" } else { "OFF" }, can)
+                        if let Some(r) = rows.row(
+                            cx,
+                            crate::online::SHOW_MY_BADGE,
+                            crate::online::SHOW_MY_BADGE_TIP,
+                            &[half],
+                        ) && ui::button(cx.p, cx.ui, r[0], if shows { "ON" } else { "OFF" }, can)
                         {
                             let t = crate::online::with(|o| o.set_show_badge(!shows));
                             crate::online::with(|o| o.forget(t));
@@ -103,10 +141,19 @@ impl Screen for IncariSettings {
             Some(1) => cx.open(super::hud_editor::HudEditor::default()),
             Some(2) => cx.open(super::wardrobe::Wardrobe::new()),
             Some(4) => {
-                let settings = cx.host.read("settings.txt").and_then(|b| String::from_utf8(b).ok()).unwrap_or_default();
+                let settings = cx
+                    .host
+                    .read("settings.txt")
+                    .and_then(|b| String::from_utf8(b).ok())
+                    .unwrap_or_default();
                 let local = cx.host.local_time();
                 let key = crate::input::Key::Keyboard(crate::recorder::KEY).label();
-                cx.open(super::recorder::RecorderScreen::new(cx.host.recorder(), &settings, &key, local));
+                cx.open(super::recorder::RecorderScreen::new(
+                    cx.host.recorder(),
+                    &settings,
+                    &key,
+                    local,
+                ));
             }
             Some(5) => cx.open(super::chat_menu::ChatMenu::default()),
             Some(6) => cx.open(super::account::Account::default()),
@@ -139,7 +186,10 @@ fn tile(
     let th = cx.p.theme;
     let hot = active && cx.ui.over(visible);
     panels::card(cx.p, r[0], r[1], r[2], r[3], hot, false, 1.0);
-    let t = cx.p.motion.ease(motion::key(r[0], r[1], -r[2], r[3]), if hot { 1.0 } else { 0.0 });
+    let t = cx.p.motion.ease(
+        motion::key(r[0], r[1], -r[2], r[3]),
+        if hot { 1.0 } else { 0.0 },
+    );
     let (bx, by) = (r[0] + 8.0, r[1] + ((r[3] - BADGE) / 2.0).floor());
     // The badge brightens toward the accent under the pointer.
     let tint = if active { th.accent } else { th.muted };
@@ -152,7 +202,13 @@ fn tile(
     let lines = cx.p.wrap(text, room, 2);
     let mut ty = r[1] + ((r[3] - 9.0 - lines.len() as f32 * 10.0) / 2.0).floor();
     let shown = cx.p.fit(title, room).into_owned();
-    cx.p.text(&shown, tx, ty, if active { th.text } else { th.muted }, false);
+    cx.p.text(
+        &shown,
+        tx,
+        ty,
+        if active { th.text } else { th.muted },
+        false,
+    );
     for line in &lines {
         ty += 10.0;
         cx.p.text(line, tx, ty, alpha(th.muted, 1.0), false);

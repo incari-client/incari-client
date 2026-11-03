@@ -21,7 +21,11 @@ pub enum MessagesFrom {
 }
 
 impl MessagesFrom {
-    pub const ALL: [MessagesFrom; 3] = [MessagesFrom::Everyone, MessagesFrom::Friends, MessagesFrom::Nobody];
+    pub const ALL: [MessagesFrom; 3] = [
+        MessagesFrom::Everyone,
+        MessagesFrom::Friends,
+        MessagesFrom::Nobody,
+    ];
 
     pub fn wire(self) -> &'static str {
         match self {
@@ -41,7 +45,10 @@ impl MessagesFrom {
     }
 
     pub fn of(wire: &str) -> Self {
-        Self::ALL.into_iter().find(|m| m.wire() == wire).unwrap_or(MessagesFrom::Friends)
+        Self::ALL
+            .into_iter()
+            .find(|m| m.wire() == wire)
+            .unwrap_or(MessagesFrom::Friends)
     }
 }
 
@@ -92,7 +99,11 @@ pub struct Peer {
 
 impl Peer {
     pub fn new(friend: bool, id: impl Into<String>, label: impl Into<String>) -> Self {
-        Self { friend, id: id.into(), label: label.into() }
+        Self {
+            friend,
+            id: id.into(),
+            label: label.into(),
+        }
     }
 
     /// The conversation's name: the same for one person whatever their label.
@@ -121,7 +132,14 @@ pub struct Conversation {
 
 impl Default for Conversation {
     fn default() -> Self {
-        Self { messages: Vec::new(), unread: 0, more: true, loading: false, loaded: false, stale: false }
+        Self {
+            messages: Vec::new(),
+            unread: 0,
+            more: true,
+            loading: false,
+            loaded: false,
+            stale: false,
+        }
     }
 }
 
@@ -159,7 +177,10 @@ impl Conversation {
         self.loading = false;
         self.loaded = true;
         self.more = more;
-        let mut merged: Vec<Message> = page.into_iter().filter(|m| self.find(&m.mid).is_none()).collect();
+        let mut merged: Vec<Message> = page
+            .into_iter()
+            .filter(|m| self.find(&m.mid).is_none())
+            .collect();
         merged.append(&mut self.messages);
         self.messages = merged;
     }
@@ -177,13 +198,20 @@ impl Conversation {
             if self.messages.is_empty() {
                 self.more = more;
             }
-            let fresh: Vec<Message> = page.into_iter().filter(|m| self.find(&m.mid).is_none()).collect();
+            let fresh: Vec<Message> = page
+                .into_iter()
+                .filter(|m| self.find(&m.mid).is_none())
+                .collect();
             merged.append(&mut self.messages);
             merged.extend(fresh);
         } else {
             self.more = more;
             merged.extend(page);
-            merged.extend(self.messages.drain(..).filter(|m| m.delivery != Delivery::Sent));
+            merged.extend(
+                self.messages
+                    .drain(..)
+                    .filter(|m| m.delivery != Delivery::Sent),
+            );
         }
         merged.sort_by_key(|m| m.at);
         if merged.len() > MAX_KEPT {
@@ -258,7 +286,11 @@ impl Social {
     /// Every friend: online ones first, then by name.
     pub fn friends(&self) -> Vec<Friend> {
         let mut list = self.friends.clone();
-        list.sort_by(|a, b| b.online.cmp(&a.online).then_with(|| case_insensitive(&a.username, &b.username)));
+        list.sort_by(|a, b| {
+            b.online
+                .cmp(&a.online)
+                .then_with(|| case_insensitive(&a.username, &b.username))
+        });
         list
     }
 
@@ -268,7 +300,12 @@ impl Social {
 
     /// Friend requests: received ones first, newest last within each.
     pub fn requests(&self) -> Vec<Request> {
-        let mut list: Vec<Request> = self.requests.iter().filter(|r| r.incoming).cloned().collect();
+        let mut list: Vec<Request> = self
+            .requests
+            .iter()
+            .filter(|r| r.incoming)
+            .cloned()
+            .collect();
         list.extend(self.requests.iter().filter(|r| !r.incoming).cloned());
         list
     }
@@ -285,7 +322,9 @@ impl Social {
             .find(|r| !r.incoming && self.sent_to_pid.get(&r.rid) == Some(&peer.id))
             .or_else(|| {
                 self.requests.iter().find(|r| {
-                    !r.incoming && !self.sent_to_pid.contains_key(&r.rid) && r.label.eq_ignore_ascii_case(&peer.label)
+                    !r.incoming
+                        && !self.sent_to_pid.contains_key(&r.rid)
+                        && r.label.eq_ignore_ascii_case(&peer.label)
                 })
             })
     }
@@ -352,7 +391,12 @@ impl Social {
     /// The full list after signing in (and each reconnect): replaces what was here. Friends'
     /// conversations still held may have missed messages: marked stale, their newest page loads
     /// again when next shown. Unread counts are the service's.
-    pub(crate) fn set_loaded(&mut self, friends: Vec<Friend>, requests: Vec<Request>, unread: Vec<(String, u32)>) {
+    pub(crate) fn set_loaded(
+        &mut self,
+        friends: Vec<Friend>,
+        requests: Vec<Request>,
+        unread: Vec<(String, u32)>,
+    ) {
         self.loaded = true;
         self.friends.clear();
         for f in friends {
@@ -468,13 +512,24 @@ impl Social {
             conversation.unread += 1;
         }
         if !peer.friend {
-            match self.player_names.iter_mut().find(|(pid, _)| *pid == peer.id) {
+            match self
+                .player_names
+                .iter_mut()
+                .find(|(pid, _)| *pid == peer.id)
+            {
                 Some(entry) => entry.1 = peer.label.clone(),
-                None => self.player_names.push((peer.id.clone(), peer.label.clone())),
+                None => self
+                    .player_names
+                    .push((peer.id.clone(), peer.label.clone())),
             }
         }
         if !mine && !viewing {
-            self.notices.push(Notice { who: peer.label.clone(), request: false, title: peer.label.clone(), text });
+            self.notices.push(Notice {
+                who: peer.label.clone(),
+                request: false,
+                title: peer.label.clone(),
+                text,
+            });
         }
         self.revision += 1;
     }
@@ -543,14 +598,33 @@ mod tests {
     use super::*;
 
     fn sent(mid: &str, at: i64) -> Message {
-        Message { mid: mid.into(), mine: false, text: mid.into(), at, delivery: Delivery::Sent }
+        Message {
+            mid: mid.into(),
+            mine: false,
+            text: mid.into(),
+            at,
+            delivery: Delivery::Sent,
+        }
     }
 
     #[test]
     fn friends_online_first_then_by_name() {
         let mut s = Social::default();
-        let f = |fid: &str, name: &str, online| Friend { fid: fid.into(), username: name.into(), online, server: None };
-        s.set_loaded(vec![f("1", "zed", false), f("2", "Bob", true), f("3", "amy", false)], vec![], vec![]);
+        let f = |fid: &str, name: &str, online| Friend {
+            fid: fid.into(),
+            username: name.into(),
+            online,
+            server: None,
+        };
+        s.set_loaded(
+            vec![
+                f("1", "zed", false),
+                f("2", "Bob", true),
+                f("3", "amy", false),
+            ],
+            vec![],
+            vec![],
+        );
         let names: Vec<String> = s.friends().into_iter().map(|f| f.username).collect();
         assert_eq!(names, ["Bob", "amy", "zed"]);
     }
@@ -563,10 +637,17 @@ mod tests {
         assert_eq!(s.unread(), 1);
         assert_eq!(s.take_notices()[0].text, "m1");
         s.message(&peer, sent("m1", 1), false);
-        assert_eq!(s.existing(&peer).unwrap().messages().len(), 1, "repeats are dropped");
+        assert_eq!(
+            s.existing(&peer).unwrap().messages().len(),
+            1,
+            "repeats are dropped"
+        );
         s.read(&peer);
         assert_eq!(s.unread(), 0);
-        assert_eq!(s.players_messaged(), [("p1".to_owned(), "Steve".to_owned())]);
+        assert_eq!(
+            s.players_messaged(),
+            [("p1".to_owned(), "Steve".to_owned())]
+        );
         s.left_server();
         assert!(s.existing(&peer).is_none());
     }
@@ -577,11 +658,26 @@ mod tests {
         let peer = Peer::new(true, "f1", "Alex");
         s.older(&peer, vec![sent("a", 1), sent("b", 2)], false);
         s.newest(&peer, vec![sent("b", 2), sent("c", 3)], true);
-        let mids: Vec<&str> = s.existing(&peer).unwrap().messages().iter().map(|m| m.mid.as_str()).collect();
+        let mids: Vec<&str> = s
+            .existing(&peer)
+            .unwrap()
+            .messages()
+            .iter()
+            .map(|m| m.mid.as_str())
+            .collect();
         assert_eq!(mids, ["a", "b", "c"]);
-        assert!(!s.existing(&peer).unwrap().has_more(), "met: what's held still reaches the start");
+        assert!(
+            !s.existing(&peer).unwrap().has_more(),
+            "met: what's held still reaches the start"
+        );
         s.newest(&peer, vec![sent("x", 10), sent("y", 11)], true);
-        let mids: Vec<&str> = s.existing(&peer).unwrap().messages().iter().map(|m| m.mid.as_str()).collect();
+        let mids: Vec<&str> = s
+            .existing(&peer)
+            .unwrap()
+            .messages()
+            .iter()
+            .map(|m| m.mid.as_str())
+            .collect();
         assert_eq!(mids, ["x", "y"]);
         assert!(s.existing(&peer).unwrap().has_more());
     }
@@ -589,13 +685,21 @@ mod tests {
     #[test]
     fn sent_to_by_pid_or_by_name() {
         let mut s = Social::default();
-        s.request(Request { rid: "r1".into(), incoming: false, label: "Steve".into() });
+        s.request(Request {
+            rid: "r1".into(),
+            incoming: false,
+            label: "Steve".into(),
+        });
         let steve = Peer::new(false, "p9", "steve");
         assert_eq!(s.sent_to(&steve).map(|r| r.rid.as_str()), Some("r1"));
         s.request_sent_to("r1", "p1");
         assert!(s.sent_to(&steve).is_none(), "known by pid now");
         assert!(s.sent_to(&Peer::new(false, "p1", "anyone")).is_some());
-        s.request(Request { rid: "r2".into(), incoming: true, label: "Alex".into() });
+        s.request(Request {
+            rid: "r2".into(),
+            incoming: true,
+            label: "Alex".into(),
+        });
         assert_eq!(s.pending_requests(), 1);
         assert_eq!(s.requests()[0].rid, "r2", "received first");
         assert_eq!(s.take_notices().len(), 1, "only the received one toasts");

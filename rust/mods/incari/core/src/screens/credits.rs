@@ -103,10 +103,22 @@ impl Screen for Credits {
         // The game's own Credits & Attribution beside Done: on Horizon Incari's credits come first
         // from the title (in Java the game's screen has a button to them).
         let game_credits = cx.host.translate("credits_and_attribution.screen.title");
-        if ui::button(cx.p, cx.ui, [(mid - 154.0).floor(), fy, 150.0, CONTROL_HEIGHT], &game_credits, true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [(mid - 154.0).floor(), fy, 150.0, CONTROL_HEIGHT],
+            &game_credits,
+            true,
+        ) {
             cx.go(Go::Game("credits"));
         }
-        if ui::button(cx.p, cx.ui, [(mid + 4.0).floor(), fy, 150.0, CONTROL_HEIGHT], &done, true) {
+        if ui::button(
+            cx.p,
+            cx.ui,
+            [(mid + 4.0).floor(), fy, 150.0, CONTROL_HEIGHT],
+            &done,
+            true,
+        ) {
             cx.go(Go::Back);
         }
         let mut open = None;

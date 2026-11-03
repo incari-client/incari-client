@@ -41,7 +41,10 @@ impl Schematic {
 
     /// How many blocks it wants, air left out.
     pub fn block_count(&self) -> u32 {
-        (1..self.counts.len()).filter(|&i| !self.palette[i].is_air()).map(|i| self.counts[i]).sum()
+        (1..self.counts.len())
+            .filter(|&i| !self.palette[i].is_air())
+            .map(|i| self.counts[i])
+            .sum()
     }
 }
 
@@ -106,7 +109,8 @@ impl Builder {
     /// Sets `x, y, z` (in the box) to palette index `index`.
     pub fn set(&mut self, x: i32, y: i32, z: i32, index: usize) {
         let [sx, _, sz] = self.size;
-        self.blocks.set(((y * sz + z) * sx + x) as usize, index as u32);
+        self.blocks
+            .set(((y * sz + z) * sx + x) as usize, index as u32);
     }
 
     pub fn contains(&self, x: i32, y: i32, z: i32) -> bool {

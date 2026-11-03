@@ -87,14 +87,21 @@ pub struct DistanceText {
 
 impl Default for DistanceText {
     fn default() -> Self {
-        Self { said: i32::MIN, text: String::new() }
+        Self {
+            said: i32::MIN,
+            text: String::new(),
+        }
     }
 }
 
 impl DistanceText {
     /// "12 m", "999 m", "1.2 km", "34.5 km".
     pub fn of(&mut self, blocks: f32) -> &str {
-        let key = if blocks < 1000.0 { blocks as i32 } else { -((blocks / 100.0) as i32) };
+        let key = if blocks < 1000.0 {
+            blocks as i32
+        } else {
+            -((blocks / 100.0) as i32)
+        };
         if key != self.said {
             self.said = key;
             self.text = if key >= 0 {
@@ -220,10 +227,16 @@ pub fn spread(along: &mut [f32], gap: impl Fn(f32) -> f32) {
 /// The way to a point behind the camera, from the player's facing: straight behind points down,
 /// the way to turn round.
 pub fn way_behind(player: &Player, target: [f64; 3]) -> [f32; 2] {
-    let bearing = (target[0] - player.x).atan2(-(target[2] - player.z)).to_degrees() as f32;
+    let bearing = (target[0] - player.x)
+        .atan2(-(target[2] - player.z))
+        .to_degrees() as f32;
     let turn = (bearing - player.heading()).to_radians();
     let (dx, dy) = (turn.sin(), -turn.cos());
-    if dx.abs() < 1e-3 { [0.0, 1.0] } else { [dx, dy] }
+    if dx.abs() < 1e-3 {
+        [0.0, 1.0]
+    } else {
+        [dx, dy]
+    }
 }
 
 /// Whether the player stands at `w`: drawn over their view, it would only be in the way.
@@ -268,14 +281,31 @@ impl Overlay {
                     let inside = at[0] >= 0.0 && at[0] <= w && at[1] >= 0.0 && at[1] <= h;
                     let (dx, dy) = (at[0] - center[0], at[1] - center[1]);
                     let length = (dx * dx + dy * dy).sqrt();
-                    let way = if length < 1e-3 { [0.0, 1.0] } else { [dx / length, dy / length] };
+                    let way = if length < 1e-3 {
+                        [0.0, 1.0]
+                    } else {
+                        [dx / length, dy / length]
+                    };
                     (at, inside, way)
                 }
                 None => ([0.0, 0.0], false, way_behind(player, point)),
             };
             // By distance, farthest first: a handful of waypoints, no sort's allocation.
-            let at_index = self.shown.iter().position(|s| s.distance < distance).unwrap_or(self.shown.len());
-            self.shown.insert(at_index, Shown { index, at, distance, on_screen, way });
+            let at_index = self
+                .shown
+                .iter()
+                .position(|s| s.distance < distance)
+                .unwrap_or(self.shown.len());
+            self.shown.insert(
+                at_index,
+                Shown {
+                    index,
+                    at,
+                    distance,
+                    on_screen,
+                    way,
+                },
+            );
         }
         let scale = look.size;
         if look.beams {
@@ -298,7 +328,15 @@ impl Overlay {
         }
     }
 
-    fn on_screen(&mut self, p: &mut Painter, wp: &Waypoint, s: Shown, look: &Look, screen: [f32; 2], scale: f32) {
+    fn on_screen(
+        &mut self,
+        p: &mut Painter,
+        wp: &Waypoint,
+        s: Shown,
+        look: &Look,
+        screen: [f32; 2],
+        scale: f32,
+    ) {
         let named = match look.labels {
             Labels::Always => true,
             Labels::Never => false,
@@ -316,9 +354,17 @@ impl Overlay {
                 return;
             }
             let name = wp.name();
-            let far = if look.distance { text.of(s.distance) } else { "" };
+            let far = if look.distance {
+                text.of(s.distance)
+            } else {
+                ""
+            };
             let name_w = p.width(name).round();
-            let far_w = if far.is_empty() { 0.0 } else { p.width(far).round() };
+            let far_w = if far.is_empty() {
+                0.0
+            } else {
+                p.width(far).round()
+            };
             let width = 8.0 + name_w + if far_w == 0.0 { 0.0 } else { 5.0 + far_w };
             let height = crate::theme::LINE + 4.0;
             let left = -(width / 2.0).trunc();
@@ -333,7 +379,14 @@ impl Overlay {
 
     /// For each waypoint off screen, an arrow at the edge pointing the way to it, with its icon and
     /// distance just inside; arrows that would overlap are spread along the edge, in order.
-    fn at_edges(&mut self, p: &mut Painter, store: &Waypoints, look: &Look, screen: [f32; 2], scale: f32) {
+    fn at_edges(
+        &mut self,
+        p: &mut Painter,
+        store: &Waypoints,
+        look: &Look,
+        screen: [f32; 2],
+        scale: f32,
+    ) {
         let edges = Edges::new(screen, scale);
         let center = [screen[0] / 2.0, screen[1] / 2.0];
         self.edges.clear();
@@ -342,13 +395,28 @@ impl Overlay {
                 continue;
             }
             let along = edges.along(edges.hit(center, s.way));
-            let at = self.edges.iter().position(|e| e.along > along).unwrap_or(self.edges.len());
-            self.edges.insert(at, Edge { along, way: s.way, shown: i });
+            let at = self
+                .edges
+                .iter()
+                .position(|e| e.along > along)
+                .unwrap_or(self.edges.len());
+            self.edges.insert(
+                at,
+                Edge {
+                    along,
+                    way: s.way,
+                    shown: i,
+                },
+            );
         }
         self.along.clear();
         self.along.extend(self.edges.iter().map(|e| e.along));
         spread(&mut self.along, |prev| {
-            (if edges.on_side(prev) { EDGE_GAP_SIDE } else { EDGE_GAP_ACROSS }) * scale
+            (if edges.on_side(prev) {
+                EDGE_GAP_SIDE
+            } else {
+                EDGE_GAP_ACROSS
+            }) * scale
         });
         let th = p.theme;
         for k in 0..self.edges.len() {
@@ -391,7 +459,13 @@ fn beam(p: &mut Painter, wp: &Waypoint, view: &View) {
     let width = (per_block * BEAM_BLOCKS).clamp(BEAM_MIN, BEAM_MAX);
     let argb = crate::color::alpha(wp.argb(), 0.45);
     band(p, b, t, width, argb);
-    band(p, b, t, (width * 0.4).max(BEAM_MIN * 0.75), crate::color::alpha(wp.argb(), 0.8));
+    band(
+        p,
+        b,
+        t,
+        (width * 0.4).max(BEAM_MIN * 0.75),
+        crate::color::alpha(wp.argb(), 0.8),
+    );
 }
 
 /// A band `width` wide from `from` to `to`, GUI units (not the painter's origin: beams are placed
@@ -433,7 +507,15 @@ fn white(p: &mut Painter) -> Option<[f32; 4]> {
 
 /// `shape` centred on (`cx`, `cy`) and turned `degrees` clockwise (its tip up at 0), `size` GUI
 /// units across. The painter draws shapes upright only, so this draws its image as a turned quad.
-pub fn turned_shape(p: &mut Painter, shape: Shape, cx: f32, cy: f32, size: f32, degrees: f32, argb: u32) {
+pub fn turned_shape(
+    p: &mut Painter,
+    shape: Shape,
+    cx: f32,
+    cy: f32,
+    size: f32,
+    degrees: f32,
+    argb: u32,
+) {
     if degrees.abs() < 0.01 {
         p.shape(shape, cx, cy, size, argb);
         return;
@@ -460,7 +542,12 @@ pub fn turned_shape(p: &mut Painter, shape: Shape, cx: f32, cy: f32, size: f32, 
     let half = pixels as f32 / 2.0 / p.scale;
     let (sin, cos) = degrees.to_radians().sin_cos();
     let turn = |u: f32, v: f32| [x + u * cos - v * sin, y + u * sin + v * cos];
-    let corners = [turn(-half, -half), turn(half, -half), turn(half, half), turn(-half, half)];
+    let corners = [
+        turn(-half, -half),
+        turn(half, -half),
+        turn(half, half),
+        turn(-half, half),
+    ];
     let argb = p.faded(argb);
     p.list.quad(r.src(), corners, argb);
 }
@@ -481,7 +568,15 @@ mod tests {
     #[test]
     fn walks_round_the_edges_clockwise() {
         let e = Edges::new([400.0, 300.0], 1.0);
-        assert_eq!(e, Edges { left: 22.0, right: 378.0, top: 22.0, bottom: 238.0 });
+        assert_eq!(
+            e,
+            Edges {
+                left: 22.0,
+                right: 378.0,
+                top: 22.0,
+                bottom: 238.0
+            }
+        );
         let c = [200.0, 150.0];
         // Up, right, down, left of the middle.
         let up = e.along(e.hit(c, [0.0, -1.0]));
@@ -507,7 +602,13 @@ mod tests {
     #[test]
     fn points_the_way_to_turn_for_what_is_behind() {
         // Facing north (yaw 180): something due south is straight behind, east is to the right.
-        let p = Player { x: 0.0, y: 0.0, z: 0.0, yaw: 180.0, dimension: String::new() };
+        let p = Player {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            yaw: 180.0,
+            dimension: String::new(),
+        };
         let behind = way_behind(&p, [0.0, 0.0, 10.0]);
         assert!((behind[0]).abs() < 1e-3 && behind[1] > 0.99);
         let east = way_behind(&p, [10.0, 0.0, 0.0]);
@@ -516,7 +617,13 @@ mod tests {
 
     #[test]
     fn leaves_out_the_one_the_player_stands_at() {
-        let p = Player { x: 10.4, y: 64.0, z: 10.6, yaw: 0.0, dimension: String::new() };
+        let p = Player {
+            x: 10.4,
+            y: 64.0,
+            z: 10.6,
+            yaw: 0.0,
+            dimension: String::new(),
+        };
         let w = |x, y| Waypoint::new("w", x, y, 10, "", 0, Shape::Circle);
         assert!(is_here(&w(10, 65), &p));
         assert!(!is_here(&w(10, 68), &p));

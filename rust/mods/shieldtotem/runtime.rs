@@ -57,7 +57,10 @@ pub fn shield_tone(shield: Shield, colors: bool) -> Tone {
     if !colors || shield.max == 0 {
         return Tone::Text;
     }
-    let (remaining, max) = (u64::from(shield.max.saturating_sub(shield.damage)), u64::from(shield.max));
+    let (remaining, max) = (
+        u64::from(shield.max.saturating_sub(shield.damage)),
+        u64::from(shield.max),
+    );
     if remaining * 5 < max {
         Tone::Negative
     } else if remaining * 2 < max {
@@ -125,7 +128,11 @@ mod tests {
     use super::*;
 
     fn shield(damage: u32, cooldown: f32) -> Shield {
-        Shield { damage, max: 336, cooldown }
+        Shield {
+            damage,
+            max: 336,
+            cooldown,
+        }
     }
 
     #[test]
@@ -133,7 +140,14 @@ mod tests {
         assert_eq!(with_shield_text(shield(84, 0.0), str::to_owned), "75%");
         assert_eq!(with_shield_text(shield(0, 0.5), str::to_owned), "Disabled");
         assert_eq!(with_shield_text(shield(335, 0.0), str::to_owned), "1%");
-        assert_eq!(percent(Shield { damage: 0, max: 0, cooldown: 0.0 }), 100);
+        assert_eq!(
+            percent(Shield {
+                damage: 0,
+                max: 0,
+                cooldown: 0.0
+            }),
+            100
+        );
         assert_eq!(with_count_text(0, str::to_owned), "x0");
     }
 
@@ -150,6 +164,13 @@ mod tests {
     fn draws_the_games_bar() {
         assert_eq!(bar(shield(0, 0.0)), None);
         assert_eq!(bar(shield(168, 0.0)), Some((7.0, 0xFF_FF00)));
-        assert_eq!(bar(Shield { damage: 1, max: 1000, cooldown: 0.0 }), Some((13.0, 0x00_FF00)));
+        assert_eq!(
+            bar(Shield {
+                damage: 1,
+                max: 1000,
+                cooldown: 0.0
+            }),
+            Some((13.0, 0x00_FF00))
+        );
     }
 }

@@ -86,7 +86,11 @@ impl Verifier {
             for sz in 0..count[2] {
                 for sx in 0..count[0] {
                     sections.push(Section {
-                        at: [min_section[0] + sx, min_section[1] + sy, min_section[2] + sz],
+                        at: [
+                            min_section[0] + sx,
+                            min_section[1] + sy,
+                            min_section[2] + sz,
+                        ],
                         ..Section::default()
                     });
                 }
@@ -113,9 +117,14 @@ impl Verifier {
     }
 
     fn slot(&self, sx: i32, sy: i32, sz: i32) -> Option<usize> {
-        let [ix, iy, iz] = [sx - self.min_section[0], sy - self.min_section[1], sz - self.min_section[2]];
+        let [ix, iy, iz] = [
+            sx - self.min_section[0],
+            sy - self.min_section[1],
+            sz - self.min_section[2],
+        ];
         let [cx, cy, cz] = self.count;
-        (ix >= 0 && iy >= 0 && iz >= 0 && ix < cx && iy < cy && iz < cz).then(|| ((iy * cz + iz) * cx + ix) as usize)
+        (ix >= 0 && iy >= 0 && iz >= 0 && ix < cx && iy < cy && iz < cz)
+            .then(|| ((iy * cz + iz) * cx + ix) as usize)
     }
 
     /// The section at section coordinates, or None if the box doesn't reach it.
@@ -128,11 +137,19 @@ impl Verifier {
     pub fn tick(&mut self, w: &World, at: [i32; 3], shown_range: i32) {
         self.ticks += 1;
         // Where they're building, but never more than half the tick.
-        let mut budget = BUDGET as i64 - self.look_around(w, at, REACH, NEAR_TICKS, BUDGET / 2, shown_range) as i64;
+        let mut budget = BUDGET as i64
+            - self.look_around(w, at, REACH, NEAR_TICKS, BUDGET / 2, shown_range) as i64;
         // One section in turn every tick, whatever else is due, so far ones are still counted.
         budget -= self.in_turn(w, at, shown_range, 1) as i64;
         if budget > 0 {
-            budget -= self.look_around(w, at, shown_range, SHOWN_TICKS, budget as usize, shown_range) as i64;
+            budget -= self.look_around(
+                w,
+                at,
+                shown_range,
+                SHOWN_TICKS,
+                budget as usize,
+                shown_range,
+            ) as i64;
         }
         if budget > 0 {
             self.in_turn(w, at, shown_range, budget as usize);
@@ -146,7 +163,9 @@ impl Verifier {
             tries += 1;
             let i = self.cursor;
             self.cursor = (self.cursor + 1) % self.sections.len();
-            let stale = self.sections[i].looked_at.is_none_or(|t| self.ticks - t > SHOWN_TICKS * 5);
+            let stale = self.sections[i]
+                .looked_at
+                .is_none_or(|t| self.ticks - t > SHOWN_TICKS * 5);
             if stale {
                 let near = near(&self.sections[i], at, shown_range);
                 spent += self.look(w, i, near);
@@ -155,10 +174,20 @@ impl Verifier {
         spent
     }
 
-    fn look_around(&mut self, w: &World, at: [i32; 3], range: i32, every: u64, budget: usize, shown_range: i32) -> usize {
+    fn look_around(
+        &mut self,
+        w: &World,
+        at: [i32; 3],
+        range: i32,
+        every: u64,
+        budget: usize,
+        shown_range: i32,
+    ) -> usize {
         let mut spent = 0;
         let lo: [i32; 3] = std::array::from_fn(|i| self.min_section[i].max((at[i] - range) >> 4));
-        let hi: [i32; 3] = std::array::from_fn(|i| (self.min_section[i] + self.count[i] - 1).min((at[i] + range) >> 4));
+        let hi: [i32; 3] = std::array::from_fn(|i| {
+            (self.min_section[i] + self.count[i] - 1).min((at[i] + range) >> 4)
+        });
         for sy in lo[1]..=hi[1] {
             for sz in lo[2]..=hi[2] {
                 for sx in lo[0]..=hi[0] {
@@ -192,11 +221,16 @@ impl Verifier {
         let base = s.at.map(|v| v << 4);
         let lo: [i32; 3] = std::array::from_fn(|k| base[k].max(lo_box[k]));
         let hi: [i32; 3] = std::array::from_fn(|k| (base[k] + 16).min(hi_box[k]));
-        let mut issues = if keep_issues { s.issues.take().or_else(|| Some(Vec::new())) } else { None };
+        let mut issues = if keep_issues {
+            s.issues.take().or_else(|| Some(Vec::new()))
+        } else {
+            None
+        };
         if let Some(list) = issues.as_mut() {
             list.clear();
         }
-        let (mut right, mut missing, mut wrong_blocks, mut wrong_states, mut extra) = (0, 0, 0, 0, 0);
+        let (mut right, mut missing, mut wrong_blocks, mut wrong_states, mut extra) =
+            (0, 0, 0, 0, 0);
         let mut hash: i32 = 1;
         let mut loaded = true;
         let mut visited = 0;
@@ -266,7 +300,8 @@ impl Verifier {
             }
         }
         let s = &mut self.sections[i];
-        (s.right, s.missing, s.wrong_blocks, s.wrong_states, s.extra) = (right, missing, wrong_blocks, wrong_states, extra);
+        (s.right, s.missing, s.wrong_blocks, s.wrong_states, s.extra) =
+            (right, missing, wrong_blocks, wrong_states, extra);
         s.loaded = loaded;
         s.issues = issues;
         s.rights.clear();
@@ -370,7 +405,13 @@ mod tests {
     fn states(s: &Schematic, blocks: &FakeBlocks) -> Vec<u32> {
         s.palette
             .iter()
-            .map(|p| if p.is_nothing() { UNKNOWN } else { blocks.state(&p.name, &p.properties, 0) })
+            .map(|p| {
+                if p.is_nothing() {
+                    UNKNOWN
+                } else {
+                    blocks.state(&p.name, &p.properties, 0)
+                }
+            })
             .collect()
     }
 
@@ -380,7 +421,10 @@ mod tests {
         let stone = b.index(BlockSpec::of("minecraft:stone", Vec::new()));
         b.set(0, 0, 0, stone);
         b.set(1, 0, 0, stone);
-        let stairs = b.index(BlockSpec::of("minecraft:oak_stairs", vec![("facing".into(), "north".into())]));
+        let stairs = b.index(BlockSpec::of(
+            "minecraft:oak_stairs",
+            vec![("facing".into(), "north".into())],
+        ));
         b.set(2, 0, 0, stairs);
         let air = b.index(BlockSpec::of("minecraft:air", Vec::new()));
         b.set(3, 0, 0, air);
@@ -400,13 +444,29 @@ mod tests {
         blocks.set(12, 64, 20, "minecraft:oak_stairs[facing=south]");
         blocks.set(13, 64, 20, "minecraft:dirt");
         blocks.set(14, 64, 20, "minecraft:glass");
-        let w = World { placement: &p, states: &st, blocks: &blocks };
+        let w = World {
+            placement: &p,
+            states: &st,
+            blocks: &blocks,
+        };
         v.tick(&w, [12, 64, 20], 48);
-        assert_eq!((v.right(), v.missing(), v.wrong_states(), v.extra(), v.wrong_blocks()), (1, 1, 1, 1, 1));
+        assert_eq!(
+            (
+                v.right(),
+                v.missing(),
+                v.wrong_states(),
+                v.extra(),
+                v.wrong_blocks()
+            ),
+            (1, 1, 1, 1, 1)
+        );
         assert!(v.looked_at_all());
         let s = v.section(0, 4, 1).unwrap();
         let at = |x: u32| (4 << 4 | x) << 3;
-        assert_eq!(s.issues(), &[at(12) | WRONG_STATE, at(13) | EXTRA, at(14) | WRONG_BLOCK]);
+        assert_eq!(
+            s.issues(),
+            &[at(12) | WRONG_STATE, at(13) | EXTRA, at(14) | WRONG_BLOCK]
+        );
     }
 
     #[test]
@@ -415,7 +475,11 @@ mod tests {
         let p = row();
         let st = states(&p.schematic, &blocks);
         let mut v = Verifier::new(&p, st.len());
-        let w = World { placement: &p, states: &st, blocks: &blocks };
+        let w = World {
+            placement: &p,
+            states: &st,
+            blocks: &blocks,
+        };
         v.tick(&w, [12, 64, 20], 48);
         assert_eq!(v.missing(), 4);
         let before = v.section(0, 4, 1).unwrap().revision;
@@ -434,7 +498,11 @@ mod tests {
         let p = row();
         let st = states(&p.schematic, &blocks);
         let mut v = Verifier::new(&p, st.len());
-        let w = World { placement: &p, states: &st, blocks: &blocks };
+        let w = World {
+            placement: &p,
+            states: &st,
+            blocks: &blocks,
+        };
         blocks.loaded.set(false);
         v.tick(&w, [12, 64, 20], 48);
         assert_eq!(v.missing() + v.right() + v.extra(), 0);
@@ -460,7 +528,11 @@ mod tests {
         let p = Placement::new(Rc::new(b.build()), 0, 0, 0);
         let st = states(&p.schematic, &blocks);
         let mut v = Verifier::new(&p, st.len());
-        let w = World { placement: &p, states: &st, blocks: &blocks };
+        let w = World {
+            placement: &p,
+            states: &st,
+            blocks: &blocks,
+        };
         v.tick(&w, [48, 16, 48], 32);
         assert!(blocks.reads.get() <= BUDGET + 4096);
         for _ in 0..200 {

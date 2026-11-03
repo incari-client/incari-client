@@ -47,11 +47,25 @@ mod tests {
 
     #[test]
     fn the_module_follows_the_pack_and_the_pack_the_module() {
-        assert_eq!(change(None, false, true), Some(Change::Module(true)), "at first, the pack's state");
+        assert_eq!(
+            change(None, false, true),
+            Some(Change::Module(true)),
+            "at first, the pack's state"
+        );
         assert_eq!(change(None, true, true), None);
-        assert_eq!(change(Some((false, false)), true, false), Some(Change::Pack(true)));
-        assert_eq!(change(Some((true, true)), false, true), Some(Change::Pack(false)));
-        assert_eq!(change(Some((false, false)), false, true), Some(Change::Module(true)), "switched in Resource Packs");
+        assert_eq!(
+            change(Some((false, false)), true, false),
+            Some(Change::Pack(true))
+        );
+        assert_eq!(
+            change(Some((true, true)), false, true),
+            Some(Change::Pack(false))
+        );
+        assert_eq!(
+            change(Some((false, false)), false, true),
+            Some(Change::Module(true)),
+            "switched in Resource Packs"
+        );
         assert_eq!(change(Some((true, true)), true, true), None);
     }
 

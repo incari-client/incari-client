@@ -35,7 +35,12 @@ pub fn model_slot(n: usize) -> [u32; 2] {
 pub fn uv16(slot: [u32; 2], uv: [f32; 4]) -> [f32; 4] {
     let (x, y) = (slot[0] as f32, slot[1] as f32);
     let (w, h) = (CANVAS[0] as f32, CANVAS[1] as f32);
-    [(x + uv[0]) * 16.0 / w, (y + uv[1]) * 16.0 / h, (x + uv[2]) * 16.0 / w, (y + uv[3]) * 16.0 / h]
+    [
+        (x + uv[0]) * 16.0 / w,
+        (y + uv[1]) * 16.0 / h,
+        (x + uv[2]) * 16.0 / w,
+        (y + uv[3]) * 16.0 / h,
+    ]
 }
 
 /// What `look` found a player drawn this frame wears on their model, for `layer` right after.
@@ -111,7 +116,13 @@ impl State {
                 s.position = position;
                 s.tick = tick;
             }
-            None => self.seen.push(Seen { mob, trail, position, ticked: None, tick }),
+            None => self.seen.push(Seen {
+                mob,
+                trail,
+                position,
+                ticked: None,
+                tick,
+            }),
         }
     }
 
@@ -177,20 +188,37 @@ mod tests {
             rects.push([x, y, MODEL, MODEL]);
         }
         for (i, a) in rects.iter().enumerate() {
-            assert!(a[0] + a[2] <= CANVAS[0] && a[1] + a[3] <= CANVAS[1], "{a:?}");
+            assert!(
+                a[0] + a[2] <= CANVAS[0] && a[1] + a[3] <= CANVAS[1],
+                "{a:?}"
+            );
             for b in &rects[..i] {
-                let apart = a[0] + a[2] <= b[0] || b[0] + b[2] <= a[0] || a[1] + a[3] <= b[1] || b[1] + b[3] <= a[1];
+                let apart = a[0] + a[2] <= b[0]
+                    || b[0] + b[2] <= a[0]
+                    || a[1] + a[3] <= b[1]
+                    || b[1] + b[3] <= a[1];
                 assert!(apart, "{a:?} {b:?}");
             }
         }
-        assert_eq!(uv16([0, 0], [0.0, 0.0, 512.0, 256.0]), [0.0, 0.0, 16.0, 16.0]);
+        assert_eq!(
+            uv16([0, 0], [0.0, 0.0, 512.0, 256.0]),
+            [0.0, 0.0, 16.0, 16.0]
+        );
     }
 
     #[test]
     fn jobs_and_sightings_are_kept_per_player() {
         let mut s = State::default();
-        s.set_job(Job { mob: 3, hat: Some(8), ..Job::default() });
-        s.set_job(Job { mob: 3, hat: None, ..Job::default() });
+        s.set_job(Job {
+            mob: 3,
+            hat: Some(8),
+            ..Job::default()
+        });
+        s.set_job(Job {
+            mob: 3,
+            hat: None,
+            ..Job::default()
+        });
         assert_eq!(s.jobs.len(), 1);
         assert_eq!(s.job(3).unwrap().hat, None);
         s.saw(5, Some(26), [1.0, 2.0, 3.0]);
@@ -203,7 +231,10 @@ mod tests {
 
     #[test]
     fn moving_capes_paint_ten_times_a_second_while_seen() {
-        let mut s = State { now_ms: 1_000.0, ..State::default() };
+        let mut s = State {
+            now_ms: 1_000.0,
+            ..State::default()
+        };
         s.cape_drawn(1);
         assert!(s.capes_due() && !s.capes_due());
         assert!(s.cape_moving(1) && !s.cape_moving(2));

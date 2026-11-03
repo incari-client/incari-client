@@ -51,7 +51,13 @@ impl Material {
     /// The length of the Java enum constant's name: its grain's salt.
     fn salt_len(self) -> i32 {
         match self {
-            Material::Gold | Material::Halo | Material::Felt | Material::Knit | Material::Bone | Material::Pack | Material::Wing => 4,
+            Material::Gold
+            | Material::Halo
+            | Material::Felt
+            | Material::Knit
+            | Material::Bone
+            | Material::Pack
+            | Material::Wing => 4,
             Material::GoldGem => 8,
             Material::Pocket => 6,
             Material::FeltBand => 9,
@@ -88,11 +94,22 @@ pub struct Spec {
 }
 
 fn bx(x: f32, y: f32, z: f32, w: i32, h: i32, d: i32, grow: f32, material: Material) -> Box3 {
-    Box3 { at: [x, y, z], size: [w, h, d], grow, material, mirror: false }
+    Box3 {
+        at: [x, y, z],
+        size: [w, h, d],
+        grow,
+        material,
+        mirror: false,
+    }
 }
 
 fn part(name: &'static str, offset: [f32; 3], rotation: [f32; 3], boxes: Vec<Box3>) -> Part {
-    Part { name, offset, rotation, boxes }
+    Part {
+        name,
+        offset,
+        rotation,
+        boxes,
+    }
 }
 
 /// How far back the wings are swept at rest, in radians.
@@ -102,7 +119,11 @@ const WING_SWEEP: f32 = 0.28;
 pub fn spec(id: &str) -> Option<Spec> {
     use Material::*;
     let zero = [0.0; 3];
-    let one = |anchor, look, p: Part| Spec { anchor, look, parts: vec![p] };
+    let one = |anchor, look, p: Part| Spec {
+        anchor,
+        look,
+        parts: vec![p],
+    };
     Some(match id {
         "hat.crown" => {
             // A band round the top of the head, outside the skin's hat layer, its top velvet.
@@ -143,7 +164,10 @@ pub fn spec(id: &str) -> Option<Spec> {
                 "hat",
                 zero,
                 zero,
-                vec![bx(-5.0, -9.0, -5.0, 10, 1, 10, 0.1, Felt), bx(-4.0, -15.0, -4.0, 8, 6, 8, -0.5, FeltBand)],
+                vec![
+                    bx(-5.0, -9.0, -5.0, 10, 1, 10, 0.1, Felt),
+                    bx(-4.0, -15.0, -4.0, 8, 6, 8, -0.5, FeltBand),
+                ],
             ),
         ),
         "hat.beanie" => one(
@@ -153,11 +177,22 @@ pub fn spec(id: &str) -> Option<Spec> {
                 "beanie",
                 zero,
                 zero,
-                vec![bx(-4.0, -9.0, -4.0, 8, 3, 8, 0.7, Knit), bx(-1.0, -12.0, -1.0, 2, 2, 2, 0.3, Pom)],
+                vec![
+                    bx(-4.0, -9.0, -4.0, 8, 3, 8, 0.7, Knit),
+                    bx(-1.0, -12.0, -1.0, 2, 2, 2, 0.3, Pom),
+                ],
             ),
         ),
-        "hat.horns" => Spec { anchor: Anchor::Head, look: Look::Cutout, parts: vec![horn("left", 1.0), horn("right", -1.0)] },
-        "hat.cat_ears" => Spec { anchor: Anchor::Head, look: Look::Cutout, parts: vec![ear("left", 1.0), ear("right", -1.0)] },
+        "hat.horns" => Spec {
+            anchor: Anchor::Head,
+            look: Look::Cutout,
+            parts: vec![horn("left", 1.0), horn("right", -1.0)],
+        },
+        "hat.cat_ears" => Spec {
+            anchor: Anchor::Head,
+            look: Look::Cutout,
+            parts: vec![ear("left", 1.0), ear("right", -1.0)],
+        },
         "back.angel_wings" | "back.bat_wings" => wings(Look::Cutout),
         "back.frost_wings" => wings(Look::Translucent),
         "back.backpack" => one(
@@ -167,7 +202,10 @@ pub fn spec(id: &str) -> Option<Spec> {
                 "pack",
                 zero,
                 zero,
-                vec![bx(-4.0, 1.0, 2.0, 8, 10, 4, 0.0, Pack), bx(-3.0, 5.0, 6.0, 6, 4, 1, 0.0, Pocket)],
+                vec![
+                    bx(-4.0, 1.0, 2.0, 8, 10, 4, 0.0, Pack),
+                    bx(-3.0, 5.0, 6.0, 6, 4, 1, 0.0, Pocket),
+                ],
             ),
         ),
         _ => return None,
@@ -191,7 +229,10 @@ fn ear(name: &'static str, side: f32) -> Part {
         name,
         [side * 2.6, -8.2, -0.5],
         [0.0, 0.0, side * 0.28],
-        vec![bx(-1.5, -3.0, -0.5, 3, 3, 1, 0.0, Material::Ear), bx(-0.5, -4.0, -0.5, 1, 1, 1, 0.0, Material::Ear)],
+        vec![
+            bx(-1.5, -3.0, -0.5, 3, 3, 1, 0.0, Material::Ear),
+            bx(-0.5, -4.0, -0.5, 1, 1, 1, 0.0, Material::Ear),
+        ],
     )
 }
 
@@ -209,8 +250,18 @@ fn wings(look: Look) -> Spec {
         anchor: Anchor::Body,
         look,
         parts: vec![
-            part("left_wing", [1.0, 3.0, 2.4], [0.0, -WING_SWEEP, -0.12], vec![wing(false)]),
-            part("right_wing", [-1.0, 3.0, 2.4], [0.0, WING_SWEEP, 0.12], vec![wing(true)]),
+            part(
+                "left_wing",
+                [1.0, 3.0, 2.4],
+                [0.0, -WING_SWEEP, -0.12],
+                vec![wing(false)],
+            ),
+            part(
+                "right_wing",
+                [-1.0, 3.0, 2.4],
+                [0.0, WING_SWEEP, 0.12],
+                vec![wing(true)],
+            ),
         ],
     }
 }
@@ -260,7 +311,8 @@ pub fn texture(id: &str, spec: &Spec, out: &mut [u32]) {
                 for x in 0..fw {
                     let (px, py) = (x0 + x, y0 + y);
                     if (px as usize) < TEXTURE && (py as usize) < TEXTURE {
-                        out[py as usize * TEXTURE + px as usize] = color(id, b.material, face, x, y, fw, fh);
+                        out[py as usize * TEXTURE + px as usize] =
+                            color(id, b.material, face, x, y, fw, fh);
                     }
                 }
             }
@@ -269,10 +321,22 @@ pub fn texture(id: &str, spec: &Spec, out: &mut [u32]) {
 }
 
 /// A face's pixel: face 0 and 1 the bottom and top, 3 the front, 5 the back.
-fn color(id: &str, material: Material, face: usize, x: i32, y: i32, width: i32, height: i32) -> u32 {
+fn color(
+    id: &str,
+    material: Material,
+    face: usize,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+) -> u32 {
     use Material::*;
     let flat = face <= 1;
-    let row = if height <= 1 { 0.0 } else { y as f32 / (height - 1) as f32 };
+    let row = if height <= 1 {
+        0.0
+    } else {
+        y as f32 / (height - 1) as f32
+    };
     let grain = art::hash(x, y, face as i32 + material.salt_len() * 7);
     let opaque = |rgb: u32| 0xFF00_0000 | rgb;
     match material {
@@ -280,11 +344,19 @@ fn color(id: &str, material: Material, face: usize, x: i32, y: i32, width: i32, 
             if material == GoldGem && flat {
                 return opaque(art::mix(0x8E1B2E, 0x6A1222, grain));
             }
-            if material == GoldGem && face == 3 && (x as f32 - (width - 1) as f32 / 2.0).abs() < 1.0 && y == 0 {
+            if material == GoldGem
+                && face == 3
+                && (x as f32 - (width - 1) as f32 / 2.0).abs() < 1.0
+                && y == 0
+            {
                 return 0xFFE0_344B;
             }
             let gold = art::mix(0xFFE58A, 0xD69A1E, if flat { 0.1 } else { row });
-            opaque(if grain < 0.08 { art::mix(gold, 0xFFFFFF, 0.6) } else { gold })
+            opaque(if grain < 0.08 {
+                art::mix(gold, 0xFFFFFF, 0.6)
+            } else {
+                gold
+            })
         }
         Halo => opaque(art::mix(0xFFF6D2, 0xFFDB7A, grain * 0.6)),
         Felt => opaque(art::mix(0x2A2A33, 0x1A1A20, grain)),
@@ -300,10 +372,18 @@ fn color(id: &str, material: Material, face: usize, x: i32, y: i32, width: i32, 
                 return 0xFF4F_8FC7;
             }
             let stripe = if flat { (x + y) / 2 } else { y };
-            if stripe & 1 == 0 { 0xFF7F_C3F2 } else { 0xFFEA_F6FF }
+            if stripe & 1 == 0 {
+                0xFF7F_C3F2
+            } else {
+                0xFFEA_F6FF
+            }
         }
         Pom => opaque(art::mix(0xFFFFFF, 0xDDE8F2, grain)),
-        Bone => opaque(art::mix(0xF2E6CC, 0x9C8A6A, if flat { 0.3 } else { 1.0 - row })),
+        Bone => opaque(art::mix(
+            0xF2E6CC,
+            0x9C8A6A,
+            if flat { 0.3 } else { 1.0 - row },
+        )),
         Ear => {
             if face == 3 && x > 0 && x < width - 1 && y > 0 {
                 0xFFF2_A6BC
@@ -316,7 +396,11 @@ fn color(id: &str, material: Material, face: usize, x: i32, y: i32, width: i32, 
                 return 0xFF7F_C3F2;
             }
             let seam = x == 0 || y == 0 || x == width - 1 || y == height - 1;
-            if seam { 0xFF3B_5B8A } else { opaque(art::mix(0x22385A, 0x1B2D49, grain)) }
+            if seam {
+                0xFF3B_5B8A
+            } else {
+                opaque(art::mix(0x22385A, 0x1B2D49, grain))
+            }
         }
         Pocket => {
             if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
@@ -367,7 +451,11 @@ pub struct Quad {
 pub struct Affine(pub [[f32; 4]; 3]);
 
 impl Affine {
-    pub const IDENTITY: Affine = Affine([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]]);
+    pub const IDENTITY: Affine = Affine([
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+    ]);
 
     pub fn translation(t: [f32; 3]) -> Self {
         let mut m = Self::IDENTITY;
@@ -379,7 +467,9 @@ impl Affine {
 
     /// `Quaternionf.rotationZYX(z, y, x)`: x first, then y, then z.
     pub fn rotation_zyx(x: f32, y: f32, z: f32) -> Self {
-        Self::rotation_z(z).then(&Self::rotation_y(y)).then(&Self::rotation_x(x))
+        Self::rotation_z(z)
+            .then(&Self::rotation_y(y))
+            .then(&Self::rotation_x(x))
     }
 
     pub fn rotation_x(a: f32) -> Self {
@@ -398,7 +488,11 @@ impl Affine {
     }
 
     pub fn scale(s: [f32; 3]) -> Self {
-        Affine([[s[0], 0.0, 0.0, 0.0], [0.0, s[1], 0.0, 0.0], [0.0, 0.0, s[2], 0.0]])
+        Affine([
+            [s[0], 0.0, 0.0, 0.0],
+            [0.0, s[1], 0.0, 0.0],
+            [0.0, 0.0, s[2], 0.0],
+        ])
     }
 
     /// `self * other`: `other` applied first (a pose stack's next transform).
@@ -407,7 +501,10 @@ impl Affine {
         let mut out = [[0.0; 4]; 3];
         for (i, row) in out.iter_mut().enumerate() {
             for (j, cell) in row.iter_mut().enumerate() {
-                *cell = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j] + if j == 3 { a[i][3] } else { 0.0 };
+                *cell = a[i][0] * b[0][j]
+                    + a[i][1] * b[1][j]
+                    + a[i][2] * b[2][j]
+                    + if j == 3 { a[i][3] } else { 0.0 };
             }
         }
         Affine(out)
@@ -488,10 +585,22 @@ fn cube(b: &Box3, tex: [i32; 2], m: &Affine, out: &mut Vec<Quad>) {
 /// position `tex`, under `m`: its polygons (a panel with no depth has only its front and back),
 /// each vertex with its texture position, as the game lays them out. The player's own boxes in
 /// the Wardrobe's preview are made the same way.
-pub fn box_quads(at: [f32; 3], size: [i32; 3], g: f32, [u, v]: [i32; 2], mirror: bool, m: &Affine, out: &mut Vec<Quad>) {
+pub fn box_quads(
+    at: [f32; 3],
+    size: [i32; 3],
+    g: f32,
+    [u, v]: [i32; 2],
+    mirror: bool,
+    m: &Affine,
+    out: &mut Vec<Quad>,
+) {
     let [w, h, d] = size;
     let (mut x0, y0, z0) = (at[0] - g, at[1] - g, at[2] - g);
-    let (mut x1, y1, z1) = (at[0] + w as f32 + g, at[1] + h as f32 + g, at[2] + d as f32 + g);
+    let (mut x1, y1, z1) = (
+        at[0] + w as f32 + g,
+        at[1] + h as f32 + g,
+        at[2] + d as f32 + g,
+    );
     if mirror {
         std::mem::swap(&mut x0, &mut x1);
     }
@@ -504,7 +613,14 @@ pub fn box_quads(at: [f32; 3], size: [i32; 3], g: f32, [u, v]: [i32; 2], mirror:
     let v5 = [x1, y1, z1];
     let v6 = [x0, y1, z1];
     let (u, v, w, h, d) = (u as f32, v as f32, w as f32, h as f32, d as f32);
-    let (f4, f5, f6, f7, f8, f9) = (u, u + d, u + d + w, u + d + w + w, u + d + w + d, u + d + w + d + w);
+    let (f4, f5, f6, f7, f8, f9) = (
+        u,
+        u + d,
+        u + d + w,
+        u + d + w + w,
+        u + d + w + d,
+        u + d + w + d + w,
+    );
     let (f10, f11, f12) = (v, v + d, v + d + h);
     let panel = size[2] == 0;
     let faces: [([[f32; 3]; 4], [f32; 4], bool); 6] = [
@@ -550,7 +666,11 @@ thread_local! {
 
 /// Runs `f` with `cosmetic`'s model and its quads posed for `state` (`mesh`), from a cache the
 /// window's thread keeps; None for a cosmetic that isn't a model. Per player per frame.
-pub fn with_mesh<R>(cosmetic: &super::catalog::Cosmetic, state: &State, f: impl FnOnce(&Spec, &[Quad]) -> R) -> Option<R> {
+pub fn with_mesh<R>(
+    cosmetic: &super::catalog::Cosmetic,
+    state: &State,
+    f: impl FnOnce(&Spec, &[Quad]) -> R,
+) -> Option<R> {
     let index = super::catalog::index(cosmetic);
     MADE.with(|made| {
         let mut made = made.borrow_mut();
@@ -558,7 +678,9 @@ pub fn with_mesh<R>(cosmetic: &super::catalog::Cosmetic, state: &State, f: impl 
         if specs.len() <= index {
             specs.resize_with(index + 1, || None);
         }
-        let spec = specs[index].get_or_insert_with(|| spec(cosmetic.id)).as_ref()?;
+        let spec = specs[index]
+            .get_or_insert_with(|| spec(cosmetic.id))
+            .as_ref()?;
         mesh(cosmetic.id, spec, state, quads);
         Some(f(spec, quads))
     })
@@ -596,7 +718,11 @@ mod tests {
             texture(c.id, &spec, &mut tex);
             for q in &quads {
                 for [u, v] in q.uv {
-                    assert!((0.0..=TEXTURE as f32).contains(&u) && (0.0..=TEXTURE as f32).contains(&v), "{}", c.id);
+                    assert!(
+                        (0.0..=TEXTURE as f32).contains(&u) && (0.0..=TEXTURE as f32).contains(&v),
+                        "{}",
+                        c.id
+                    );
                 }
             }
             // Something painted under every face's middle (wings may be clear at their edges).
@@ -617,9 +743,19 @@ mod tests {
     #[test]
     fn boxes_have_six_faces_and_panels_two() {
         let mut quads = Vec::new();
-        mesh("hat.beanie", &spec("hat.beanie").unwrap(), &State::default(), &mut quads);
+        mesh(
+            "hat.beanie",
+            &spec("hat.beanie").unwrap(),
+            &State::default(),
+            &mut quads,
+        );
         assert_eq!(quads.len(), 12);
-        mesh("back.bat_wings", &spec("back.bat_wings").unwrap(), &State::default(), &mut quads);
+        mesh(
+            "back.bat_wings",
+            &spec("back.bat_wings").unwrap(),
+            &State::default(),
+            &mut quads,
+        );
         assert_eq!(quads.len(), 4);
     }
 
@@ -628,7 +764,15 @@ mod tests {
         let spec = spec("back.angel_wings").unwrap();
         let (mut plain, mut moved) = (Vec::new(), Vec::new());
         mesh("back.angel_wings", &spec, &State::default(), &mut plain);
-        mesh("back.angel_wings", &spec, &State { chest_armor: true, ..State::default() }, &mut moved);
+        mesh(
+            "back.angel_wings",
+            &spec,
+            &State {
+                chest_armor: true,
+                ..State::default()
+            },
+            &mut moved,
+        );
         assert!((moved[0].pos[0][2] - plain[0].pos[0][2] - 1.0).abs() < 1e-5);
     }
 

@@ -4,14 +4,17 @@
 use crate::paint::Painter;
 
 /// Discs' colours: calm, readable under white text, apart from the accent and the warnings.
-const COLORS: [u32; 8] = [0xFF4E6E9E, 0xFF5A8F7B, 0xFF8A6BB0, 0xFFB0735A, 0xFF4F8FA8, 0xFF9E5A78, 0xFF6F8A4E, 0xFF7A6E5A];
+const COLORS: [u32; 8] = [
+    0xFF4E6E9E, 0xFF5A8F7B, 0xFF8A6BB0, 0xFFB0735A, 0xFF4F8FA8, 0xFF9E5A78, 0xFF6F8A4E, 0xFF7A6E5A,
+];
 
 pub const ONLINE: u32 = 0xFF5ED38A;
 pub const OFFLINE: u32 = 0xFF7D8590;
 
 /// Java's `String.hashCode`, so a name has the same colour in both clients.
 fn java_hash(text: &str) -> i32 {
-    text.encode_utf16().fold(0i32, |h, c| h.wrapping_mul(31).wrapping_add(i32::from(c)))
+    text.encode_utf16()
+        .fold(0i32, |h, c| h.wrapping_mul(31).wrapping_add(i32::from(c)))
 }
 
 /// `label`'s colour.
@@ -33,17 +36,33 @@ pub fn lighter(label: &str) -> u32 {
 pub fn draw(p: &mut Painter, x: f32, y: f32, size: f32, label: &str) {
     let radius = size / 2.0;
     p.round(x, y, size, size, radius, color(label));
-    let letter: String = label.chars().next().map_or("?".into(), |c| c.to_uppercase().collect());
+    let letter: String = label
+        .chars()
+        .next()
+        .map_or("?".into(), |c| c.to_uppercase().collect());
     let w = p.width(&letter);
     let th = p.theme;
-    p.text(&letter, x + ((size - w) / 2.0).floor() + 1.0, y + ((size - 7.0) / 2.0).floor(), th.text, false);
+    p.text(
+        &letter,
+        x + ((size - w) / 2.0).floor() + 1.0,
+        y + ((size - 7.0) / 2.0).floor(),
+        th.text,
+        false,
+    );
 }
 
 /// A presence dot on an avatar's lower right corner, ringed in `behind` to stand off it.
 pub fn status(p: &mut Painter, x: f32, y: f32, size: f32, online: bool, behind: u32) {
     let (cx, cy) = (x + size - 2.5, y + size - 2.5);
     p.round(cx - 3.5, cy - 3.5, 7.0, 7.0, 3.5, behind);
-    p.round(cx - 2.5, cy - 2.5, 5.0, 5.0, 2.5, if online { ONLINE } else { OFFLINE });
+    p.round(
+        cx - 2.5,
+        cy - 2.5,
+        5.0,
+        5.0,
+        2.5,
+        if online { ONLINE } else { OFFLINE },
+    );
 }
 
 #[cfg(test)]

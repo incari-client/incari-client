@@ -201,7 +201,11 @@ impl Theme {
 
     /// A panel's fill: glass in Normal, solid in Potato.
     pub fn panel_fill(&self) -> u32 {
-        if self.normal() { self.glass } else { self.glass_solid }
+        if self.normal() {
+            self.glass
+        } else {
+            self.glass_solid
+        }
     }
 
     /// A panel's edge.
