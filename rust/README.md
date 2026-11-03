@@ -70,6 +70,8 @@ one-line change for when it's stamped. Block highlight is Horizon's own; the res
 state helpers (`native_attack_strength`, `native_effect`, `native_equipped`...), are Incari's, in
 the fork's `incari_client_hooks.json`, to offer upstream.
 
+F then a digit types that function key (F+3 is F3, F+0 is F10) for Chromebooks, as in the Java build. It's in the Horizon fork (`game/f_chord.rs`), not a mod: a mod's `key` hook can't swallow or remake a key. Needs the pin bumped to the fork commit that has it.
+
 Everything of the Java client's is here. What runs differently: the screen recorder records in the
 browser build only (the page's `MediaRecorder`), as Java's; Incari's online service works only in
 the threaded browser build (the others have no WebSocket client); the world map remembers land

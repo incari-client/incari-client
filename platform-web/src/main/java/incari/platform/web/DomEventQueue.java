@@ -6,6 +6,7 @@ import incari.platform.api.input.Scancodes;
 import incari.platform.api.window.PlatformEventListener;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -84,6 +85,18 @@ final class DomEventQueue {
      * Safari): what it typed last without Shift or AltGr.
      */
     private final @Nullable String[] typedNames = new String[Scancodes.COUNT];
+    /** The F key, which with a digit types a function key (see {@link #chord}). */
+    private static final int CHORD_KEY = Scancodes.A + 5;
+
+    /** F is down and not yet reported: a digit may still turn it into a function key. */
+    private boolean chordKeyPending;
+    /** F is down and a digit already turned it into a function key; its release isn't reported. */
+    private boolean chordKeyUsed;
+
+    private int chordKeyCode;
+    private int chordKeyModifiers;
+    /** The function key each held digit stands for, or 0, so its release releases that key. */
+    private final int[] chordedKeys = new int[Scancodes.COUNT];
     /** A bit per platform mouse button (1 << button) pressed on the canvas and not yet released. */
     private int buttonsDown;
 
@@ -242,7 +255,7 @@ final class DomEventQueue {
         // unbound binds all sit on that same unknown key, and would fire. One with a keycode
         // stays (a virtual keyboard's Backspace has no code, and text fields need it).
         boolean unknown = scancode == Scancodes.UNKNOWN && (keyCode & ~DomKeys.NON_PRINTABLE) == 0;
-        if (!unknown) {
+        if (!unknown && !chord(down, scancode, keyCode, action, flags)) {
             add(Event.key(scancode, keyCode, modifiers, action));
         }
         if (down && textInput) {
@@ -255,6 +268,84 @@ final class DomEventQueue {
             }
         }
         return consumesKey(code, key, flags);
+    }
+
+    /**
+     * Chromebooks have no function row keys the game can use, so F then a digit types the function
+     * key: F+3 is F3, F+5 is F5, and F+3+H is F3+H (F+1..9 are F1..F9, F+0 is F10). Not while
+     * typing text, where "f3" is just text.
+     *
+     * <p>F alone still presses F, but only when it's released or another key goes down, because the
+     * queue can't know a digit is coming. A chord's F is never reported, so it doesn't also act as
+     * its own key (swap hands).
+     *
+     * @return whether the queue handled the key, so the caller must not report it as it came
+     */
+    private boolean chord(boolean down, int scancode, int keyCode, KeyAction action, int flags) {
+        boolean plain = (flags & (DOM_CTRL | DOM_ALT | DOM_META | DOM_ALT_GRAPH)) == 0;
+        if (scancode == CHORD_KEY) {
+            if (down) {
+                if (action == KeyAction.PRESS && plain && !textInput) {
+                    chordKeyPending = true;
+                    chordKeyCode = keyCode;
+                    chordKeyModifiers = modifiers;
+                    return true;
+                }
+                // The game saw this F, or it's a repeat of one the chord swallowed.
+                return action == KeyAction.REPEAT && (chordKeyPending || chordKeyUsed);
+            }
+            if (chordKeyPending) {
+                chordKeyPending = false;
+                add(Event.key(scancode, chordKeyCode, chordKeyModifiers, KeyAction.PRESS));
+                return false;
+            }
+            if (chordKeyUsed) {
+                chordKeyUsed = false;
+                return true;
+            }
+            return false;
+        }
+        if (scancode < 0 || scancode >= chordedKeys.length) {
+            return false;
+        }
+        int functionKey = chordedKeys[scancode];
+        if (!down) {
+            if (functionKey == 0) {
+                return false;
+            }
+            chordedKeys[scancode] = 0;
+            releaseFunctionKey(functionKey);
+            return true;
+        }
+        boolean digit = scancode >= Scancodes.DIGIT_1 && scancode <= Scancodes.DIGIT_0;
+        if (digit && plain && (chordKeyPending || chordKeyUsed)) {
+            int target = Scancodes.F1 + (scancode == Scancodes.DIGIT_0 ? 9 : scancode - Scancodes.DIGIT_1);
+            if (action == KeyAction.PRESS) {
+                chordKeyPending = false;
+                chordKeyUsed = true;
+                chordedKeys[scancode] = target;
+                keysDown[target] = true;
+                heldKeyCodes[target] = target | DomKeys.NON_PRINTABLE;
+            } else if (functionKey == 0) {
+                return true;
+            } else {
+                target = functionKey;
+            }
+            add(Event.key(target, target | DomKeys.NON_PRINTABLE, modifiers, action));
+            return true;
+        }
+        if (chordKeyPending && scancode < Scancodes.LEFT_CTRL) {
+            // Not a chord after all: the F goes first, then this key. Modifiers don't end the
+            // wait, so F+Shift+3 works.
+            chordKeyPending = false;
+            add(Event.key(CHORD_KEY, chordKeyCode, chordKeyModifiers, KeyAction.PRESS));
+        }
+        return false;
+    }
+
+    private void releaseFunctionKey(int functionKey) {
+        keysDown[functionKey] = false;
+        add(Event.key(functionKey, functionKey | DomKeys.NON_PRINTABLE, modifiers, KeyAction.RELEASE));
     }
 
     /**
@@ -602,6 +693,9 @@ final class DomEventQueue {
         blurSinceDrain = true;
         // Nothing held when focus left will see its release, so release it all now, as SDL does.
         modifiers = 0;
+        chordKeyPending = false;
+        chordKeyUsed = false;
+        Arrays.fill(chordedKeys, 0);
         for (int scancode = 1; scancode < keysDown.length; scancode++) {
             if (keysDown[scancode]) {
                 keysDown[scancode] = false;

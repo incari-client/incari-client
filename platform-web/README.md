@@ -10,7 +10,7 @@ Audio and WebRTC. Designs: input ADR 0010, networking ADR 0009, storage ADR 0011
 | --- | --- |
 | `WebPlatform` | The platform. `endFrame` waits for the next animation frame and logs a heartbeat |
 | `Dom` | Every JavaScript snippet for input, fullscreen, Pointer Lock, the clipboard, dropped files |
-| `DomEventQueue`, `DomKeys`, `CanvasSize`, `DroppedFiles` | Plain Java (JVM-tested): DOM events become SDL-style events between frames; `KeyboardEvent.code` → scancodes |
+| `DomEventQueue`, `DomKeys`, `CanvasSize`, `DroppedFiles` | Plain Java (JVM-tested): DOM events become SDL-style events between frames; `KeyboardEvent.code` → scancodes; F then a digit is that function key (F+3 = F3, F+0 = F10) for Chromebooks, not while typing text |
 | `CanvasWindow`, `WebDisplays` | The window and displays |
 | `audio/` | One `AudioContext` with the unlock prompt; decoding through the browser; `Spatializer` matches OpenAL Soft's panning |
 | `WebSocketNetwork` | Server connections; callbacks queue events, `pollEvents` delivers them on the game's thread |

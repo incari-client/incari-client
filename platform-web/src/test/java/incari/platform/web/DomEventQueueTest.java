@@ -31,6 +31,73 @@ class DomEventQueueTest {
         assertThat(drain()).containsExactly("key 26 119 0 PRESS", "key 26 119 0 RELEASE");
     }
 
+    // --- F+digit function keys (Chromebooks) ---
+
+    @Test
+    void fThenDigitIsAFunctionKey() {
+        keyDown("KeyF", "f", 0);
+        keyDown("Digit3", "3", 0);
+        keyUp("Digit3", "3", 0);
+        keyUp("KeyF", "f", 0);
+        assertThat(drain()).containsExactly("key 60 1073741884 0 PRESS", "key 60 1073741884 0 RELEASE");
+    }
+
+    @Test
+    void fPlusDigitPlusAnotherKeyKeepsTheFunctionKeyHeld() {
+        keyDown("KeyF", "f", 0);
+        keyDown("Digit3", "3", 0);
+        assertThat(queue.isKeyDown(Scancodes.F1 + 2)).isTrue();
+        keyDown("KeyH", "h", 0);
+        keyUp("KeyH", "h", 0);
+        keyUp("Digit3", "3", 0);
+        assertThat(queue.isKeyDown(Scancodes.F1 + 2)).isFalse();
+        assertThat(drain()).hasSize(4).first().isEqualTo("key 60 1073741884 0 PRESS");
+    }
+
+    @Test
+    void zeroIsF10() {
+        keyDown("KeyF", "f", 0);
+        keyDown("Digit0", "0", 0);
+        assertThat(drain()).containsExactly("key 67 1073741891 0 PRESS");
+    }
+
+    @Test
+    void fAloneIsReportedWhenReleased() {
+        keyDown("KeyF", "f", 0);
+        assertThat(drain()).isEmpty();
+        keyUp("KeyF", "f", 0);
+        assertThat(drain()).containsExactly("key 9 102 0 PRESS", "key 9 102 0 RELEASE");
+    }
+
+    @Test
+    void fIsReportedFirstWhenAnotherKeyFollows() {
+        keyDown("KeyF", "f", 0);
+        keyDown("KeyW", "w", 0);
+        assertThat(drain()).containsExactly("key 9 102 0 PRESS", "key 26 119 0 PRESS");
+    }
+
+    @Test
+    void digitsAloneAreDigits() {
+        keyDown("Digit3", "3", 0);
+        assertThat(drain()).containsExactly("key 32 51 0 PRESS");
+    }
+
+    @Test
+    void noChordWhileTyping() {
+        queue.setTextInput(true);
+        keyDown("KeyF", "f", 0);
+        keyDown("Digit3", "3", 0);
+        assertThat(drain()).contains("key 9 102 0 PRESS", "key 32 51 0 PRESS");
+    }
+
+    @Test
+    void focusLossReleasesAChordedKey() {
+        keyDown("KeyF", "f", 0);
+        keyDown("Digit5", "5", 0);
+        queue.event("blur", "", "", 0, 0, 0, 0, 0, 0);
+        assertThat(drain()).contains("key 62 1073741886 0 PRESS", "key 62 1073741886 0 RELEASE");
+    }
+
     @Test
     void repeatsAreReportedAsRepeats() {
         keyDown("KeyW", "w", 0);

@@ -73,6 +73,7 @@ cargo test --manifest-path rust/Cargo.toml   # the Rust build's mods
 
 1. Edit `work/client/src/main/java`: a one- or two-line hook into an Incari module, marked
    `// Incari start: <reason>` and `// Incari end`.
+2. Create an equivalent module/change in the experimental Rust port.
 2. Commit in `work/client`, one concern each, subject `<subsystem>: <summary>`.
 3. `./incari rebuild`, then commit `patches/` here.
 
