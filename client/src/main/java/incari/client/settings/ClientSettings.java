@@ -37,6 +37,9 @@ public final class ClientSettings {
     /** The screen recorder takes the microphone too. */
     public static final Flag RECORD_MICROPHONE = new Flag("record-microphone", false);
 
+    /** The disconnection screen joins the server again after a countdown ({@code Reconnect}). */
+    public static final Flag AUTO_RECONNECT = new Flag("auto-reconnect", false);
+
     private static final Map<String, String> VALUES = new TreeMap<>();
     private static @Nullable Path file;
 

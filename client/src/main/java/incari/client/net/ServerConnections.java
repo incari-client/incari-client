@@ -101,6 +101,8 @@ public final class ServerConnections {
     private static volatile int lastJoined = -1;
     /** The server the connect screen last prepared a join to. */
     private static volatile @Nullable Join lastJoin;
+    /** Whether the last connection opened was to a shared world, which {@link #lastJoin} isn't. */
+    private static volatile boolean lastWasRelay;
     /** The Eagler stage of the connect screen's last connection, if it was an Eagler one. */
     private static volatile @Nullable EaglerHandshake lastEagler;
 
@@ -117,6 +119,7 @@ public final class ServerConnections {
         int protocol = retry >= 0 ? retry : targetProtocol(server, address);
         VersionRetry.joining(server, address, protocol);
         lastJoin = new Join(server, address);
+        lastWasRelay = false;
         if (protocol != gameProtocol()) {
             LOGGER.info("Joining {} as {} through Via", address, ServerVersions.name(protocol));
             IncariVia.configure(new File(Minecraft.getInstance().gameDirectory, "incari/via"), gameProtocol());
@@ -203,6 +206,7 @@ public final class ServerConnections {
      */
     public static ChannelFuture connectRelay(
             final RelayWorldAddress world, final EventLoopGroupHolder eventLoops, final Connection connection) {
+        lastWasRelay = true;
         if (world.incariProtocol() >= 0) {
             return connectIncariHost(world, eventLoops, connection);
         }
@@ -263,6 +267,11 @@ public final class ServerConnections {
     /** The join the connect screen last prepared, or null before the first. */
     static @Nullable Join lastJoin() {
         return lastJoin;
+    }
+
+    /** {@link Reconnect}: the server to join again, or null when the last connection wasn't to one. */
+    static @Nullable Join rejoinable() {
+        return lastWasRelay ? null : lastJoin;
     }
 
     /**

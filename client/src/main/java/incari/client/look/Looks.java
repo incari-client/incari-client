@@ -1,10 +1,12 @@
 package incari.client.look;
 
+import incari.client.net.Reconnect;
 import incari.client.net.WispServers;
 import incari.client.relay.RelayScreen;
 import incari.client.ui.Look;
 import incari.client.ui.ScreenEdits;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.client.gui.screens.ManageServerScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
@@ -26,5 +28,6 @@ public final class Looks {
         ScreenEdits.edit(PauseScreen.class, PauseLook::edit);
         ScreenEdits.edit(JoinMultiplayerScreen.class, RelayScreen::fitRow);
         ScreenEdits.edit(ManageServerScreen.class, WispServers::editServerScreen);
+        ScreenEdits.edit(DisconnectedScreen.class, Reconnect::edit);
     }
 }

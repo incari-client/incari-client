@@ -107,6 +107,11 @@ public final class IncariSettingsScreen extends ListScreen {
         rows.add(showMyBadge(list));
         rows.add(toggle(
                 list,
+                "Auto reconnect",
+                "After a kick, joins the server again in 5 seconds.",
+                ClientSettings.AUTO_RECONNECT));
+        rows.add(toggle(
+                list,
                 "Usage counts",
                 "Once a day, sends Incari a random number, the version and the build, nothing else. "
                         + "It helps us know how many people play.",
