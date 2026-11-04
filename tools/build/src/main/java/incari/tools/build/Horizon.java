@@ -166,8 +166,8 @@ final class Horizon {
     }
 
     /**
-     * Builds the Rust build into {@link #output}: Horizon's resources, the mods, both of its
-     * WebAssembly builds (threaded, and single-threaded for pages that can't share memory).
+     * Builds the Rust build into {@link #output}: Horizon's resources, the mods, and its
+     * threaded WebAssembly build (the page's service worker makes it cross-origin isolated).
      */
     static void build(Workspace ws, BuildConfig config, Path checkout, Pin pin)
             throws IOException, InterruptedException {
@@ -178,7 +178,7 @@ final class Horizon {
         Path stage = stage(ws);
         // web/package.py writes its builds inside the source it runs in, and horizon-mixins refuses
         // to restage over them (a symlink among them). They were copied out after the last build.
-        for (String built : List.of("web/dist", "web/dist-st", "web/out")) {
+        for (String built : List.of("web/dist", "web/out")) {
             FileTrees.deleteRecursively(stage.resolve(built));
         }
         Log.step("Applying rust/mods to Horizon (horizon-mixins)");
@@ -196,10 +196,10 @@ final class Horizon {
                         stage.toString()),
                 ws.repoRoot(),
                 false);
-        Log.step("Compiling Horizon for the browser (threaded and single-threaded; long the first time)");
+        Log.step("Compiling Horizon for the browser (long the first time)");
         Path packaged = ws.workDir().resolve("horizon-out");
         ProcessRunner.Result result = ProcessRunner.start(
-                List.of("python3", "web/package.py", "folder", "--out", packaged.toString()),
+                List.of("python3", "web/package.py", "--out", packaged.toString()),
                 stage,
                 Map.of(
                         "HORIZON_RESOURCES", resources.toString(),

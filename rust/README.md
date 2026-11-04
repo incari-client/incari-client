@@ -90,7 +90,7 @@ the `wasm32-unknown-unknown` target; the `wasm-bindgen-cli` of Horizon's `Cargo.
 INCARI_HORIZON_DIR=~/horizon-web ./incari build --only rust   # another Horizon checkout
 ```
 
-The first build compiles `horizon-prepare` and the game twice (threaded and single-threaded): long.
+The first build compiles `horizon-prepare` and the game: long.
 Under `work/`:
 
 | Folder | What |

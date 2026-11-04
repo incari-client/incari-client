@@ -41,8 +41,8 @@ The aim is to ship it beside Fast and Compatible without a second project to mai
   every mod shares (settings pages, HUD boxes by corner) is a bundle of its own, `rust/mods/common`,
   with no hooks.
 - **One build command.** `./incari build` builds Rust before Fast and Compatible: horizon-mixins
-  (pinned too) applies `rust/mods` into `work/horizon-stage`, then Horizon's `web/package.py folder`
-  builds its threaded and single-threaded modules into `app-web/build/rust/`. `--only rust` builds
+  (pinned too) applies `rust/mods` into `work/horizon-stage`, then Horizon's `web/package.py`
+  builds its threaded module (the fork dropped the single-threaded one) into `app-web/build/rust/`. `--only rust` builds
   it alone. The web folder has it in `rust/`; the single file doesn't (`--html` leaves it out:
   Horizon's offline file is a page of its own).
 - **Its tools are optional.** It needs Rust `nightly-2026-10-14` with `rust-src` and the
