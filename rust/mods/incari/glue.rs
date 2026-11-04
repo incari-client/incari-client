@@ -344,6 +344,29 @@ impl incari_core::host_extras::HostExtras for Extras {
     }
 }
 
+thread_local! {
+    /// The Eaglercraft server's pause menu as the client takes it, made once a menu.
+    static SERVER_MENU: RefCell<Option<std::sync::Arc<incari_core::server_menu::ServerMenu>>> =
+        const { RefCell::new(None) };
+}
+
+/// Horizon's copy of an Eaglercraft server's pause menu in the client's types.
+fn server_menu(menu: &horizon_protocol::eagler::PauseMenu) -> incari_core::server_menu::ServerMenu {
+    use incari_core::server_menu::{ServerButton, ServerMenu};
+    let button = |b: &horizon_protocol::eagler::PauseButton| ServerButton { text: b.text.clone(), url: b.url.clone() };
+    ServerMenu {
+        serial: menu.serial,
+        server_info: menu.server_info.as_ref().map(button),
+        discord: menu.discord.as_ref().map(button),
+        icon_keys: menu.icon_keys.clone(),
+        icons: menu
+            .icons
+            .iter()
+            .map(|i| incari_core::canvas::Image { width: i.width, height: i.height, rgba: i.rgba.clone() })
+            .collect(),
+    }
+}
+
 /// The game's font, measured as the HUD draws it.
 struct Font<'a>(&'a HudAtlas);
 
@@ -406,6 +429,7 @@ impl Host for Shell<'_, '_> {
             "lan" => "lan",
             "friends" => "friends",
             "links" => "links",
+            "additions" => "additions",
             "report_bugs" => "report_bugs",
             "feedback" => "feedback",
             "social" => "social",
@@ -434,6 +458,23 @@ impl Host for Shell<'_, '_> {
     }
     fn on_server(&self) -> bool {
         self.game.native_external_server()
+    }
+    fn server_menu(&self) -> Option<std::sync::Arc<incari_core::server_menu::ServerMenu>> {
+        let menu = self.game.native_eagler_pause_menu()?;
+        Some(SERVER_MENU.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            match &*cache {
+                Some(kept) if kept.serial == menu.serial => kept.clone(),
+                _ => {
+                    let kept = std::sync::Arc::new(server_menu(&menu));
+                    *cache = Some(kept.clone());
+                    kept
+                }
+            }
+        }))
+    }
+    fn pause_server_button(&self) -> Option<(String, &'static str)> {
+        self.game.native_pause_server_button()
     }
     fn friends_key(&self) -> Key {
         Key::from_name(self.game.native_bound_key("key.friends"))
@@ -874,6 +915,8 @@ fn replay(list: &DrawList, atlas: &HudAtlas, batch: &mut HudBatch, game: Option<
                 let Some(mut r) = atlas.sprites.get(list.str(name)).copied() else {
                     continue;
                 };
+                // No size: the whole sprite, as big as its pack made it.
+                let src: incari_core::draw::Rect = if src[2] <= 0.0 || src[3] <= 0.0 { [0.0, 0.0, r.w as f32, r.h as f32] } else { *src };
                 let (du, dv) = ((r.u1 - r.u0) / r.w as f32, (r.v1 - r.v0) / r.h as f32);
                 r.u0 += src[0] * du;
                 r.v0 += src[1] * dv;

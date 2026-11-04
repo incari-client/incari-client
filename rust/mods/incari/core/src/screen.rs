@@ -26,6 +26,15 @@ pub trait Host {
     fn game_version(&self) -> String;
     /// Whether the world played is a server's.
     fn on_server(&self) -> bool;
+    /// The Eaglercraft server's own pause menu, while on the server that sent it.
+    fn server_menu(&self) -> Option<std::sync::Arc<crate::server_menu::ServerMenu>> {
+        None
+    }
+    /// The game's own server button in the pause menu: its label and what `open` does for it
+    /// (`additions`, the server's pause screen dialog, or `links`, Server Links); None without.
+    fn pause_server_button(&self) -> Option<(String, &'static str)> {
+        None
+    }
     /// The key the game's Friends mapping is bound to (O, HID usage 18, by default).
     fn friends_key(&self) -> crate::input::Key {
         crate::input::Key::Keyboard(18)

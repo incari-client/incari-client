@@ -71,6 +71,11 @@ one-line change for when it's stamped. Block highlight is Horizon's own; the res
 state helpers (`native_attack_strength`, `native_effect`, `native_equipped`...), are Incari's, in
 the fork's `incari_client_hooks.json`, to offer upstream.
 
+An Eaglercraft server's own pause menu (its `pause_menu.yml`: server info and Discord buttons, and
+pictures beside the menu's buttons and title) shows in Incari's pause menu in place of the game's
+Server Links button, as in the Java build. Horizon reads it (the fork's `eagler::pause_menu`,
+`native_eagler_pause_menu`); a server info button that shows a web view isn't shown.
+
 F then a digit types that function key (F+3 is F3, F+0 is F10) for Chromebooks, as in the Java build. It's in the Horizon fork (`game/f_chord.rs`), not a mod: a mod's `key` hook can't swallow or remake a key. Needs the pin bumped to the fork commit that has it.
 
 Everything of the Java client's is here. What runs differently: the screen recorder records in the

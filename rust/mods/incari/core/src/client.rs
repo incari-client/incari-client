@@ -200,7 +200,10 @@ impl Client {
                         Box::new(crate::screens::title::Title::new(host.now_ms())),
                     ))
                 }
-                Root::Pause => Some((Root::Pause, Box::new(crate::screens::pause::Pause))),
+                Root::Pause => Some((
+                    Root::Pause,
+                    Box::new(crate::screens::pause::Pause::default()),
+                )),
                 Root::World | Root::Game => None,
             };
             if root == Root::Game {

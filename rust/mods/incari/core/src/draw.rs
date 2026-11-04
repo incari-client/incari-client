@@ -51,7 +51,8 @@ pub enum Cmd {
         corners: [[f32; 2]; 4],
         argb: u32,
     },
-    /// A sprite of the game's atlas by name (`gui/sprites/...`), part `src` of it over `dst`.
+    /// A sprite of the game's atlas by name (`gui/sprites/...`), part `src` of it over `dst`;
+    /// a `src` of no size is the whole sprite (`WHOLE`), whatever size the pack made it.
     Sprite {
         name: Range<u32>,
         src: Rect,
@@ -129,6 +130,9 @@ impl DrawList {
             self.cmds.push(Cmd::Quad { src, corners, argb });
         }
     }
+
+    /// A `src` meaning the whole sprite.
+    pub const WHOLE: Rect = [0.0; 4];
 
     pub fn sprite(&mut self, name: &str, src: Rect, dst: Rect, argb: u32) {
         if argb >> 24 == 0 {
