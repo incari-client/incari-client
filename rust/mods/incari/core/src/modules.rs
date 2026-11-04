@@ -81,6 +81,10 @@ pub const EFFECTS: &[(&str, &str)] = &[
 ];
 
 /// Which entities get a hitbox (framework's `Hitboxes.Show`).
+/// How No Render draws items on the ground.
+pub const NO_RENDER_ITEMS: &[(&str, &str)] =
+    &[("shown", "Shown"), ("still", "Still"), ("hidden", "Hidden")];
+
 pub const HITBOX_SHOW: &[(&str, &str)] = &[
     ("players", "Players"),
     ("living", "Players and mobs"),
@@ -268,6 +272,7 @@ pub fn all() -> Vec<Module> {
         clear_chat(),
         low_fire(),
         no_hurt_cam(),
+        no_render(),
         waypoints(),
         schematics(),
         shulker_tooltips(),
@@ -1082,6 +1087,49 @@ fn low_fire() -> Module {
     )
 }
 
+fn no_render() -> Module {
+    module!(
+        "norender",
+        "No Render",
+        "Hides items on the ground and other things that cost frames.",
+        Category::Visual
+    )
+    .setting(
+        s::choice("items", "Items on the ground", NO_RENDER_ITEMS, "hidden")
+            .described("Still: no bobbing or spinning. Hidden: not drawn, but still picked up."),
+    )
+    .setting(
+        s::bool("one-copy", "One item per stack", true)
+            .described("Draws a stack on the ground as one item, not a pile of up to five.")
+            .shown(Shown::Not("items", "hidden")),
+    )
+    .setting(s::bool("orbs", "Hide XP orbs", false).described("Experience orbs aren't drawn."))
+    .setting(
+        s::bool("falling-blocks", "Hide falling blocks", false)
+            .described("Falling sand, gravel and anvils aren't drawn until they land."),
+    )
+    .setting(
+        s::bool("fireworks", "Hide fireworks", false)
+            .described("Firework rockets and their bursts aren't drawn."),
+    )
+    .setting(
+        s::bool("growth", "Hide bone meal sparkles", true)
+            .described("The green sparkles of bone meal and villagers aren't drawn."),
+    )
+    .setting(
+        s::bool("breaking", "Hide block bits", false)
+            .described("The bits of blocks breaking, and the dust of running and landing."),
+    )
+    .setting(
+        s::bool("explosions", "Hide explosions", false)
+            .described("Explosions' smoke clouds aren't drawn."),
+    )
+    .setting(
+        s::bool("all-particles", "Hide all particles", false)
+            .described("No particles at all: more frames, but no rain splashes, hits or potions."),
+    )
+}
+
 fn no_hurt_cam() -> Module {
     let m = module!(
         "nohurtcam",
@@ -1328,7 +1376,7 @@ mod tests {
 
     #[test]
     fn has_every_java_module() {
-        assert_eq!(all().len(), 34, "Features.all registers 34");
+        assert_eq!(all().len(), 35, "Features.all registers 35");
         let theme = all().into_iter().find(|m| m.id == "theme").unwrap();
         assert!(theme.always_on);
         let fps = all().into_iter().find(|m| m.id == "fpsdisplay").unwrap();

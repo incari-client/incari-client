@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 17:37:09 -0500
+Subject: [PATCH] particles: Particles a module hides aren't made
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/particle/ParticleEngine.java b/src/main/java/net/minecraft/client/particle/ParticleEngine.java
+index bb79399954c7cdc67085f7b8b131f07ebe60ee1f..a255f0518ccbda1a76113c59ab1bd859a16c81c4 100644
+--- a/src/main/java/net/minecraft/client/particle/ParticleEngine.java
++++ b/src/main/java/net/minecraft/client/particle/ParticleEngine.java
+@@ -51,2 +51,3 @@
+     ) {
++        if (incari.client.modules.ModuleNoRender.hides(options.getType())) return null; // Incari: No Render's particles
+         Particle particle = this.makeParticle(options, x, y, z, xa, ya, za);
+@@ -68,2 +69,3 @@
+     public void add(final Particle p) {
++        if (incari.client.modules.ModuleNoRender.hides(p)) return; // Incari: No Render's particles
+         Optional<ParticleLimit> limit = p.getParticleLimit();

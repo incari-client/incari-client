@@ -146,6 +146,9 @@ public interface Game {
         public void overrideHitboxes(@Nullable Hitboxes hitboxes) {}
 
         @Override
+        public void overrideNoRender(@Nullable NoRender noRender) {}
+
+        @Override
         public void overrideBrightness(float level) {}
 
         @Override
@@ -303,6 +306,12 @@ public interface Game {
      * changed.
      */
     void overrideHitboxes(@Nullable Hitboxes hitboxes);
+
+    /**
+     * Leaves out of the world what {@code noRender} hides, from the next frame (particles: from the
+     * next one made); null draws everything again. Held until changed.
+     */
+    void overrideNoRender(@Nullable NoRender noRender);
 
     /**
      * Lights the world as night vision would, at {@code level} from 0 (the game's own light) to 1

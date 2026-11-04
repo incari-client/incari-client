@@ -30,6 +30,7 @@ Rust build has it (ADR 0068, 0069): its settings and HUD are the Rust client's o
 | [Low Shield](lowshield/README.md) | Visual | Shield drawn lower | Ported |
 | [Minimap](minimap/README.md) | HUD | Live map, world map, remembered exploration | Ported |
 | [No Hurt Cam](nohurtcam/README.md) | Visual | No camera tilt when hurt | Ported |
+| [No Render](norender/README.md) | Visual | Hide items on the ground, XP orbs, particles | Ported |
 | [Old Textures](oldtextures/README.md) | Visual | Programmer Art on and off | Ported |
 | [Reach Display](reachdisplay/README.md) | Combat | Your last hit's reach | Ported |
 | [Saturation](saturation/README.md) | HUD | Saturation shown on the hunger bar | Ported |

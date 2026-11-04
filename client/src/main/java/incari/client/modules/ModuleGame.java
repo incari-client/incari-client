@@ -12,6 +12,7 @@ import incari.framework.game.GameKey;
 import incari.framework.game.GameOption;
 import incari.framework.game.Hitboxes;
 import incari.framework.game.ItemView;
+import incari.framework.game.NoRender;
 import incari.framework.game.Perspective;
 import incari.framework.game.PlayerView;
 import incari.framework.game.ThemeColors;
@@ -319,6 +320,11 @@ final class ModuleGame implements Game {
     @Override
     public void overrideHitboxes(@Nullable Hitboxes hitboxes) {
         ModuleHitboxes.hold(hitboxes);
+    }
+
+    @Override
+    public void overrideNoRender(@Nullable NoRender noRender) {
+        ModuleNoRender.hold(noRender);
     }
 
     @Override

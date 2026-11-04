@@ -43,6 +43,8 @@ pub mod incari_lowshield;
 pub mod incari_minimap;
 #[path = "mods/nohurtcam/runtime.rs"]
 pub mod incari_nohurtcam;
+#[path = "mods/norender/runtime.rs"]
+pub mod incari_norender;
 #[path = "mods/oldanimations/runtime.rs"]
 pub mod incari_oldanimations;
 #[path = "mods/oldtextures/runtime.rs"]

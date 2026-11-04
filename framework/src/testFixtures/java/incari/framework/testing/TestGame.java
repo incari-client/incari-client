@@ -17,6 +17,7 @@ import incari.framework.game.GameOption;
 import incari.framework.game.GamePart;
 import incari.framework.game.Hitboxes;
 import incari.framework.game.ItemView;
+import incari.framework.game.NoRender;
 import incari.framework.game.Perspective;
 import incari.framework.game.PlayerView;
 import incari.framework.game.Weather;
@@ -431,6 +432,9 @@ public final class TestGame implements KeyInput, Game {
     /** The hitboxes a module last asked for ({@link Game#overrideHitboxes}); null for none. */
     public @Nullable Hitboxes hitboxes;
 
+    /** What a module last asked the world to leave out ({@link Game#overrideNoRender}); null for nothing. */
+    public @Nullable NoRender noRender;
+
     /** The hurt tint a module last asked for, and how strong in percent; strength 0 for the game's. */
     public int hitColor;
 
@@ -476,6 +480,11 @@ public final class TestGame implements KeyInput, Game {
     @Override
     public void overrideHitboxes(@Nullable Hitboxes hitboxes) {
         this.hitboxes = hitboxes;
+    }
+
+    @Override
+    public void overrideNoRender(@Nullable NoRender noRender) {
+        this.noRender = noRender;
     }
 
     @Override

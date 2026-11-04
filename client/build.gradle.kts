@@ -181,6 +181,7 @@ dependencies {
     implementation(project(":features:customsky"))
     implementation(project(":features:hitboxes"))
     implementation(project(":features:schematics"))
+    implementation(project(":features:norender"))
     implementation(project(":features:oldanimations"))
     implementation(project(":features:shulkertooltips"))
     implementation(project(":features:theme"))

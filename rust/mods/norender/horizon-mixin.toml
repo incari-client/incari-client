@@ -1,0 +1,26 @@
+# Incari's No Render (features/norender) for the Rust build (ADR 0068, 0069). Hooks by name where
+# Horizon has stamped the hook point (native-hooks.json), by function where it's still pending. Its
+# settings are the client's (rust/mods/incari), shown in the module menu.
+[mod]
+id = "incari_norender"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_norender"
+source = "runtime.rs"
+
+[[injection]]
+id = "hide"
+# Horizon's no_render hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_no_render.json), so this targets its function. Make it
+# `hook = "no_render"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_no_render"
+kind = "HEAD"
+helper = "hide.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "hide", ty = "&mut crate::game::native_hooks::NativeNoRender", value = "&mut *hide" },
+]

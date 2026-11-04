@@ -83,6 +83,7 @@ include(":features:fullbright")
 include(":features:customsky")
 include(":features:hitboxes")
 include(":features:schematics")
+include(":features:norender")
 
 // Graphics backends under the game's GpuDevice API (the desktop keeps Mojang's own).
 include(":render-webgl2")

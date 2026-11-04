@@ -21,6 +21,7 @@ import incari.features.lowfire.LowFire;
 import incari.features.lowshield.LowShield;
 import incari.features.minimap.Minimap;
 import incari.features.nohurtcam.NoHurtCam;
+import incari.features.norender.NoRenderModule;
 import incari.features.oldanimations.OldAnimations;
 import incari.features.oldtextures.OldTextures;
 import incari.features.reachdisplay.ReachDisplay;
@@ -80,6 +81,7 @@ final class Features {
                 new ClearChat(),
                 new LowFire(),
                 new NoHurtCam(),
+                new NoRenderModule(),
                 new WaypointsModule(),
                 new SchematicsModule(),
                 new ShulkerTooltips());

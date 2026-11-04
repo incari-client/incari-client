@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 17:37:09 -0500
+Subject: [PATCH] render: Items, orbs and falling blocks a module hides aren't
+ drawn
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/renderer/entity/EntityRenderDispatcher.java b/src/main/java/net/minecraft/client/renderer/entity/EntityRenderDispatcher.java
+index 54332dd30958fccee78ac53401e72e43968d8258..726dae51a941ed329224523d4eca3d8a1ba3e527 100644
+--- a/src/main/java/net/minecraft/client/renderer/entity/EntityRenderDispatcher.java
++++ b/src/main/java/net/minecraft/client/renderer/entity/EntityRenderDispatcher.java
+@@ -122,2 +122,3 @@
+     ) {
++        if (incari.client.modules.ModuleNoRender.hides(entity)) return false; // Incari: No Render's hidden entities
+         EntityRenderer<? super E, ?> renderer = this.getRenderer(entity);
+diff --git a/src/main/java/net/minecraft/client/renderer/entity/ItemEntityRenderer.java b/src/main/java/net/minecraft/client/renderer/entity/ItemEntityRenderer.java
+index a09e63cc8a7ef4268e7ba60110255ee4fe96b1e0..8a81fec15a8dd58577b71993a1b30d2283236e16 100644
+--- a/src/main/java/net/minecraft/client/renderer/entity/ItemEntityRenderer.java
++++ b/src/main/java/net/minecraft/client/renderer/entity/ItemEntityRenderer.java
+@@ -38,2 +38,3 @@
+         state.extractItemGroupRenderState(entity, entity.getItem(), this.itemModelResolver);
++        incari.client.modules.ModuleNoRender.item(state); // Incari: No Render's still items, one per stack
+     }
