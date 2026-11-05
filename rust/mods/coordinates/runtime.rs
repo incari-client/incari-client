@@ -41,10 +41,18 @@ pub fn facing(sector: usize) -> &'static str {
     ][sector % 8]
 }
 
+/// The Overworld block matching a Nether position: from the exact position, as a Nether block
+/// spans 8 Overworld ones (x 100.9 is 807, not 800).
+pub fn overworld_block(nether: f64) -> i32 {
+    block(nether * 8.0)
+}
+
 /// What the rows are made from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Spot {
     pub at: [i32; 3],
+    /// The Overworld x and z matching the exact position, for a player in the Nether.
+    pub overworld_at: [i32; 2],
     pub sector: usize,
     pub nether: bool,
     pub overworld: bool,
@@ -54,6 +62,7 @@ pub struct Spot {
 /// facing north.
 pub const SAMPLE: Spot = Spot {
     at: [0, 0, 0],
+    overworld_at: [0, 0],
     sector: 0,
     nether: false,
     overworld: true,
@@ -89,7 +98,8 @@ pub fn rows(spot: Spot, shown: Shown) -> Vec<Row> {
         rows.push(("", facing(spot.sector).to_owned()));
     }
     if shown.other && spot.nether {
-        rows.push(("Overworld", format!("{}, {}", x * 8, z * 8)));
+        let [ox, oz] = spot.overworld_at;
+        rows.push(("Overworld", format!("{ox}, {oz}")));
     } else if shown.other && spot.overworld {
         rows.push((
             "Nether",
@@ -130,6 +140,7 @@ mod tests {
     fn spot(at: [i32; 3], nether: bool) -> Spot {
         Spot {
             at,
+            overworld_at: [at[0] * 8, at[2] * 8],
             sector: 0,
             nether,
             overworld: !nether,
@@ -181,6 +192,17 @@ mod tests {
         };
         assert_eq!(super::rows(end, line).len(), 1);
         assert_eq!(super::rows(SAMPLE, ALL)[3], ("", "North (-Z)".to_owned()));
+    }
+
+    #[test]
+    fn the_overworlds_spot_is_from_the_exact_position() {
+        // Block 100 and -1 in the Nether, but 807 and -4 in the Overworld: not 800 and -8.
+        assert_eq!([overworld_block(100.9), overworld_block(-0.5)], [807, -4]);
+        let there = Spot {
+            overworld_at: [807, -4],
+            ..spot([100, 70, -1], true)
+        };
+        assert_eq!(rows(there, ALL)[4], ("Overworld", "807, -4".to_owned()));
     }
 
     #[test]

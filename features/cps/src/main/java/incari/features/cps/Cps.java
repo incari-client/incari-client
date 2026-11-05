@@ -82,7 +82,7 @@ public final class Cps extends Module {
         private String cached = "";
 
         Counter() {
-            super("cps", "CPS", Anchor.LEFT, 2, -48);
+            super("cps", "CPS", Anchor.TOP_LEFT, 2, 30);
         }
 
         @Override

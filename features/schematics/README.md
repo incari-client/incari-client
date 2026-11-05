@@ -12,8 +12,9 @@ reads Litematica's files, but none of its code.
 - **Old versions:** a block state this version can't read is upgraded with the game's data fixer
   (built only then, in the browser). A block the game doesn't have is left out, and the load says
   how many.
-- **Placing:** it's loaded with its lowest corner where you stand. Turning and mirroring keep that
-  corner; the blocks turn with it.
+- **Placing:** it's loaded with its lowest corner where you stand, in your dimension. Turning and
+  mirroring keep that corner; the blocks turn with it. In another dimension it isn't drawn or
+  checked, and the panel says where it is; Place moves it to yours.
 - **Checking:** the world is compared a 16-block section at a time, 8192 blocks a tick at most:
   where you build every few ticks, what's in range every two seconds, the rest in turn. Chunks the
   client hasn't loaded count as nothing yet.

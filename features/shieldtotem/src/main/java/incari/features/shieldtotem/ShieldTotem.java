@@ -58,6 +58,26 @@ public final class ShieldTotem extends Module {
     private static final int ICON = 16;
     private static final int TEXT_GAP = 2;
 
+    /**
+     * Each element's width, whatever it says: the icon and room for "Disabled". Fixed, so the
+     * icons hold still as the text changes (centre-anchored, a wider element would start further
+     * left), and the two share one column however the screen clamps them.
+     */
+    static final int WIDTH = 60;
+
+    /**
+     * Across from the screen's middle to an element's middle: its left edge 122 right of the
+     * middle, clear of the hotbar (91) and the off hand's slot a left-handed player has there (91
+     * to 120).
+     */
+    static final int OFFSET_X = 122 + WIDTH / 2;
+
+    /** Up from the screen's bottom: above the off hand's slot (24 tall), on narrow screens too. */
+    static final int SHIELD_Y = 25;
+
+    /** The totems sit on the shield, so the two never meet, however narrow the screen. */
+    static final int TOTEMS_Y = SHIELD_Y + 16 + 2;
+
     /** The held shield: off hand first, where it's usually carried. */
     private final class Shield extends HudElement {
 
@@ -65,8 +85,8 @@ public final class ShieldTotem extends Module {
         private String percentText = "";
 
         Shield() {
-            // Right of the hotbar, where nothing of the game's is: the off hand's slot is on its left.
-            super("shield", "Shield", Anchor.BOTTOM, 122, 3);
+            // Right of the hotbar and of a left-handed player's off hand slot, a slot's height up.
+            super("shield", "Shield", Anchor.BOTTOM, OFFSET_X, SHIELD_Y);
         }
 
         private @Nullable ItemView shield(HudCanvas canvas) {
@@ -116,7 +136,7 @@ public final class ShieldTotem extends Module {
         @Override
         public int width(HudCanvas canvas) {
             ItemView shield = shield(canvas);
-            return shield == null ? 0 : ICON + TEXT_GAP + canvas.textWidth(text(shield));
+            return shield == null ? 0 : WIDTH;
         }
 
         @Override
@@ -164,7 +184,8 @@ public final class ShieldTotem extends Module {
         private String countText = "";
 
         Totems() {
-            super("totems", "Totems", Anchor.BOTTOM, 170, 3);
+            // Above the shield, in its column.
+            super("totems", "Totems", Anchor.BOTTOM, OFFSET_X, TOTEMS_Y);
         }
 
         private int count(HudCanvas canvas) {
@@ -197,7 +218,7 @@ public final class ShieldTotem extends Module {
         @Override
         public int width(HudCanvas canvas) {
             int count = count(canvas);
-            return count < 0 ? 0 : ICON + TEXT_GAP + canvas.textWidth(text(count));
+            return count < 0 ? 0 : WIDTH;
         }
 
         @Override

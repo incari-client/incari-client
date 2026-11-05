@@ -48,16 +48,15 @@ fn incari_shieldtotem_hud(
             canvas.fill_argb(2.0, 13.0, width, 1.0, 0xFF00_0000 | rgb);
         }
         let text_tone = tone(m::shield_tone(shield, s.bool("wear-colors")));
-        let width = m::with_shield_text(shield, |text| {
+        m::with_shield_text(shield, |text| {
             canvas.text(text, m::ICON + m::TEXT_GAP, text_y, text_tone);
-            canvas.text_width(text)
         });
         if shield.cooldown > 0.0 {
             // What's left of the cooldown, as a bar under the word.
             let bar = (canvas.text_width(m::DISABLED) * shield.cooldown).round();
             canvas.fill(m::ICON + m::TEXT_GAP, m::ICON - 1.0, bar, 1.0, Tone::Negative);
         }
-        Some([m::ICON + m::TEXT_GAP + width, m::ICON])
+        Some([m::WIDTH, m::ICON])
     });
 
     c::element(game, batch, m::ID, m::TOTEMS_ELEMENT, |canvas| {
@@ -79,10 +78,9 @@ fn incari_shieldtotem_hud(
         };
         canvas.item(m::TOTEM, 0.0, 0.0);
         let text_tone = if count == 0 { Tone::Negative } else { Tone::Text };
-        let width = m::with_count_text(count, |text| {
+        m::with_count_text(count, |text| {
             canvas.text(text, m::ICON + m::TEXT_GAP, text_y, text_tone);
-            canvas.text_width(text)
         });
-        Some([m::ICON + m::TEXT_GAP + width, m::ICON])
+        Some([m::WIDTH, m::ICON])
     });
 }

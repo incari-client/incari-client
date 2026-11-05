@@ -158,6 +158,20 @@ pub fn with_clicks<R>(button: usize, count: u32, f: impl FnOnce(&str) -> R) -> R
     })
 }
 
+/// The count alone of a "12 CPS": what a button too narrow for the whole shows.
+pub fn count_only(clicks: &str) -> &str {
+    clicks.split(' ').next().unwrap_or(clicks)
+}
+
+/// How much to shrink text `width` wide to fit a key `room` wide: 1 if it fits (never grows it).
+pub fn fit_scale(width: f32, room: f32) -> f32 {
+    if width <= room || room <= 0.0 {
+        1.0
+    } else {
+        room / width
+    }
+}
+
 /// "LMB" for "Left Button": the mouse's names are too long for a key's box (ModuleGame.shortName).
 pub fn short_name(name: &str) -> Option<String> {
     Some(
@@ -223,6 +237,13 @@ mod tests {
         assert_eq!(label_y([0, 0, 20, 20], false), 6);
         assert_eq!(label_y([0, 44, 31, 21], true), 46);
         assert_eq!(bar([0, 90, 64, 12]), [21, 96, 21, 1]);
+    }
+
+    #[test]
+    fn text_too_wide_drops_its_unit_then_shrinks() {
+        assert_eq!(count_only("12 CPS"), "12");
+        assert_eq!(fit_scale(30.0, 31.0), 1.0);
+        assert_eq!(fit_scale(40.0, 20.0), 0.5);
     }
 
     #[test]

@@ -29,7 +29,8 @@ import org.jspecify.annotations.Nullable;
  * build by. It's moved, turned and mirrored where it stands; what's still missing shows as ghosts,
  * the wrong blocks as boxes, and a list says what's left to place. Reads {@code .litematic}, Sponge
  * {@code .schem} and the game's structure {@code .nbt}. One schematic at a time, kept until another
- * is chosen or it's unloaded, whatever world the player goes to.
+ * is chosen or it's unloaded, whatever world the player goes to; drawn and checked only in the
+ * dimension it was placed in.
  */
 public final class SchematicsModule extends Module {
 
@@ -167,6 +168,16 @@ public final class SchematicsModule extends Module {
 
     private final GhostView ghostView = new GhostView();
     private long ticks;
+
+    /** The player's dimension at the last tick; null outside a world. */
+    private @Nullable String dimension;
+
+    /**
+     * Whether the player is in the schematic's dimension, as of the last tick: it's drawn and
+     * checked only there. A field, as the ghosts ask block by block.
+     */
+    private boolean inDimension = true;
+
     private final StatusPanel status = new StatusPanel(this);
     private final MaterialPanel materials = new MaterialPanel(this);
 
@@ -251,6 +262,11 @@ public final class SchematicsModule extends Module {
         return loaded;
     }
 
+    /** Whether the player is in the schematic's dimension (as of the last tick), where it's drawn. */
+    boolean isHere() {
+        return inDimension;
+    }
+
     /** The layer drawn, in world y. */
     int layer() {
         return layer;
@@ -273,9 +289,13 @@ public final class SchematicsModule extends Module {
         int x = player == null ? 0 : floor(player.x());
         int y = player == null ? 64 : floor(player.y());
         int z = player == null ? 0 : floor(player.z());
+        String in = player == null ? null : player.dimension();
         Loaded now = new Loaded(
-                schematic, new Placement(schematic, x, y, z), system().game().blocks());
+                schematic,
+                new Placement(schematic, in, x, y, z),
+                system().game().blocks());
         loaded = now;
+        inDimension = true;
         layer = y;
         ghostRevision++;
         String size = schematic.sizeX() + " x " + schematic.sizeY() + " x " + schematic.sizeZ();
@@ -306,7 +326,9 @@ public final class SchematicsModule extends Module {
         if (now == null || player == null) {
             return;
         }
+        now.placement.moveTo(player.dimension());
         now.placement.moveTo(floor(player.x()), floor(player.y()), floor(player.z()));
+        inDimension = true;
         placed(now);
     }
 
@@ -418,7 +440,16 @@ public final class SchematicsModule extends Module {
     private void tick() {
         Loaded now = loaded;
         PlayerView player = system().game().player();
-        if (now == null || player == null) {
+        String in = player == null ? null : player.dimension();
+        if (in != null && !in.equals(dimension)) {
+            // Through a portal: the ghosts are made again, for none here or the schematic's there.
+            ghostRevision++;
+            status.changed();
+            materials.changed();
+        }
+        dimension = in;
+        inDimension = now == null || now.placement.isIn(in);
+        if (now == null || player == null || !inDimension) {
             return;
         }
         now.verifier.tick(floor(player.x()), floor(player.y()), floor(player.z()), range.get());
@@ -431,7 +462,7 @@ public final class SchematicsModule extends Module {
 
     private void draw(WorldCanvas canvas) {
         Loaded now = loaded;
-        if (now == null) {
+        if (now == null || !inDimension) {
             return;
         }
         Placement placement = now.placement;
@@ -556,7 +587,7 @@ public final class SchematicsModule extends Module {
         @Override
         public int ghostAt(int x, int y, int z) {
             Loaded now = loaded;
-            if (now == null || !shows(y)) {
+            if (now == null || !inDimension || !shows(y)) {
                 return Blocks.AIR;
             }
             int index = now.placement.indexAt(x, y, z);

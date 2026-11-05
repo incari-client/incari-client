@@ -91,13 +91,15 @@ public final class Coordinates extends Module {
         private int cachedX = Integer.MIN_VALUE;
         private int cachedY;
         private int cachedZ;
+        private int cachedOverworldX;
+        private int cachedOverworldZ;
         private int cachedSector = -1;
         private @Nullable String cachedBiome;
         private @Nullable String cachedDimension;
         private long cachedSettings = -1;
 
         Position() {
-            super("position", "Coordinates", Anchor.LEFT, 2, 10);
+            super("position", "Coordinates", Anchor.TOP_LEFT, 2, 62);
             for (int i = 0; i < MAX_ROWS; i++) {
                 values[i] = "";
             }
@@ -123,12 +125,18 @@ public final class Coordinates extends Module {
             int sector = Math.floorMod(Math.round(player.heading() / 45.0F), 8);
             String biome = showBiome.get() ? player.biome() : "";
             String dimension = player.dimension();
+            // The Overworld block matching where they stand in the Nether: from the exact position,
+            // as a Nether block spans 8 Overworld ones (x 100.9 is 807, not 800).
+            int overworldX = block(player.x() * 8);
+            int overworldZ = block(player.z() * 8);
             long settingsKey = (layout.get() == Layout.LINE ? 1 : 0)
                     | (showFacing.get() ? 2 : 0)
                     | (showBiome.get() ? 4 : 0)
                     | (showOther.get() ? 8 : 0);
             if (x == cachedX
                     && y == cachedY
+                    && overworldX == cachedOverworldX
+                    && overworldZ == cachedOverworldZ
                     && z == cachedZ
                     && sector == cachedSector
                     && biome.equals(cachedBiome)
@@ -138,6 +146,8 @@ public final class Coordinates extends Module {
             }
             cachedX = x;
             cachedY = y;
+            cachedOverworldX = overworldX;
+            cachedOverworldZ = overworldZ;
             cachedZ = z;
             cachedSector = sector;
             cachedBiome = biome;
@@ -159,7 +169,7 @@ public final class Coordinates extends Module {
             }
             if (showOther.get()) {
                 if (dimension.equals(PlayerView.NETHER)) {
-                    row("Overworld", (x * 8) + ", " + (z * 8));
+                    row("Overworld", overworldX + ", " + overworldZ);
                 } else if (dimension.equals(PlayerView.OVERWORLD)) {
                     row("Nether", Math.floorDiv(x, 8) + ", " + Math.floorDiv(z, 8));
                 }

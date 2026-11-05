@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 22:43:03 -0500
+Subject: [PATCH] gui: The effect icons move below Incari's HUD elements in the
+ top right
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/gui/Hud.java b/src/main/java/net/minecraft/client/gui/Hud.java
+index 05dcf5d0fd23b85b84eeaf4449277dc288d0f885..ef983c26058038107b0b097bf9774da66d993148 100644
+--- a/src/main/java/net/minecraft/client/gui/Hud.java
++++ b/src/main/java/net/minecraft/client/gui/Hud.java
+@@ -514,2 +514,6 @@
+             int harmfulCount = 0;
++            // Incari start: below Incari's HUD elements in the top right (the minimap)
++            incari.framework.ModuleSystem incariModules = incari.client.modules.IncariModules.current();
++            int incariShift = incariModules == null ? 0 : incariModules.effectIconsShift(graphics.guiWidth(), graphics.guiHeight());
++            // Incari end
+ 
+@@ -523,2 +527,5 @@
+                     }
++                    // Incari start: below Incari's HUD elements in the top right
++                    y += incariShift;
++                    // Incari end
+ 

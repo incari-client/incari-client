@@ -108,7 +108,11 @@ thread_local! {
 }
 
 fn player(game: &super::Game<'_>) -> Option<Player> {
-    game.native_player().map(|p| Player { pos: [p.x, p.y, p.z], yaw: p.yaw })
+    game.native_player().map(|p| Player {
+        pos: [p.x, p.y, p.z],
+        yaw: p.yaw,
+        dimension: incari_core::schematic::session::dimension_key(&p.dimension),
+    })
 }
 
 /// Once a tick, the window's.

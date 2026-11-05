@@ -45,6 +45,17 @@ public final class ModuleSystem {
     /** Ticks from the last change to the save: a slider's drag is one save, not dozens. */
     static final int SAVE_DELAY_TICKS = 20;
 
+    /**
+     * The game's effect icons in the top right: four 25-unit boxes in from the right edge, and two
+     * rows (helpful, then harmful) 52 units tall from the top.
+     */
+    static final int EFFECT_ICONS_WIDTH = 100;
+
+    static final int EFFECT_ICONS_HEIGHT = 52;
+
+    /** {@link #effectIconsShift}'s scratch: an element's bounds. */
+    private final int[] iconBounds = new int[4];
+
     private final List<Module> modules;
     private final EventBus events;
     private final Profiles profiles;
@@ -300,6 +311,44 @@ public final class ModuleSystem {
      */
     public boolean hasLiveHud() {
         return liveHud.length > 0 || events.count(Events.OVERLAY) > 0;
+    }
+
+    /**
+     * How far down the game draws its effect icons, in GUI units, so they clear the HUD elements in
+     * their place in the top right (the minimap): below the lowest in the way, but never off the
+     * bottom of the screen. 0 leaves them where the game puts them. Render thread, as the game's HUD
+     * draws them; reads where each element was last drawn, allocating nothing.
+     */
+    public int effectIconsShift(int screenWidth, int screenHeight) {
+        int shift = 0;
+        int lowest = Math.max(0, screenHeight - EFFECT_ICONS_HEIGHT);
+        // Each element in the way moves them below it, until none is: a handful of elements.
+        for (int pass = 0; pass <= activeHud.length + liveHud.length; pass++) {
+            int below = Math.max(below(activeHud, shift, screenWidth), below(liveHud, shift, screenWidth));
+            if (below <= shift) {
+                break;
+            }
+            if (below > lowest) {
+                return lowest;
+            }
+            shift = below;
+        }
+        return shift;
+    }
+
+    /** The lowest bottom of the {@code elements} over the icons' place {@code shift} down, plus a gap. */
+    private int below(HudElement[] elements, int shift, int screenWidth) {
+        int[] b = iconBounds;
+        int lowest = shift;
+        for (HudElement element : elements) {
+            if (element.lastDrawn(b)
+                    && b[0] + b[2] > screenWidth - EFFECT_ICONS_WIDTH
+                    && b[1] < shift + EFFECT_ICONS_HEIGHT
+                    && b[1] + b[3] > shift) {
+                lowest = Math.max(lowest, b[1] + b[3] + 1);
+            }
+        }
+        return lowest;
     }
 
     /**

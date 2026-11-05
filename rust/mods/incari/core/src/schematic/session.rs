@@ -100,11 +100,30 @@ impl Default for Look {
     }
 }
 
-/// Where the player is: their feet, and Minecraft's yaw (0 faces south, 90 west).
+/// Where the player is: their feet, Minecraft's yaw (0 faces south, 90 west), and their
+/// dimension (`dimension_key`).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Player {
     pub pos: [f64; 3],
     pub yaw: f32,
+    pub dimension: u64,
+}
+
+/// A dimension's id (`minecraft:the_nether`) as a number to keep in a `Copy` player: FNV-1a.
+pub fn dimension_key(id: &str) -> u64 {
+    id.bytes().fold(0xCBF2_9CE4_8422_2325, |h, b| {
+        (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01B3)
+    })
+}
+
+/// Where a schematic in another dimension is, for the status panel: "In the Overworld".
+pub fn where_placed(dimension: Option<u64>) -> &'static str {
+    match dimension {
+        Some(d) if d == dimension_key("minecraft:overworld") => "In the Overworld",
+        Some(d) if d == dimension_key("minecraft:the_nether") => "In the Nether",
+        Some(d) if d == dimension_key("minecraft:the_end") => "In the End",
+        _ => "In another dimension",
+    }
 }
 
 impl Player {
@@ -278,6 +297,11 @@ pub struct Session {
     pub hud_revision: u64,
     /// Asked of the game side: set Layers to One layer (a layer key pressed while it's All).
     pub wants_one_layer: bool,
+    /// The player's dimension at the last tick.
+    dimension: Option<u64>,
+    /// Whether the player is in another dimension than the schematic's, as of the last tick: it's
+    /// drawn and checked only in its own.
+    away: bool,
 }
 
 thread_local! {
@@ -351,11 +375,10 @@ impl Session {
             }
         };
         let [x, y, z] = player.map_or([0, 64, 0], |p| p.block());
-        let loaded = Loaded::new(
-            schematic.clone(),
-            Placement::new(schematic.clone(), x, y, z),
-            blocks,
-        );
+        let mut placement = Placement::new(schematic.clone(), x, y, z);
+        placement.set_dimension(player.map(|p| p.dimension));
+        let loaded = Loaded::new(schematic.clone(), placement, blocks);
+        self.away = false;
         let [sx, sy, sz] = schematic.size;
         let mut message = format!(
             "{}, {sx} x {sy} x {sz}, placed where you stand.",
@@ -391,6 +414,8 @@ impl Session {
                 };
                 let [x, y, z] = player.block();
                 p.move_to(x, y, z);
+                p.set_dimension(Some(player.dimension));
+                self.away = false;
             }
             Action::Nudge(back) => {
                 let Some(player) = player else {
@@ -481,9 +506,20 @@ impl Session {
             self.changed();
         }
         self.seen = Some(*look);
+        let dimension = player.map(|p| p.dimension);
+        if dimension.is_some() && dimension != self.dimension {
+            // Through a portal: the ghosts are made again, for none here or the schematic's there.
+            self.changed();
+        }
+        self.dimension = dimension;
+        self.away =
+            matches!((&self.loaded, dimension), (Some(now), Some(d)) if !now.placement.is_in(d));
         let (Some(now), Some(player)) = (self.loaded.as_mut(), player) else {
             return;
         };
+        if self.away {
+            return;
+        }
         let world = verifier::World {
             placement: &now.placement,
             states: &now.states,
@@ -495,6 +531,11 @@ impl Session {
             now.materials.refresh(&now.verifier);
             self.hud_revision += 1;
         }
+    }
+
+    /// Whether the player is in another dimension than the schematic's (as of the last tick).
+    pub fn is_away(&self) -> bool {
+        self.away
     }
 
     /// Whether world layer `y` is drawn.
@@ -533,7 +574,7 @@ impl Session {
         blocks: &dyn Blocks,
     ) -> Option<u32> {
         let now = self.loaded.as_ref()?;
-        if look.ghosts == Ghosts::None || !self.shows(y, look) {
+        if self.away || look.ghosts == Ghosts::None || !self.shows(y, look) {
             return None;
         }
         let index = now.placement.index_at(x, y, z);
@@ -552,7 +593,7 @@ impl Session {
     /// extra blocks within range, nearest sections first, at most `MAX_BOXES`.
     pub fn boxes(&self, camera: [f64; 3], look: &Look, out: &mut Vec<WorldBox>) {
         out.clear();
-        let Some(now) = &self.loaded else {
+        let Some(now) = self.loaded.as_ref().filter(|_| !self.away) else {
             return;
         };
         if look.outline {
@@ -653,6 +694,7 @@ mod tests {
     const PLAYER: Player = Player {
         pos: [100.5, 64.0, 200.5],
         yaw: 0.0,
+        dimension: 1,
     };
 
     fn loaded(blocks: &FakeBlocks) -> Session {
@@ -720,6 +762,37 @@ mod tests {
                 argb: 0xFF55AAFF,
                 fill: 0
             }]
+        );
+    }
+
+    #[test]
+    fn it_stays_in_the_dimension_it_was_placed_in() {
+        let blocks = FakeBlocks::default();
+        let mut s = loaded(&blocks);
+        let look = Look::default();
+        let nether = Player {
+            dimension: dimension_key("minecraft:the_nether"),
+            ..PLAYER
+        };
+        s.tick(&blocks, Some(nether), &look, stored_inflate);
+        assert!(s.is_away());
+        assert!(ghosts(&s, &look, &blocks).is_empty());
+        let mut boxes = Vec::new();
+        s.boxes([100.0, 64.0, 200.0], &look, &mut boxes);
+        assert!(boxes.is_empty());
+
+        s.tick(&blocks, Some(PLAYER), &look, stored_inflate);
+        assert!(!s.is_away());
+        assert_eq!(ghosts(&s, &look, &blocks).len(), 4);
+
+        // Placed again where the player stands, it moves to their dimension.
+        s.tick(&blocks, Some(nether), &look, stored_inflate);
+        s.act(Action::Here, &blocks, Some(nether), &look);
+        assert!(!s.is_away());
+        assert_eq!(ghosts(&s, &look, &blocks).len(), 4);
+        assert_eq!(
+            where_placed(Some(dimension_key("minecraft:overworld"))),
+            "In the Overworld"
         );
     }
 

@@ -16,7 +16,7 @@ Each waypoint has a name, color (12 presets or any hex), icon (circle, square, d
 | Beams | on/off (each waypoint has its own switch too) | on |
 | Arrows at the edge | on/off | on |
 | Size | 0.5x to 2x | 1x |
-| Mark deaths | on/off | on |
+| Mark deaths | on/off (on a server: for the visit only, never saved, as one address can be many maps) | on |
 | Clear deaths on arrival (within 4 blocks, after being 8 away) | on/off | on |
 
 ```sh

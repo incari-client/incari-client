@@ -37,8 +37,9 @@ final class EffectsElement extends HudElement {
     private final @Nullable String[] cachedTime = new String[CACHED];
 
     EffectsElement(ArmorPotionView module) {
-        // Top left, below where Toggle Sprint's line goes, and clear of the chat.
-        super("effects", "Effects", Anchor.TOP_LEFT, 2, 14);
+        // Top left, below Toggle Sprint's line and the FPS, CPS and reach readouts, so a long list
+        // grows away from them.
+        super("effects", "Effects", Anchor.TOP_LEFT, 2, 62);
         this.module = module;
         Arrays.fill(cachedSeconds, Integer.MIN_VALUE);
     }

@@ -121,6 +121,12 @@ fn status_lines(
         placed.push_str(", mirrored");
     }
     lines.push((placed, Tone::Muted));
+    if s.is_away() {
+        lines.push((
+            super::session::where_placed(p.dimension()).into(),
+            Tone::Warning,
+        ));
+    }
     match look.layers {
         Layers::All => {}
         Layers::One => lines.push((format!("Layer {}", s.layer()), Tone::Muted)),
@@ -131,6 +137,10 @@ fn status_lines(
 
 /// The **Material list** element: its size, None to hide it. `rows` is its own setting.
 pub fn materials(canvas: &mut HudCanvas, s: &Session, items: &Items) -> Option<[f32; 2]> {
+    if s.is_away() {
+        // In another dimension the counts are of the schematic's, not what's around the player.
+        return None;
+    }
     MATERIALS.with(|cell| {
         let mut c = cell.borrow_mut();
         let editing = canvas.editing && !s.is_loaded();

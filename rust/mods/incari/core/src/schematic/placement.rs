@@ -9,6 +9,8 @@ use std::rc::Rc;
 #[derive(Clone, Debug)]
 pub struct Placement {
     pub schematic: Rc<Schematic>,
+    /// The dimension it stands in (`dimension_key`); None if placed outside a world (any).
+    dimension: Option<u64>,
     min: [i32; 3],
     mirror: Mirror,
     turns: u8,
@@ -18,10 +20,27 @@ impl Placement {
     pub fn new(schematic: Rc<Schematic>, x: i32, y: i32, z: i32) -> Self {
         Self {
             schematic,
+            dimension: None,
             min: [x, y, z],
             mirror: Mirror::None,
             turns: 0,
         }
+    }
+
+    /// The dimension it stands in, or None for any.
+    pub fn dimension(&self) -> Option<u64> {
+        self.dimension
+    }
+
+    /// Moves it to `dimension` (the player's, as it's placed where they stand).
+    pub fn set_dimension(&mut self, dimension: Option<u64>) {
+        self.dimension = dimension;
+    }
+
+    /// Whether it's in `dimension`, the player's: drawn and checked only there, as the same
+    /// coordinates in another dimension are another place.
+    pub fn is_in(&self, dimension: u64) -> bool {
+        self.dimension.is_none_or(|d| d == dimension)
     }
 
     /// Puts the box's lowest corner at `x, y, z`.

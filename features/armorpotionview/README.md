@@ -14,7 +14,7 @@ Two HUD elements: your armor and held item with durability (green, amber below h
 | Color by kind | on/off: helpful green, harmful red | off |
 | Effect icons on the | Left, Right | Left |
 | HUD: Armor | position and scale | bottom right, 1x |
-| HUD: Effects | position and scale | top left, below Toggle Sprint's line, 1x |
+| HUD: Effects | position and scale | top left, below Toggle Sprint's line and the FPS, CPS and reach readouts (y 62), 1x |
 
 ```sh
 ./gradlew :features:armorpotionview:check

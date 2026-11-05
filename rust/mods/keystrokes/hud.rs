@@ -42,9 +42,18 @@ fn incari_keystrokes_hud(
                 (false, true) => Tone::Muted,
                 (false, false) => Tone::Text,
             };
+            // Centred, and shrunk if it's still too wide: text never spills out of its key.
             let label = |canvas: &mut incari_core::hud::HudCanvas<'_, '_>, text: &str, ty: f32, muted: bool| {
-                let tx = x + ((w - canvas.text_width(text)) / 2.0).trunc();
-                canvas.text(text, tx, ty, tone(muted));
+                let width = canvas.text_width(text);
+                let scale = m::fit_scale(width, w);
+                if scale >= 1.0 {
+                    let tx = x + ((w - width) / 2.0).trunc();
+                    canvas.text(text, tx, ty, tone(muted));
+                } else {
+                    let argb = canvas.color(tone(muted));
+                    let ly = ty + m::LINE as f32 * (1.0 - scale) / 2.0;
+                    canvas.text_scaled(text, x + (w - width * scale) / 2.0, ly, argb, scale);
+                }
             };
             match cell.face {
                 m::Face::Name => label(&mut *canvas, name, m::label_y(cell.rect, false) as f32, false),
@@ -53,6 +62,8 @@ fn incari_keystrokes_hud(
                     label(&mut *canvas, name, ty, false);
                     let count = if button == 0 { left } else { right };
                     m::with_clicks(button, count, |text| {
+                        // "12 CPS" too wide for the button: "12".
+                        let text = if canvas.text_width(text) > w { m::count_only(text) } else { text };
                         label(&mut *canvas, text, ty + m::LINE as f32, true);
                     });
                 }

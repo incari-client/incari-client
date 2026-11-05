@@ -48,6 +48,18 @@ class KeystrokesTest {
     }
 
     @Test
+    void clicksTooWideForTheButtonDropTheirUnit() {
+        module.setEnabled(true);
+        for (int i = 0; i < 12; i++) {
+            game.click(ClickListener.LEFT);
+        }
+        // "12 CPS" is 36 wide on the test canvas; a mouse button at the default size is 31.
+        List<String> drawn = game.drawHud().drawn;
+        assertThat(drawn).anyMatch(line -> line.startsWith("text \"12\""));
+        assertThat(drawn).noneMatch(line -> line.startsWith("text \"12 CPS\""));
+    }
+
+    @Test
     void sizeFollowsTheRowsShown() {
         module.setEnabled(true);
         ((BooleanSetting) module.settings().get("show-mouse")).set(false);
