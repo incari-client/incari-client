@@ -80,15 +80,19 @@ public final class Keystrokes extends Module {
         /** A row of sneak and sprint, and the space bar, are this much of a key's height. */
         private static final int SHORT_ROW_PERCENT = 60;
 
-        // Each mouse button's "12 CPS", made again only when its count changes.
+        // Each mouse button's "12 CPS", and "12" for a button too narrow for it, made again only
+        // when its count changes.
         private int cachedLeft = -1;
         private String leftText = "";
+        private String leftNumber = "";
         private int cachedRight = -1;
         private String rightText = "";
+        private String rightNumber = "";
 
         Keys() {
-            // Below the minimap's place: the left is the chat's and the effects'.
-            super("keys", "Keys", Anchor.TOP_RIGHT, 4, 108);
+            // Below the minimap and the coordinates under it (4 + 111): the left is the chat's
+            // and the effects'.
+            super("keys", "Keys", Anchor.TOP_RIGHT, 4, 120);
         }
 
         private int size() {
@@ -129,11 +133,11 @@ public final class Keystrokes extends Module {
             Game game = system().game();
             int s = size();
             int width = width(canvas);
-            key(canvas, game, GameKey.FORWARD, s + GAP, 0, s, s, null);
+            key(canvas, game, GameKey.FORWARD, s + GAP, 0, s, s, null, null);
             int y = s + GAP;
-            key(canvas, game, GameKey.LEFT, 0, y, s, s, null);
-            key(canvas, game, GameKey.BACK, s + GAP, y, s, s, null);
-            key(canvas, game, GameKey.RIGHT, (s + GAP) * 2, y, s, s, null);
+            key(canvas, game, GameKey.LEFT, 0, y, s, s, null, null);
+            key(canvas, game, GameKey.BACK, s + GAP, y, s, s, null, null);
+            key(canvas, game, GameKey.RIGHT, (s + GAP) * 2, y, s, s, null, null);
             y += s + GAP;
             int half = (width - GAP) / 2;
             if (showMouse.get()) {
@@ -145,13 +149,13 @@ public final class Keystrokes extends Module {
                     rightCps = rightText(right.perSecond(now));
                 }
                 int mouse = mouseRow(canvas);
-                key(canvas, game, GameKey.ATTACK, 0, y, half, mouse, leftCps);
-                key(canvas, game, GameKey.USE, half + GAP, y, width - half - GAP, mouse, rightCps);
+                key(canvas, game, GameKey.ATTACK, 0, y, half, mouse, leftCps, leftNumber);
+                key(canvas, game, GameKey.USE, half + GAP, y, width - half - GAP, mouse, rightCps, rightNumber);
                 y += mouse + GAP;
             }
             if (showSneakSprint.get()) {
-                key(canvas, game, GameKey.SNEAK, 0, y, half, shortRow(), null);
-                key(canvas, game, GameKey.SPRINT, half + GAP, y, width - half - GAP, shortRow(), null);
+                key(canvas, game, GameKey.SNEAK, 0, y, half, shortRow(), null, null);
+                key(canvas, game, GameKey.SPRINT, half + GAP, y, width - half - GAP, shortRow(), null, null);
                 y += shortRow() + GAP;
             }
             if (showSpace.get()) {
@@ -171,7 +175,8 @@ public final class Keystrokes extends Module {
         private String leftText(int cps) {
             if (cps != cachedLeft) {
                 cachedLeft = cps;
-                leftText = cps + " CPS";
+                leftNumber = Integer.toString(cps);
+                leftText = leftNumber + " CPS";
             }
             return leftText;
         }
@@ -179,21 +184,59 @@ public final class Keystrokes extends Module {
         private String rightText(int cps) {
             if (cps != cachedRight) {
                 cachedRight = cps;
-                rightText = cps + " CPS";
+                rightNumber = Integer.toString(cps);
+                rightText = rightNumber + " CPS";
             }
             return rightText;
         }
 
-        private void key(HudCanvas canvas, Game game, GameKey key, int x, int y, int w, int h, @Nullable String below) {
+        /**
+         * A key {@code w} by {@code h} at {@code x, y}: its name, and under it {@code below} (its
+         * clicks a second), or {@code belowShort} where that doesn't fit the key.
+         */
+        private void key(
+                HudCanvas canvas,
+                Game game,
+                GameKey key,
+                int x,
+                int y,
+                int w,
+                int h,
+                @Nullable String below,
+                @Nullable String belowShort) {
             boolean down = game.isDown(key);
             background(canvas, x, y, w, h, down);
             String name = game.keyName(key);
             int line = canvas.lineHeight();
             int textHeight = below == null ? line - 1 : line * 2 - 1;
             int ty = y + (h - textHeight + 1) / 2;
-            label(canvas, name, x + (w - canvas.textWidth(name)) / 2, ty, down, false);
+            fitted(canvas, name, x, w, ty, down, false);
             if (below != null) {
-                label(canvas, below, x + (w - canvas.textWidth(below)) / 2, ty + line, down, true);
+                String text = below;
+                if (belowShort != null && canvas.textWidth(text) > w) {
+                    text = belowShort;
+                }
+                fitted(canvas, text, x, w, ty + line, down, true);
+            }
+        }
+
+        /**
+         * {@code text} centred across the key at {@code x}, {@code w} wide: at its own size if it
+         * fits, else shrunk to fit, so it never spills out of the key.
+         */
+        private void fitted(HudCanvas canvas, String text, int x, int w, int y, boolean down, boolean muted) {
+            int textWidth = canvas.textWidth(text);
+            if (textWidth <= w || w <= 0) {
+                label(canvas, text, x + (w - textWidth) / 2, y, down, muted);
+                return;
+            }
+            float scale = w / (float) textWidth;
+            // Shrunk about the line's middle, so it stays centred on the key's line.
+            canvas.push(x + w / 2.0F, y + canvas.lineHeight() * (1 - scale) / 2, scale);
+            try {
+                label(canvas, text, -textWidth / 2, 0, down, muted);
+            } finally {
+                canvas.pop();
             }
         }
 

@@ -41,6 +41,24 @@ class MinimapTest {
     }
 
     @Test
+    void theGamesEffectIconsMoveBelowItInTheTopRight() {
+        map.resetPlacement();
+        game.join();
+        game.drawLive();
+        // At 4, 4 with the coordinates below: 111 tall, so the icons start a gap below 115.
+        assertThat(game.system().effectIconsShift(320, 240)).isEqualTo(116);
+
+        // Elsewhere, or once it's off, they keep their place.
+        map.anchor().set(Anchor.TOP_LEFT);
+        game.drawLive();
+        assertThat(game.system().effectIconsShift(320, 240)).isZero();
+        map.anchor().set(Anchor.TOP_RIGHT);
+        game.drawLive();
+        module.setEnabled(false);
+        assertThat(game.system().effectIconsShift(320, 240)).isZero();
+    }
+
+    @Test
     void theTerrainTurnsWithThePlayer() {
         game.join().at(100.5, 70, -30.25).facing(90);
         assertThat(drawn())

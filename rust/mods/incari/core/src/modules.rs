@@ -347,7 +347,7 @@ fn keystrokes() -> Module {
         s::color("pressed-color", "Pressed color", 0xA9DCFF, false)
             .shown(Shown::When("custom-color", true)),
     )
-    .element(HudElement::new("keys", "Keys", Anchor::TopRight, 4, 108))
+    .element(HudElement::new("keys", "Keys", Anchor::TopRight, 4, 120))
 }
 
 fn cps() -> Module {
@@ -361,7 +361,7 @@ fn cps() -> Module {
         s::choice("buttons", "Buttons", CPS_BUTTONS, "both")
             .described("Which mouse buttons' clicks are counted."),
     )
-    .element(HudElement::text("cps", "CPS", Anchor::Left, 2, -48))
+    .element(HudElement::text("cps", "CPS", Anchor::TopLeft, 2, 30))
 }
 
 fn fps_display() -> Module {
@@ -376,7 +376,7 @@ fn fps_display() -> Module {
         s::bool("speed-colors", "Color by speed", false)
             .described("Green from 60 frames a second, amber from 30, red below."),
     )
-    .element(HudElement::text("fps", "FPS", Anchor::Left, 2, -64))
+    .element(HudElement::text("fps", "FPS", Anchor::TopLeft, 2, 14))
 }
 
 fn reach_display() -> Module {
@@ -396,7 +396,7 @@ fn reach_display() -> Module {
         s::bool("far-color", "Mark long hits", false)
             .described("Hits past 3 blocks show in amber."),
     )
-    .element(HudElement::text("reach", "Reach", Anchor::Left, 2, -32))
+    .element(HudElement::text("reach", "Reach", Anchor::TopLeft, 2, 46))
 }
 
 fn coordinates() -> Module {
@@ -422,9 +422,9 @@ fn coordinates() -> Module {
     .element(HudElement::new(
         "position",
         "Coordinates",
-        Anchor::Left,
+        Anchor::TopLeft,
         2,
-        10,
+        62,
     ))
 }
 
@@ -482,7 +482,7 @@ fn armor_potion_view() -> Module {
         "Effects",
         Anchor::TopLeft,
         2,
-        14,
+        62,
     ))
 }
 
@@ -511,8 +511,10 @@ fn shield_totem() -> Module {
             .described("Shows a red 0 when you carry none; off hides the count instead.")
             .shown(Shown::When("show-totems", true)),
     )
-    .element(HudElement::new("shield", "Shield", Anchor::Bottom, 122, 3))
-    .element(HudElement::new("totems", "Totems", Anchor::Bottom, 170, 3))
+    // One 60-wide column right of the hotbar and a left-handed off hand's slot (its left edge 122
+    // right of the middle), a slot's height up; the totems on the shield.
+    .element(HudElement::new("shield", "Shield", Anchor::Bottom, 152, 25))
+    .element(HudElement::new("totems", "Totems", Anchor::Bottom, 152, 43))
 }
 
 fn saturation() -> Module {
@@ -1195,10 +1197,9 @@ fn waypoints() -> Module {
         s::float("size", "Size", 0.5, 2.0, 0.25, 1.0)
             .described("How big icons and names are drawn over the world."),
     )
-    .setting(
-        s::bool("deaths", "Mark deaths", true)
-            .described("Adds a waypoint where you die, replacing the last one."),
-    )
+    .setting(s::bool("deaths", "Mark deaths", true).described(
+        "Adds a waypoint where you die, replacing the last one; on a server, until you leave.",
+    ))
     .setting(
         s::bool("clear-deaths", "Clear deaths on arrival", true)
             .described("Removes a death's waypoint once you get back to it.")

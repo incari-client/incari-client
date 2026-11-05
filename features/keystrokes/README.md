@@ -10,6 +10,9 @@ Your movement keys, mouse buttons (with clicks per second) and space bar, as you
 | Space bar | on/off | on |
 | Sneak and sprint | on/off | off |
 | Custom pressed color | on/off, and a color | off |
+| HUD: Keys | position and scale | top right, below the minimap and its coordinates (y 120), 1x |
+
+Text always fits its key: a mouse button too narrow for "12 CPS" shows "12", and a name or count still too wide is drawn smaller.
 
 ```sh
 ./gradlew :features:keystrokes:check

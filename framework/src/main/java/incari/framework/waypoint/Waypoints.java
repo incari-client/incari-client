@@ -75,14 +75,14 @@ public final class Waypoints {
         }
         list.add(waypoint);
         waypoint.attach(this);
-        changed();
+        changed(waypoint.isTemporary());
     }
 
     /** Removes {@code waypoint}; nothing if it isn't here. */
     public void remove(Waypoint waypoint) {
         if (list.remove(waypoint)) {
             waypoint.attach(null);
-            changed();
+            changed(waypoint.isTemporary());
         }
     }
 
@@ -155,28 +155,41 @@ public final class Waypoints {
         }
     }
 
-    /** Saves now if anything changed since the last save. */
+    /** Saves now if anything changed since the last save; {@linkplain Waypoint#isTemporary() temporary} ones aren't. */
     public void flush() {
         String name = world;
         if (saveCountdown < 0 || name == null) {
             return;
         }
         saveCountdown = -1;
+        // A temporary waypoint is the visit's: never in the file.
+        List<Waypoint> kept = new ArrayList<>(list.size());
+        for (Waypoint waypoint : list) {
+            if (!waypoint.isTemporary()) {
+                kept.add(waypoint);
+            }
+        }
         try {
-            if (list.isEmpty()) {
+            if (kept.isEmpty()) {
                 storage.delete(path(name));
             } else {
-                storage.write(path(name), WaypointCodec.write(list));
+                storage.write(path(name), WaypointCodec.write(kept));
             }
         } catch (IOException | RuntimeException e) {
             log.accept("Couldn't save the waypoints of " + name + ": " + e);
         }
     }
 
-    /** A waypoint in the list changed, or the list did. */
-    void changed() {
+    /**
+     * A waypoint in the list changed, or the list did. A {@linkplain Waypoint#isTemporary()
+     * temporary} one's change needs no save: the file never has it (and an unreadable file isn't
+     * overwritten for it).
+     */
+    void changed(boolean temporary) {
         revision++;
-        saveCountdown = SAVE_DELAY_TICKS;
+        if (!temporary) {
+            saveCountdown = SAVE_DELAY_TICKS;
+        }
     }
 
     /**

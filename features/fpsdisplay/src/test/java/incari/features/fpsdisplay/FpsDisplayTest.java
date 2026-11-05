@@ -21,7 +21,7 @@ class FpsDisplayTest {
         module.setEnabled(true);
         game.fps = 144;
         assertThat(game.drawHud().drawn)
-                .contains("fill 50x14 at 2,49 BACKGROUND")
+                .contains("fill 50x14 at 2,14 BACKGROUND")
                 .anyMatch(line -> line.startsWith("text \"144 FPS\""));
     }
 

@@ -29,6 +29,7 @@ public final class Waypoint {
     private boolean visible = true;
     private boolean beam = true;
     private boolean death;
+    private boolean temporary;
     private @Nullable Waypoints owner;
 
     /**
@@ -56,6 +57,7 @@ public final class Waypoint {
         copy.visible = visible;
         copy.beam = beam;
         copy.death = death;
+        copy.temporary = temporary;
         return copy;
     }
 
@@ -71,6 +73,7 @@ public final class Waypoint {
         visible = other.visible;
         beam = other.beam;
         death = other.death;
+        temporary = other.temporary;
         changed();
     }
 
@@ -173,6 +176,24 @@ public final class Waypoint {
         changed();
     }
 
+    /**
+     * Whether it lasts only while the player stays in the world: shown, but never saved to the
+     * world's file (a death's on a server, where one address can be many maps).
+     */
+    public boolean isTemporary() {
+        return temporary;
+    }
+
+    /** Makes it last only for this visit to the world, or be saved as usual. */
+    public void setTemporary(boolean temporary) {
+        this.temporary = temporary;
+        // Saved either way: the file gains it, or loses it.
+        Waypoints list = owner;
+        if (list != null) {
+            list.changed(false);
+        }
+    }
+
     /** The squared distance from {@code px, py, pz} to the middle of its block. */
     public double distanceSquared(double px, double py, double pz) {
         double dx = x + 0.5 - px;
@@ -193,7 +214,7 @@ public final class Waypoint {
     private void changed() {
         Waypoints list = owner;
         if (list != null) {
-            list.changed();
+            list.changed(temporary);
         }
     }
 

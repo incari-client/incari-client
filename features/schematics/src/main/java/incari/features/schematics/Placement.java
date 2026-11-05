@@ -2,6 +2,7 @@ package incari.features.schematics;
 
 import incari.features.schematics.format.Schematic;
 import incari.framework.game.Mirror;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Where a schematic stands in the world: its box's lowest corner, and how it's mirrored and then
@@ -12,6 +13,10 @@ import incari.framework.game.Mirror;
 final class Placement {
 
     final Schematic schematic;
+
+    /** The dimension it stands in, by the game's id; null if placed outside a world (any). */
+    private @Nullable String dimension;
+
     private int x;
     private int y;
     private int z;
@@ -19,8 +24,32 @@ final class Placement {
     private int turns;
 
     Placement(Schematic schematic, int x, int y, int z) {
+        this(schematic, null, x, y, z);
+    }
+
+    Placement(Schematic schematic, @Nullable String dimension, int x, int y, int z) {
         this.schematic = schematic;
+        this.dimension = dimension;
         moveTo(x, y, z);
+    }
+
+    /** The dimension it stands in, or null for any. */
+    @Nullable
+    String dimension() {
+        return dimension;
+    }
+
+    /** Moves it to {@code dimension} (the player's, as it's placed where they stand). */
+    void moveTo(String dimension) {
+        this.dimension = dimension;
+    }
+
+    /**
+     * Whether it's in {@code dimension}, the player's: drawn and checked only there, as the same
+     * coordinates in another dimension are another place.
+     */
+    boolean isIn(@Nullable String dimension) {
+        return this.dimension == null || this.dimension.equals(dimension);
     }
 
     /** Puts the box's lowest corner at {@code x, y, z}. */

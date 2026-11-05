@@ -80,6 +80,37 @@ class WaypointsModuleTest {
     }
 
     @Test
+    void onAServerADeathIsMarkedForTheVisitOnly() {
+        // One address, many maps: the death mustn't be kept to show on the next one.
+        store.close();
+        store.open("server/play.example.net");
+        add("Base", 0, 64, 0);
+        player.at(-3.2, 70, 8.9).dead(true);
+        game.tick();
+        assertThat(store.death())
+                .isNotNull()
+                .satisfies(death -> assertThat(death.isTemporary()).isTrue());
+        store.flush();
+        String saved = String.join("\n", game.files.values());
+        assertThat(saved).contains("Base").doesNotContain("Death");
+
+        store.close();
+        store.open("server/play.example.net");
+        assertThat(store.all())
+                .singleElement()
+                .satisfies(kept -> assertThat(kept.name()).isEqualTo("Base"));
+    }
+
+    @Test
+    void inSingleplayerADeathIsKept() {
+        player.at(-3.2, 70, 8.9).dead(true);
+        game.tick();
+        assertThat(store.death())
+                .isNotNull()
+                .satisfies(death -> assertThat(death.isTemporary()).isFalse());
+    }
+
+    @Test
     void aDeathIsClearedOnceThePlayerGetsBackToIt() {
         player.at(0, 70, 0).dead(true);
         game.tick();

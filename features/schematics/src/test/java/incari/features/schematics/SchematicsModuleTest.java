@@ -4,6 +4,7 @@ import static incari.features.schematics.format.NbtWriter.compound;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import incari.features.schematics.format.NbtWriter;
+import incari.framework.game.PlayerView;
 import incari.framework.testing.FakePlayer;
 import incari.framework.testing.TestGame;
 import java.util.List;
@@ -158,6 +159,26 @@ class SchematicsModuleTest {
         load();
         assertThat(game.messages.get(1)).endsWith("1 block isn't in this version: left out.");
         assertThat(game.drawWorld()).noneMatch(line -> line.contains("glass"));
+    }
+
+    @Test
+    void itStaysInTheDimensionItWasPlacedIn() {
+        load();
+        player.in(PlayerView.NETHER);
+        game.ticks(1);
+        assertThat(game.drawWorld()).isEmpty();
+        String hud = String.join("\n", game.drawHud().drawn);
+        assertThat(hud).contains("In the Overworld").doesNotContain("Materials");
+
+        player.in(PlayerView.OVERWORLD);
+        game.ticks(1);
+        assertThat(game.drawWorld()).contains("ghost minecraft:stone at 100,64,200");
+
+        // Placed again where the player stands, it moves to their dimension.
+        player.in(PlayerView.NETHER);
+        game.ticks(1);
+        module.here.run();
+        assertThat(game.drawWorld()).contains("ghost minecraft:stone at 100,64,200");
     }
 
     @Test

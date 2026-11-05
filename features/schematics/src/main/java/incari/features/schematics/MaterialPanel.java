@@ -49,7 +49,8 @@ final class MaterialPanel extends HudElement {
 
     @Override
     public boolean isVisible() {
-        return module.isLoaded();
+        // In another dimension the counts are of the schematic's, not what's around the player.
+        return module.isLoaded() && module.isHere();
     }
 
     private List<Row> rows(HudCanvas canvas) {

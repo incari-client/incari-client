@@ -49,6 +49,9 @@ public final class WaypointsModule extends Module {
         }
     }
 
+    /** How {@code Game.world()} names a server's world. */
+    static final String SERVER_PREFIX = "server/";
+
     /** The name a death's waypoint gets. */
     static final String DEATH_NAME = "Death";
 
@@ -88,7 +91,7 @@ public final class WaypointsModule extends Module {
             .describedAs("How big icons and names are drawn over the world.");
     final BooleanSetting deaths = settings()
             .bool("deaths", "Mark deaths", true)
-            .describedAs("Adds a waypoint where you die, replacing the last one.");
+            .describedAs("Adds a waypoint where you die, replacing the last one; on a server, until you leave.");
     final BooleanSetting clearDeaths = settings()
             .bool("clear-deaths", "Clear deaths on arrival", true)
             .describedAs("Removes a death's waypoint once you get back to it.")
@@ -230,7 +233,8 @@ public final class WaypointsModule extends Module {
 
     private void markDeath(PlayerView player) {
         Waypoints store = store();
-        if (store.world() == null) {
+        String world = store.world();
+        if (world == null) {
             return;
         }
         Waypoint last = store.death();
@@ -246,7 +250,16 @@ public final class WaypointsModule extends Module {
                 DEATH_COLOR,
                 Shape.CROSS);
         death.setDeath(true);
+        // A server's address can be many maps (a network's lobby and its games, each with its own
+        // places at the same coordinates): there a death is marked for this visit only, never kept
+        // in the server's file to show up on the next map or the next day.
+        death.setTemporary(onServer(world));
         store.add(death);
+    }
+
+    /** Whether {@code world} ({@code Game.world()}) is a server's, rather than singleplayer's. */
+    static boolean onServer(String world) {
+        return world.startsWith(SERVER_PREFIX);
     }
 
     private static int floor(double value) {

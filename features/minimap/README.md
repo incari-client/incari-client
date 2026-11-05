@@ -19,6 +19,8 @@ A live map of the loaded world around you, round or square, turning with you or 
 | Coordinates | on/off | on |
 | HUD: Map | position and scale | top right, 1x |
 
+The game's effect icons, also top right, move down below the map (and anything else of Incari's in their place) rather than over it (`ModuleSystem.effectIconsShift`, hooked in `Hud.extractEffects`).
+
 ```sh
 ./gradlew :features:minimap:check
 ```

@@ -64,7 +64,7 @@ public final class FpsDisplay extends Module {
         private String cached = "";
 
         Counter() {
-            super("fps", "FPS", Anchor.LEFT, 2, -64);
+            super("fps", "FPS", Anchor.TOP_LEFT, 2, 14);
         }
 
         @Override

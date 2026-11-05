@@ -10,6 +10,7 @@ fn incari_coordinates_hud(
     let _ = corners;
     let spot = game.native_player().map(|p| m::Spot {
         at: [m::block(p.x), m::block(p.y), m::block(p.z)],
+        overworld_at: [m::overworld_block(p.x), m::overworld_block(p.z)],
         sector: m::sector(p.yaw),
         nether: p.dimension == m::NETHER,
         overworld: p.dimension == m::OVERWORLD,

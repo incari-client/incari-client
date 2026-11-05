@@ -15,6 +15,9 @@ pub const TOTEM: &str = "minecraft:totem_of_undying";
 pub const ICON: f32 = 16.0;
 pub const TEXT_GAP: f32 = 2.0;
 pub const DISABLED: &str = "Disabled";
+/// Each element's width, whatever it says (the Java module's WIDTH): the icons hold still as the
+/// text changes, and the two share one column however the screen clamps them.
+pub const WIDTH: f32 = 60.0;
 
 /// The HUD editor's totem count with no world.
 pub const SAMPLE_TOTEMS: u32 = 2;

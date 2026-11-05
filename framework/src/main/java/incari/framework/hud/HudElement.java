@@ -26,6 +26,16 @@ public abstract class HudElement {
     private final IntSetting offsetY;
     private final FloatSetting scale;
 
+    /** Where it was last drawn on the game's HUD (not the HUD editor's): left, top, width, height. */
+    private int drawnX;
+
+    private int drawnY;
+    private int drawnWidth;
+    private int drawnHeight;
+
+    /** Whether it showed the last time the game's HUD drew it. */
+    private boolean drawn;
+
     /**
      * @param id the config key, unique within the module
      * @param name what the settings screen and the HUD editor call it
@@ -151,6 +161,22 @@ public abstract class HudElement {
         offsetY.set(a.offsetY(y, height, screenHeight));
     }
 
+    /**
+     * Where it was last drawn on the game's HUD, into {@code out} as left, top, width and height in
+     * GUI units; false if it showed nothing then. The module system's, to keep the game's own HUD
+     * clear of it ({@link incari.framework.ModuleSystem#effectIconsShift}). Allocates nothing.
+     */
+    public final boolean lastDrawn(int[] out) {
+        if (!drawn) {
+            return false;
+        }
+        out[0] = drawnX;
+        out[1] = drawnY;
+        out[2] = drawnWidth;
+        out[3] = drawnHeight;
+        return true;
+    }
+
     /** Back where its module put it, at its default size. */
     public final void resetPlacement() {
         anchor.reset();
@@ -161,7 +187,11 @@ public abstract class HudElement {
 
     /** The module system's: places, scales and draws it, if visible (placeable in the editor). */
     public final void render(HudCanvas canvas) {
-        if (canvas.editing() ? !isPlaceable() : !isVisible()) {
+        boolean editing = canvas.editing();
+        if (editing ? !isPlaceable() : !isVisible()) {
+            if (!editing) {
+                drawn = false;
+            }
             return;
         }
         float s = scale.get();
@@ -170,6 +200,13 @@ public abstract class HudElement {
         Anchor a = anchor.get();
         int x = a.x(offsetX.get(), w, canvas.screenWidth());
         int y = a.y(offsetY.get(), h, canvas.screenHeight());
+        if (!editing) {
+            drawn = w > 0 && h > 0;
+            drawnX = x;
+            drawnY = y;
+            drawnWidth = w;
+            drawnHeight = h;
+        }
         canvas.push(x, y, s);
         try {
             draw(canvas);

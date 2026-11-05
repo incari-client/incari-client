@@ -41,6 +41,14 @@ class CoordinatesTest {
     }
 
     @Test
+    void theOverworldsPlaceIsFromTheExactPosition() {
+        module.setEnabled(true);
+        // Block 100 and -1 in the Nether, but 807 and -4 in the Overworld: not 800 and -8.
+        game.join().at(100.9, 70, -0.5).in(PlayerView.NETHER);
+        assertThat(game.drawHud().drawn).anyMatch(line -> line.startsWith("text \"807, -4\""));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void oneLineWhenAsked() {
         module.setEnabled(true);
@@ -49,7 +57,7 @@ class CoordinatesTest {
         ((BooleanSetting) module.settings().get("show-biome")).set(false);
         ((BooleanSetting) module.settings().get("show-other")).set(false);
         game.join().at(1, 2, 3);
-        assertThat(game.drawHud().drawn).contains("text \"X 1  Y 2  Z 3\" at 6,126 TEXT");
+        assertThat(game.drawHud().drawn).contains("text \"X 1  Y 2  Z 3\" at 6,65 TEXT");
     }
 
     @Test

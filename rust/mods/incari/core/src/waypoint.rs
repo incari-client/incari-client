@@ -39,6 +39,9 @@ pub const OVERWORLD: &str = "minecraft:overworld";
 pub const NETHER: &str = "minecraft:the_nether";
 pub const END: &str = "minecraft:the_end";
 
+/// How a server's world is named (`Game.world()`).
+pub const SERVER_PREFIX: &str = "server/";
+
 /// The name and colour a death's waypoint gets (WaypointsModule).
 pub const DEATH_NAME: &str = "Death";
 pub const DEATH_COLOR: u32 = COLORS[0];
@@ -111,6 +114,9 @@ pub struct Waypoint {
     pub beam: bool,
     /// It marks where the player last died (made by the game, replaced at the next death).
     pub death: bool,
+    /// It lasts only while the player stays in the world: shown, but never saved to the world's
+    /// file (a death's on a server, where one address can be many maps).
+    pub temporary: bool,
 }
 
 impl Waypoint {
@@ -127,6 +133,7 @@ impl Waypoint {
             visible: true,
             beam: true,
             death: false,
+            temporary: false,
         }
     }
 
@@ -373,8 +380,9 @@ impl Waypoints {
         if self.world.is_none() || self.get(waypoint.id).is_some() {
             return;
         }
+        let temporary = waypoint.temporary;
         self.list.push(waypoint);
-        self.changed();
+        self.changed_one(temporary);
     }
 
     /// Removes waypoint `id`; false if it isn't here.
@@ -382,8 +390,8 @@ impl Waypoints {
         let Some(i) = self.list.iter().position(|w| w.id == id) else {
             return false;
         };
-        self.list.remove(i);
-        self.changed();
+        let gone = self.list.remove(i);
+        self.changed_one(gone.temporary);
         true
     }
 
@@ -397,7 +405,9 @@ impl Waypoints {
         // Its identity stays, whatever `f` did.
         w.id = id;
         if *w != before {
-            self.changed();
+            // A temporary one's change needs no save, unless it became, or stopped being, one.
+            let temporary = before.temporary && w.temporary;
+            self.changed_one(temporary);
         }
         true
     }
@@ -462,16 +472,22 @@ impl Waypoints {
             return;
         }
         self.save_countdown = -1;
-        if self.list.is_empty() {
+        // A temporary waypoint is the visit's: never in the file.
+        let kept: Vec<Waypoint> = self.list.iter().filter(|w| !w.temporary).cloned().collect();
+        if kept.is_empty() {
             storage.delete(&path(name));
         } else {
-            storage.write(&path(name), &write(&self.list));
+            storage.write(&path(name), &write(&kept));
         }
     }
 
-    fn changed(&mut self) {
+    /// A waypoint changed, or the list did. A temporary one's change needs no save: the file never
+    /// has it (and an unreadable file isn't overwritten for it).
+    fn changed_one(&mut self, temporary: bool) {
         self.revision += 1;
-        self.save_countdown = SAVE_DELAY_TICKS;
+        if !temporary {
+            self.save_countdown = SAVE_DELAY_TICKS;
+        }
     }
 }
 
@@ -589,6 +605,9 @@ impl DeathWatch {
             let mut death =
                 Waypoint::new(DEATH_NAME, x, y, z, &p.dimension, DEATH_COLOR, Shape::Cross);
             death.death = true;
+            // A server's address can be many maps (a network's lobby and its games): there a death
+            // is marked for this visit only, never kept in the server's file for the next map.
+            death.temporary = store.world().is_some_and(|w| w.starts_with(SERVER_PREFIX));
             store.add(death);
             self.left_death = false;
         }
@@ -914,6 +933,44 @@ pub(crate) mod tests {
         watch.tick(&mut store, Some(&at(2.0)), true, true, false);
         assert_eq!(store.all().len(), 1);
         assert_eq!(store.death().unwrap().x, 2);
+    }
+
+    #[test]
+    fn on_a_server_a_death_is_marked_for_the_visit_only() {
+        let mut files = Files::default();
+        let mut store = Waypoints::new();
+        store.open("server/play.example.net", &mut files);
+        store.add(Waypoint::new(
+            "Base",
+            0,
+            64,
+            0,
+            OVERWORLD,
+            COLORS[1],
+            Shape::Circle,
+        ));
+        let mut watch = DeathWatch::default();
+        let p = Player {
+            x: 10.5,
+            y: 64.0,
+            z: 0.5,
+            yaw: 0.0,
+            dimension: OVERWORLD.into(),
+        };
+        watch.tick(&mut store, Some(&p), true, true, true);
+        assert!(store.death().unwrap().temporary);
+        store.flush(&mut files);
+        let saved: String = files.0.values().cloned().collect();
+        assert!(saved.contains("Base") && !saved.contains("Death"));
+        store.close(&mut files);
+        store.open("server/play.example.net", &mut files);
+        assert_eq!(store.all().len(), 1);
+
+        // In singleplayer it's kept.
+        store.open("world/A", &mut files);
+        watch.tick(&mut store, Some(&p), false, true, true);
+        watch.tick(&mut store, Some(&p), true, true, true);
+        assert!(!store.death().unwrap().temporary);
     }
 
     #[test]

@@ -61,6 +61,22 @@ class HudElementTest {
     }
 
     @Test
+    void remembersWhereTheGameDrewItButNotTheEditor() {
+        Box box = new Box();
+        assertThat(box.lastDrawn(bounds)).isFalse();
+        box.render(canvas);
+        assertThat(box.lastDrawn(bounds)).isTrue();
+        assertThat(bounds).containsExactly(2, 2, 50, 10);
+
+        box.offsetY().set(40);
+        TestGame.Canvas editor = new TestGame.Canvas(320, 240);
+        editor.editing = true;
+        box.render(editor);
+        box.lastDrawn(bounds);
+        assertThat(bounds).containsExactly(2, 2, 50, 10);
+    }
+
+    @Test
     void resetPutsItBack() {
         Box box = new Box();
         box.place(135, 115, 50, 10, 320, 240);

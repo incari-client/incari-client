@@ -68,7 +68,7 @@ public final class ReachDisplay extends Module {
         private String cached = "";
 
         Distance() {
-            super("reach", "Reach", Anchor.LEFT, 2, -32);
+            super("reach", "Reach", Anchor.TOP_LEFT, 2, 46);
         }
 
         private boolean showing() {

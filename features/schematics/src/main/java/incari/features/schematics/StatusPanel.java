@@ -1,6 +1,7 @@
 package incari.features.schematics;
 
 import incari.framework.game.Mirror;
+import incari.framework.game.PlayerView;
 import incari.framework.hud.Anchor;
 import incari.framework.hud.HudCanvas;
 import incari.framework.hud.HudElement;
@@ -8,6 +9,7 @@ import incari.framework.hud.TextElement;
 import incari.framework.hud.Tone;
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The loaded schematic, how far it's built and how it's placed, in a few lines. The lines are made
@@ -90,11 +92,28 @@ final class StatusPanel extends HudElement {
             placed += ", mirrored";
         }
         add(placed, Tone.MUTED);
+        if (!module.isHere()) {
+            add(where(placement.dimension()), Tone.WARNING);
+        }
         if (module.layers.get() != SchematicsModule.Layers.ALL) {
             add(
                     (module.layers.get() == SchematicsModule.Layers.ONE ? "Layer " : "Up to layer ") + module.layer(),
                     Tone.MUTED);
         }
+    }
+
+    /** Where it's placed, for a player in another dimension: "In the Overworld". */
+    static String where(@Nullable String dimension) {
+        if (PlayerView.OVERWORLD.equals(dimension)) {
+            return "In the Overworld";
+        }
+        if (PlayerView.NETHER.equals(dimension)) {
+            return "In the Nether";
+        }
+        if (PlayerView.END.equals(dimension)) {
+            return "In the End";
+        }
+        return "In another dimension";
     }
 
     private void add(String line, Tone tone) {
