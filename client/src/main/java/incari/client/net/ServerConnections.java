@@ -124,6 +124,9 @@ public final class ServerConnections {
         lastJoin = new Join(server, address);
         lastWasRelay = false;
         lastJoinReachedWorld = false;
+        // Set again by connect() for a join that goes through it; a plain TCP join (the desktop's,
+        // as the game's own version) doesn't, and mustn't be judged by the last Eagler one's.
+        lastEagler = null;
         if (protocol != gameProtocol()) {
             LOGGER.info("Joining {} as {} through Via", address, ServerVersions.name(protocol));
             IncariVia.configure(new File(Minecraft.getInstance().gameDirectory, "incari/via"), gameProtocol());
@@ -266,6 +269,18 @@ public final class ServerConnections {
                     }
                 })
                 .connect(world);
+    }
+
+    /**
+     * {@code IncariTicks}, once a client tick: a join that reached a world counts as one, however its
+     * connection was built. {@link JoinWatch} sees it only on the connections it's in, not on the
+     * game's own pipeline (a desktop TCP join as the game's own version); a kick after it isn't a
+     * refusal ({@link ViaHint}).
+     */
+    public static void tick(Minecraft minecraft) {
+        if (!lastJoinReachedWorld && minecraft.level != null && minecraft.getConnection() != null) {
+            lastJoinReachedWorld = true;
+        }
     }
 
     /** The join the connect screen last prepared, or null before the first. */

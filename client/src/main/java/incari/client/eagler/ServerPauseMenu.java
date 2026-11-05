@@ -3,6 +3,7 @@ package incari.client.eagler;
 import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
+import incari.client.ui.Ui;
 import incari.net.eagler.EaglerPauseMenu;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,6 +27,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -268,15 +270,18 @@ public final class ServerPauseMenu {
             Font font = Minecraft.getInstance().font;
             boolean left = icons.containsKey("icon_" + key + "_L");
             boolean right = icons.containsKey("icon_" + key + "_R");
-            int textWidth = font.width(getMessage());
-            int groupWidth = textWidth + (left ? ICON_SIZE + ICON_GAP : 0) + (right ? ICON_SIZE + ICON_GAP : 0);
+            int iconsWidth = (left ? ICON_SIZE + ICON_GAP : 0) + (right ? ICON_SIZE + ICON_GAP : 0);
+            // The server's own words: cut to fit the button with its pictures, never drawn past it.
+            FormattedCharSequence text = Ui.fit(font, getMessage(), Math.max(0, getWidth() - 8 - iconsWidth));
+            int textWidth = font.width(text);
+            int groupWidth = textWidth + iconsWidth;
             int x = getX() + (getWidth() - groupWidth) / 2;
             int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
             if (left) {
                 extractIcon(graphics, "icon_" + key + "_L", x, iconY);
                 x += ICON_SIZE + ICON_GAP;
             }
-            graphics.text(font, getMessage(), x, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0);
+            graphics.text(font, text, x, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0);
             if (right) {
                 extractIcon(graphics, "icon_" + key + "_R", x + textWidth + ICON_GAP, iconY);
             }

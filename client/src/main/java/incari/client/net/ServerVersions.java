@@ -3,6 +3,7 @@ package incari.client.net;
 import incari.via.IncariVia;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntSupplier;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -119,8 +120,25 @@ public final class ServerVersions {
      * protocol. Other versions only with Via on; the rest are marked incompatible, as in the game.
      */
     public static boolean isCompatible(ServerData server) {
+        // A featured server runs the game's version and can't be edited (ADR 0071): what an older
+        // build's "Auto" learned for it doesn't count.
+        return isCompatible(server, () -> FeaturedServers.is(server) ? -1 : VersionRetry.learned(server.ip));
+    }
+
+    /** {@link #isCompatible(ServerData)}, given the version an earlier join found for it (-1 for none). */
+    static boolean isCompatible(ServerData server, IntSupplier learned) {
         int protocol = server.protocol;
-        return protocol == UNKNOWN || protocol == gameProtocol() || (usesVia(server) && IncariVia.supports(protocol));
+        if (protocol == UNKNOWN) {
+            // An Eagler server never says its version: a join with Via on finds it. With Via off, one
+            // an earlier join found to run another version can't be joined until Via is turned on.
+            return usesVia(server) || !needsVia(learned.getAsInt());
+        }
+        return protocol == gameProtocol() || (usesVia(server) && IncariVia.supports(protocol));
+    }
+
+    /** Whether a server found to speak {@code protocol} (-1 for not known) needs Via to be joined. */
+    static boolean needsVia(int protocol) {
+        return protocol >= 0 && protocol != gameProtocol();
     }
 
     /** Whether the game can join a server whose ping reported {@code protocol}: its own version, or one Via translates. */
@@ -160,6 +178,8 @@ public final class ServerVersions {
             Minecraft minecraft = Minecraft.getInstance();
             Screen editScreen = minecraft.gui.screen();
             if (editScreen != null) {
+                // Coming back lays the edit screen out again from the entry: what was typed goes in it first.
+                TypedServerFields.keep(editScreen, server);
                 minecraft.gui.setScreen(new VersionSelectScreen(editScreen, choices, server.incariVersion, protocol -> {
                     server.incariVersion = protocol;
                     pressed.setMessage(label(protocol));

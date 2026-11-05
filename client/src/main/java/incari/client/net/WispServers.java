@@ -146,6 +146,8 @@ public final class WispServers {
                     Minecraft minecraft = Minecraft.getInstance();
                     Screen editScreen = minecraft.gui.screen();
                     if (editScreen != null) {
+                        // Coming back lays the edit screen out again from the entry: what was typed goes in it first.
+                        TypedServerFields.keep(editScreen, server);
                         minecraft.gui.setScreen(
                                 screen(editScreen, server, () -> pressed.setMessage(label(server.incariWisp))));
                     }

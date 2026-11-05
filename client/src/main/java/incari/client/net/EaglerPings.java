@@ -131,7 +131,8 @@ public final class EaglerPings {
         server.playerList = playerList;
         server.protocol = protocolIn(answer);
         int shown = server.protocol != ServerVersions.UNKNOWN ? server.protocol : VersionRetry.learned(server.ip);
-        server.version = Component.literal(shown >= 0 ? "Eagler " + ServerVersions.name(shown) : "Eagler")
+        server.version = Component.literal(
+                        versionLabel(shown, ServerVersions.usesVia(server) || FeaturedServers.is(server)))
                 .withStyle(ChatFormatting.GRAY);
         if (icon != null) {
             byte[] png = iconPng(icon);
@@ -140,6 +141,20 @@ public final class EaglerPings {
                 onPersistentDataChange.run();
             }
         }
+    }
+
+    /**
+     * The server list's version for an Eagler server known to speak {@code protocol} (-1 for not
+     * known). One of another version with Via off says it needs Via: the list marks it incompatible
+     * ({@link ServerVersions#isCompatible(ServerData)}) and shows this in red. Literal English until
+     * Incari has its own language files.
+     */
+    static String versionLabel(int protocol, boolean viaOn) {
+        if (protocol < 0) {
+            return "Eagler";
+        }
+        String name = ServerVersions.name(protocol);
+        return !viaOn && ServerVersions.needsVia(protocol) ? "Needs Via: " + name : "Eagler " + name;
     }
 
     /**

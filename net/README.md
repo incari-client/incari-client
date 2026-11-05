@@ -21,7 +21,7 @@ Version translation is `:via`'s job.
 | `tls.TlsConnection`, `Transport` | TLS 1.2/1.3 (Bouncy Castle, non-blocking) over a socket or a Wisp stream, for sign-in (ADR 0070) |
 | `tls.CertificateChain`, `TrustAnchors` | The server's chain against four pinned roots: host name, dates, CA rules, signatures |
 | `https.HttpsClient`, `HttpRequest`, `ResponseParser` | One HTTPS/1.1 request per connection, to an allow-list of hosts, sizes capped |
-| `msa.MicrosoftSignIn` | Microsoft sign-in as the launcher: device code, Xbox Live, XSTS, Minecraft token and profile; session joins; chat keys |
+| `msa.MicrosoftSignIn` | Microsoft sign-in as the launcher: device code, Xbox Live, XSTS, Minecraft token and profile; session joins; chat keys. A `SignInException` is `temporary()` when the request didn't get through or the service answered 5xx/429: the screen keeps polling, and a failed refresh keeps the account |
 | `msa.MicrosoftAccount`, `MicrosoftEndpoints` | The signed-in account (tokens never printed); the client id, URLs and allowed hosts |
 
 ## Invariants

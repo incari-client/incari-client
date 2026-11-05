@@ -46,15 +46,19 @@ class ViaChoiceTest {
 
     @Test
     void hintsAtAVersionRefusalWithViaOff() {
-        assertThat(ViaHint.applies(server(ServerVersions.OFF), true, false)).isTrue();
-        assertThat(ViaHint.applies(server(ServerVersions.OFF), false, true)).isTrue();
+        assertThat(ViaHint.applies(server(ServerVersions.OFF), false, true, false))
+                .isTrue();
+        assertThat(ViaHint.applies(server(ServerVersions.OFF), false, false, true))
+                .isTrue();
     }
 
     @Test
     void noHintWithViaOnOrForAnotherKick() {
-        assertThat(ViaHint.applies(server(ServerVersions.AUTO), true, false)).isFalse();
-        assertThat(ViaHint.applies(server(ServerVersions.OFF), false, false)).isFalse();
-        assertThat(ViaHint.applies(null, true, true)).isFalse();
+        assertThat(ViaHint.applies(server(ServerVersions.AUTO), false, true, false))
+                .isFalse();
+        assertThat(ViaHint.applies(server(ServerVersions.OFF), false, false, false))
+                .isFalse();
+        assertThat(ViaHint.applies(null, false, true, true)).isFalse();
     }
 
     @Test
@@ -89,5 +93,30 @@ class ViaChoiceTest {
         ServerData again = new ServerData("Minecraft Server", "ws://127.0.0.1:8801", ServerData.Type.OTHER);
         ServerVersions.applyQuickPlay(again);
         assertThat(ServerVersions.usesVia(again)).isFalse();
+    }
+
+    @Test
+    void anEaglerServerFoundToRunAnotherVersionNeedsViaWhileItsOff() {
+        ServerData off = server(ServerVersions.OFF);
+        off.protocol = ServerVersions.UNKNOWN;
+        assertThat(ServerVersions.isCompatible(off, () -> 47)).isFalse();
+        assertThat(ServerVersions.isCompatible(off, () -> -1)).isTrue();
+        assertThat(ServerVersions.isCompatible(off, ServerVersions::gameProtocol))
+                .isTrue();
+        ServerData auto = server(ServerVersions.AUTO);
+        auto.protocol = ServerVersions.UNKNOWN;
+        assertThat(ServerVersions.isCompatible(auto, () -> 47)).isTrue();
+
+        assertThat(EaglerPings.versionLabel(47, false)).startsWith("Needs Via");
+        assertThat(EaglerPings.versionLabel(47, true)).startsWith("Eagler ");
+        assertThat(EaglerPings.versionLabel(-1, false)).isEqualTo("Eagler");
+        assertThat(EaglerPings.versionLabel(ServerVersions.gameProtocol(), false))
+                .startsWith("Eagler ");
+    }
+
+    @Test
+    void noEditHintForAFeaturedServer() {
+        assertThat(ViaHint.applies(server(ServerVersions.OFF), true, true, true))
+                .isFalse();
     }
 }

@@ -54,6 +54,13 @@ public final class MicrosoftScreen extends Screen {
     private boolean polling;
     private long nextPollMillis;
     private int intervalSeconds;
+    /** Polls in a row that didn't get through: retried, further apart, until {@link #MAX_POLL_FAILURES}. */
+    private int pollFailures;
+
+    /** Polls in a row that may fail to get through before the sign-in gives up: minutes of trying. */
+    private static final int MAX_POLL_FAILURES = 8;
+    /** The longest wait between polls that didn't get through. */
+    private static final long MAX_RETRY_MILLIS = 30_000;
 
     public MicrosoftScreen(Screen parent) {
         super(Component.literal("Microsoft Account"));
@@ -169,6 +176,7 @@ public final class MicrosoftScreen extends Screen {
         show(State.REQUESTING);
         whenDone(client.requestCode(), mine, requested -> {
             code = requested;
+            pollFailures = 0;
             intervalSeconds = requested.intervalSeconds();
             nextPollMillis = System.currentTimeMillis() + intervalSeconds * 1000L;
             show(State.CODE);
@@ -187,23 +195,69 @@ public final class MicrosoftScreen extends Screen {
         }
         polling = true;
         int mine = attempt;
-        whenDone(client.poll(current), mine, poll -> {
-            polling = false;
-            switch (poll.state()) {
-                case WAITING -> nextPollMillis = System.currentTimeMillis() + intervalSeconds * 1000L;
-                case SLOW_DOWN -> {
-                    intervalSeconds += 5;
-                    nextPollMillis = System.currentTimeMillis() + intervalSeconds * 1000L;
+        // Not whenDone: a poll that didn't get through (school Wi-Fi, the proxy) is tried again, and
+        // only Microsoft's own answer (expired, declined) ends the sign-in.
+        var _ = client.poll(current).handle((poll, failure) -> {
+            this.minecraft.execute(() -> {
+                if (mine != attempt) {
+                    return;
                 }
-                case DONE -> {
-                    MicrosoftSignIn.MicrosoftTokens tokens = poll.tokens();
-                    if (tokens != null) {
-                        show(State.SIGNING_IN);
-                        whenDone(client.signIn(tokens), mine, this::signedIn);
-                    }
+                if (failure != null) {
+                    pollFailed(failure);
+                } else {
+                    polled(poll, client, mine);
+                }
+            });
+            return null;
+        });
+    }
+
+    private void polled(MicrosoftSignIn.Poll poll, MicrosoftSignIn client, int mine) {
+        polling = false;
+        if (pollFailures > 0) {
+            pollFailures = 0;
+            message = CommonComponents.EMPTY;
+            rebuildWidgets();
+        }
+        switch (poll.state()) {
+            case WAITING -> nextPollMillis = System.currentTimeMillis() + intervalSeconds * 1000L;
+            case SLOW_DOWN -> {
+                intervalSeconds += 5;
+                nextPollMillis = System.currentTimeMillis() + intervalSeconds * 1000L;
+            }
+            case DONE -> {
+                MicrosoftSignIn.MicrosoftTokens tokens = poll.tokens();
+                if (tokens != null) {
+                    show(State.SIGNING_IN);
+                    whenDone(client.signIn(tokens), mine, this::signedIn);
                 }
             }
-        });
+        }
+    }
+
+    /** A poll failed: tried again later if it only didn't get through, else the sign-in ends. */
+    private void pollFailed(Throwable failure) {
+        Throwable cause = unwrap(failure);
+        if (cause instanceof SignInException signInFailure
+                && signInFailure.temporary()
+                && ++pollFailures <= MAX_POLL_FAILURES) {
+            polling = false;
+            long wait = Math.min(MAX_RETRY_MILLIS, (intervalSeconds * 1000L) << Math.min(pollFailures, 4));
+            nextPollMillis = System.currentTimeMillis() + wait;
+            message = Component.literal("Can't reach Microsoft right now. Still trying...")
+                    .withStyle(ChatFormatting.GRAY);
+            rebuildWidgets();
+            return;
+        }
+        failed(failure);
+    }
+
+    private static Throwable unwrap(Throwable failure) {
+        Throwable cause = failure;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 
     private void signedIn(MicrosoftAccount account) {
@@ -246,16 +300,14 @@ public final class MicrosoftScreen extends Screen {
     }
 
     private void failed(Throwable failure) {
-        Throwable cause = failure;
-        while (cause instanceof CompletionException && cause.getCause() != null) {
-            cause = cause.getCause();
-        }
+        Throwable cause = unwrap(failure);
         String reason = cause instanceof SignInException && cause.getMessage() != null
                 ? cause.getMessage()
                 : "Sign-in failed. Try again.";
         attempt++;
         code = null;
         polling = false;
+        pollFailures = 0;
         message = Component.literal(reason).withStyle(ChatFormatting.RED);
         show(State.IDLE);
     }

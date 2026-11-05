@@ -172,6 +172,38 @@ class MicrosoftSignInTest {
     void anExpiredRefreshTokenAsksToSignInAgain() {
         server.answer("login.live.com/oauth20_token.srf", 400, "{\"error\":\"invalid_grant\"}");
         assertFails(signIn.renew(account(NOW)), "Sign in again");
+        assertThat(((SignInException) failureAfter(400, "invalid_grant")).temporary())
+                .isFalse();
+    }
+
+    @Test
+    void aServiceOutageOrNetworkFailureIsWorthTryingAgain() {
+        server.answer("login.live.com/oauth20_token.srf", 503, "");
+        Throwable outage = failure(signIn.renew(account(NOW)));
+        assertThat(outage.getMessage()).contains("Try again").doesNotContain("Sign in again");
+        assertThat(((SignInException) outage).temporary()).isTrue();
+
+        server.fail("login.live.com/oauth20_token.srf");
+        Throwable unreachable = failure(signIn.renew(account(NOW)));
+        assertThat(((SignInException) unreachable).temporary()).isTrue();
+    }
+
+    @Test
+    void aPollThatDoesntGetThroughIsTemporaryAndARefusalIsNot() {
+        DeviceCode code = new DeviceCode("ABCD1234", "device", "https://www.microsoft.com/link", NOW + 1000, 5);
+        server.fail("login.live.com/oauth20_token.srf");
+        assertThat(((SignInException) failure(signIn.poll(code))).temporary()).isTrue();
+        server.answer("login.live.com/oauth20_token.srf", 502, "<html>Bad gateway</html>");
+        assertThat(((SignInException) failure(signIn.poll(code))).temporary()).isTrue();
+        server.answer("login.live.com/oauth20_token.srf", 400, "{\"error\":\"expired_token\"}");
+        assertThat(((SignInException) failure(signIn.poll(code))).temporary()).isFalse();
+        server.answer("login.live.com/oauth20_token.srf", 400, "{\"error\":\"access_denied\"}");
+        assertThat(((SignInException) failure(signIn.poll(code))).temporary()).isFalse();
+    }
+
+    private Throwable failureAfter(int status, String error) {
+        server.answer("login.live.com/oauth20_token.srf", status, "{\"error\":\"" + error + "\"}");
+        return failure(signIn.renew(account(NOW)));
     }
 
     // --- Joins and keys ------------------------------------------------------------------------
