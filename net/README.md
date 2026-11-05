@@ -18,6 +18,11 @@ Version translation is `:via`'s job.
 | `eagler.EaglerPassword` | Auth plugins' password methods |
 | `relay.*` | Joining a world shared through an Eagler relay, over a WebRTC data channel |
 | `wisp.WispConnection`, `WispAddress` | A Java server's TCP port through a Wisp proxy (Wispcraft, ADR 0065), with its SRV lookup |
+| `tls.TlsConnection`, `Transport` | TLS 1.2/1.3 (Bouncy Castle, non-blocking) over a socket or a Wisp stream, for sign-in (ADR 0070) |
+| `tls.CertificateChain`, `TrustAnchors` | The server's chain against four pinned roots: host name, dates, CA rules, signatures |
+| `https.HttpsClient`, `HttpRequest`, `ResponseParser` | One HTTPS/1.1 request per connection, to an allow-list of hosts, sizes capped |
+| `msa.MicrosoftSignIn` | Microsoft sign-in as the launcher: device code, Xbox Live, XSTS, Minecraft token and profile; session joins; chat keys |
+| `msa.MicrosoftAccount`, `MicrosoftEndpoints` | The signed-in account (tokens never printed); the client id, URLs and allowed hosts |
 
 ## Invariants
 
@@ -29,12 +34,18 @@ Version translation is `:via`'s job.
 - **The Eagler stage speaks the server's version.** It sits below framing and Via.
 - **Nothing of EaglerXServer's code** (it's All Rights Reserved). The client side is written from
   the wire protocol.
+- **Sign-in never logs a token** and reaches only `MicrosoftEndpoints.HOSTS`, over pinned TLS.
 
 ## How to test
 
 ```sh
 ./gradlew :net:check
+INCARI_LIVE=1 ./gradlew :net:test --tests '*LiveEndpointsTest'   # the real hosts' TLS; signs nobody in
 ```
+
+`TlsConnectionTest` runs real handshakes against the JDK's TLS server on localhost. A whole
+sign-in needs a Microsoft account that owns the game: Edit Profile → Microsoft Sign-In, then an
+online-mode server (`online-mode=true`) directly or through `wisp-js-server` (below).
 
 End to end against a local vanilla server behind `tools/wsbridge` (a stand-in Eagler proxy):
 

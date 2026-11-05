@@ -1,6 +1,8 @@
 package incari.client.profile;
 
 import com.mojang.blaze3d.Blaze3D;
+import incari.client.account.MicrosoftAccounts;
+import incari.client.account.MicrosoftScreen;
 import incari.client.skins.OwnSkin;
 import incari.client.startup.DeferredModels;
 import incari.client.ui.Ui;
@@ -50,7 +52,7 @@ public final class ProfileScreen extends Screen {
     private final Runnable next;
 
     private final OwnSkin skin = OwnSkin.shared();
-    private final boolean nameEditable;
+    private boolean nameEditable;
     private String name = PlayerName.name();
     private Component message = CommonComponents.EMPTY;
 
@@ -99,6 +101,12 @@ public final class ProfileScreen extends Screen {
 
     @Override
     protected void init() {
+        // Again on each return: signing in with Microsoft makes the name the account's.
+        boolean wasEditable = nameEditable;
+        nameEditable = PlayerName.editable() && Minecraft.getInstance().level == null;
+        if (!nameEditable || !wasEditable) {
+            name = PlayerName.name();
+        }
         int left = this.width / 2 - (PREVIEW_WIDTH + GAP + CONTROLS_WIDTH) / 2;
         int top = Math.max(32, this.height / 2 - 76);
         int controls = left + PREVIEW_WIDTH + GAP;
@@ -113,6 +121,19 @@ public final class ProfileScreen extends Screen {
                 Component.literal("Capes"),
                 button -> this.minecraft.gui.setScreen(new CapeScreen(this, skin)),
                 this.font));
+        if (PlayerName.launchedOffline()) {
+            // Signing in with Microsoft, for servers that check accounts (ADR 0070).
+            String microsoft = MicrosoftAccounts.account() != null ? "Microsoft: Signed In" : "Microsoft Sign-In";
+            int width = this.font.width(microsoft);
+            this.addRenderableWidget(new PlainTextButton(
+                    controls + CONTROLS_WIDTH - width,
+                    top - 11,
+                    width,
+                    10,
+                    Component.literal(microsoft),
+                    button -> this.minecraft.gui.setScreen(new MicrosoftScreen(this)),
+                    this.font));
+        }
 
         EditBox box = new EditBox(this.font, controls, top + 12, CONTROLS_WIDTH, 20, nameBox, USERNAME) {
             @Override

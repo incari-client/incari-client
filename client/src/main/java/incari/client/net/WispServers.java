@@ -169,6 +169,16 @@ public final class WispServers {
         });
     }
 
+    /**
+     * The proxy Microsoft sign-in goes through in a browser (ADR 0070): the one the player last
+     * entered, or Wispcraft's default. It carries only TLS, so it can't read the sign-in.
+     */
+    public static WebSocketUrl signInProxy() {
+        Path folder = Minecraft.getInstance().gameDirectory.toPath().resolve("incari");
+        WebSocketUrl saved = WebSocketUrl.tryParse(SavedWispProxy.load(folder));
+        return saved != null ? saved : WebSocketUrl.parse(WispChoice.DEFAULT_PROXY);
+    }
+
     // Literal English until Incari has its own language files.
     private static Component label(WispChoice choice) {
         return Component.literal("Wispcraft: " + (choice.on() ? "On" : "Off"));

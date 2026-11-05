@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 19:20:26 -0500
+Subject: [PATCH] multiplayer: Join online-mode servers with Incari's Microsoft
+ sign-in
+
+Signed-off-by: incari-client <335801235+incari-client@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/multiplayer/ClientHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/client/multiplayer/ClientHandshakePacketListenerImpl.java
+index 35464dac357d57c552e385922952dc05c7a3fd14..7c855e7748a2260d25fd32f184ce3cac56f96625 100644
+--- a/src/main/java/net/minecraft/client/multiplayer/ClientHandshakePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/client/multiplayer/ClientHandshakePacketListenerImpl.java
+@@ -153,2 +153,5 @@
+     private @Nullable Component authenticateServer(final String digest) {
++        // Incari start: join with Incari's Microsoft sign-in, or say how to get one
++        if (incari.client.account.ServerJoins.handles()) return incari.client.account.ServerJoins.authenticate(digest);
++        // Incari end
+         try {

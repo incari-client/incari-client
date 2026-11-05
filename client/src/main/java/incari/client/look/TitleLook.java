@@ -66,6 +66,7 @@ public final class TitleLook {
     private static final Component[] LETTERS = new Component[NAME.length()];
     private static final Component SUBTITLE = Component.literal("CLIENT  ·  " + IncariBuild.VERSION);
     private static final Component CARD_LABEL = Component.literal("OFFLINE MODE");
+    private static final Component CARD_LABEL_MICROSOFT = Component.literal("MICROSOFT ACCOUNT");
     private static final Component UPDATE_HINT = Component.literal("GitHub");
     private static final Component NOTES_HINT = Component.literal("What's new");
     private static final Component COPYRIGHT = Component.translatable("title.credits");
@@ -406,7 +407,11 @@ public final class TitleLook {
             Panels.panel(graphics, cardX, cardY, cardWidth, cardHeight, eased);
             Font font = Minecraft.getInstance().font;
             graphics.centeredText(
-                    font, CARD_LABEL, cardX + cardWidth / 2, cardY + 12, ARGB.multiplyAlpha(Theme.MUTED, eased));
+                    font,
+                    incari.client.account.MicrosoftAccounts.account() != null ? CARD_LABEL_MICROSOFT : CARD_LABEL,
+                    cardX + cardWidth / 2,
+                    cardY + 12,
+                    ARGB.multiplyAlpha(Theme.MUTED, eased));
             // In the player's name tag cosmetic, if they wear one (ADR 0061).
             Component name = Cosmetics.ownName(PlayerName.name());
             graphics.centeredText(

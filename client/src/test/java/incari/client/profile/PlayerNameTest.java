@@ -3,6 +3,8 @@ package incari.client.profile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import incari.client.account.MicrosoftAccounts;
+import incari.net.msa.MicrosoftAccount;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +25,56 @@ class PlayerNameTest {
     @AfterEach
     void forget() {
         PlayerName.reset();
+        MicrosoftAccounts.reset();
+    }
+
+    private void saveMicrosoftAccount() throws IOException {
+        Files.createDirectories(gameDirectory.resolve("incari"));
+        MicrosoftAccount account = new MicrosoftAccount(
+                "Notch", "069a79f444e94726a5befca90e38aaf5", "mc-token", Long.MAX_VALUE, "refresh");
+        Files.writeString(gameDirectory.resolve("incari/microsoft-account.json"), account.toJson());
+    }
+
+    @Test
+    void aSavedMicrosoftAccountIsThePlayer() throws IOException {
+        save("Chosen_1");
+        saveMicrosoftAccount();
+        User user = PlayerName.user(launched("Player123", "0"), gameDirectory.toFile());
+        assertThat(user.getName()).isEqualTo("Notch");
+        assertThat(user.getProfileId()).isEqualTo(UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5"));
+        assertThat(user.getAccessToken()).isEqualTo("mc-token");
+        assertThat(PlayerName.name()).isEqualTo("Notch");
+        assertThat(PlayerName.editable()).isFalse();
+        assertThat(PlayerName.asksAtStartup()).isFalse();
+        assertThatThrownBy(() -> PlayerName.set("Other_1")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void signingOutGoesBackToTheOfflineNameAndDeletesTheTokens() throws IOException {
+        save("Chosen_1");
+        saveMicrosoftAccount();
+        User launched = launched("Player123", "0");
+        PlayerName.user(launched, gameDirectory.toFile());
+        MicrosoftAccounts.signOut();
+        assertThat(PlayerName.user(launched, gameDirectory.toFile()).getName()).isEqualTo("Chosen_1");
+        assertThat(PlayerName.editable()).isTrue();
+        assertThat(gameDirectory.resolve("incari/microsoft-account.json")).doesNotExist();
+    }
+
+    @Test
+    void aLauncherAccountIgnoresIncarisSignIn() throws IOException {
+        saveMicrosoftAccount();
+        User account = new User("Real", UUID.randomUUID(), "token", Optional.empty(), Optional.empty());
+        assertThat(PlayerName.user(account, gameDirectory.toFile())).isSameAs(account);
+        assertThat(PlayerName.launchedOffline()).isFalse();
+    }
+
+    @Test
+    void aBrokenAccountFileIsIgnored() throws IOException {
+        Files.createDirectories(gameDirectory.resolve("incari"));
+        Files.writeString(gameDirectory.resolve("incari/microsoft-account.json"), "{\"version\":1,\"name\":\"\"}");
+        User launched = launched("Player123", "0");
+        assertThat(PlayerName.user(launched, gameDirectory.toFile())).isSameAs(launched);
     }
 
     private static User launched(String name, String token) {

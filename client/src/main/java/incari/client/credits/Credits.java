@@ -58,6 +58,14 @@ public final class Credits {
                     "GPL-3.0",
                     GPL_3,
                     URI.create("https://github.com/ViaVersion/ViaBackwards")),
+            // Microsoft sign-in's TLS, and the browser build's AES, RSA and chat signing (ADR 0070).
+            new Credit(
+                    "Bouncy Castle",
+                    null,
+                    "The Legion of the Bouncy Castle Inc.",
+                    "MIT",
+                    URI.create("https://www.bouncycastle.org/about/license/"),
+                    URI.create("https://github.com/bcgit/bc-java")),
             // The look's fonts, in Incari's pack with their licences beside them.
             new Credit(
                     "Red Hat Display",

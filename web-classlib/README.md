@@ -16,6 +16,7 @@ for the browser build only. The desktop runs on a real JDK and never loads it.
 | `image` | PNG decode and encode, image resize, behind LWJGL's STB |
 | `resources.ClassPathResources` | Class-path resources from the unpacked client jar |
 | `security.Digest` | MD5, SHA-1 and SHA-256 behind `MessageDigest` (Guava's hashing needs them) |
+| `security.RsaPublicKey`, `RsaPrivateKey` | RSA keys behind `KeyFactory`, `Cipher` (RSA/PKCS#1, AES/CFB8), `Signature` (SHA256withRSA) and `KeyGenerator`: the login handshake and chat signing, over Bouncy Castle (ADR 0070) |
 | `logging`, `concurrent`, `nio`, `util` | Helpers: the console SLF4J binding, file channels, and more |
 
 ## TeaVM behaviour to design around

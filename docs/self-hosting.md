@@ -81,6 +81,9 @@ and Caddy configs; `.htaccess` covers Apache.
 - **Compression** for `.wasm`, `.js` and `.json`.
 - **Optional:** `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy:
   require-corp` let workers share memory instead of copying (a little faster).
+- **An origin of its own.** Players who sign in with Microsoft keep their tokens in the page's
+  storage, which every page on the same origin can read. Don't serve Incari beside other people's
+  pages (a shared `user.github.io`, say): give it its own host or subdomain (ADR 0070).
 
 Players join over WebSocket: EaglerXServer, or a vanilla server behind a bridge. A page on HTTPS
 can only open `wss://` addresses.

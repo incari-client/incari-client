@@ -32,6 +32,11 @@ final class WebSocketNetwork implements PlatformNetwork {
     }
 
     @Override
+    public boolean canOpenSockets() {
+        return false;
+    }
+
+    @Override
     public NetConnection connect(String host, int port, NetConnection.Listener listener) {
         Socket socket = new Socket(host + ":" + port, listener, null);
         socket.failLater("Browsers can only join WebSocket servers. Use an address starting with ws:// or wss://");

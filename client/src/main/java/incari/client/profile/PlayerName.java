@@ -1,6 +1,7 @@
 package incari.client.profile;
 
 import com.mojang.logging.LogUtils;
+import incari.client.account.MicrosoftAccounts;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -64,8 +65,7 @@ public final class PlayerName {
 
     /** Whether the profile screen opens at start-up: offline, with the name the player's to choose. */
     public static boolean asksAtStartup() {
-        User user = launched;
-        return !fixedAtLaunch && user != null && offline(user);
+        return !fixedAtLaunch && editable();
     }
 
     /**
@@ -74,7 +74,12 @@ public final class PlayerName {
      */
     public static User user(User launchedUser, File gameDirectory) {
         User user = current;
-        return user != null ? user : first(launchedUser, gameDirectory.toPath());
+        if (user == null) {
+            user = first(launchedUser, gameDirectory.toPath());
+        }
+        // Signed in with Microsoft (ADR 0070): that account, whatever the launch said.
+        User microsoft = MicrosoftAccounts.user();
+        return microsoft != null ? microsoft : user;
     }
 
     private static synchronized User first(User launchedUser, Path gameDirectory) {
@@ -84,20 +89,32 @@ public final class PlayerName {
         }
         launched = launchedUser;
         file = gameDirectory.resolve("incari").resolve("profile.properties");
+        if (offline(launchedUser)) {
+            MicrosoftAccounts.load(gameDirectory);
+        }
         String saved = fixedAtLaunch || !offline(launchedUser) ? null : read(file);
         user = saved == null ? launchedUser : named(launchedUser, saved);
         current = user;
         return user;
     }
 
-    /** Whether the player can choose their name: they play offline. */
+    /** Whether the player can choose their name: they play offline, not signed in with Microsoft. */
     public static boolean editable() {
+        return launchedOffline() && MicrosoftAccounts.user() == null;
+    }
+
+    /** Whether the game was launched offline (no launcher account), so Incari's own sign-in applies. */
+    public static boolean launchedOffline() {
         User user = launched;
         return user != null && offline(user);
     }
 
     /** The name the player plays under. */
     public static String name() {
+        User microsoft = MicrosoftAccounts.user();
+        if (microsoft != null) {
+            return microsoft.getName();
+        }
         User user = current;
         return user != null ? user.getName() : "";
     }
@@ -105,7 +122,7 @@ public final class PlayerName {
     /** Plays as {@code name} from now on, and keeps it for the next start. */
     public static synchronized void set(String name) {
         User user = launched;
-        if (!isValid(name) || user == null || !offline(user)) {
+        if (!isValid(name) || user == null || !offline(user) || MicrosoftAccounts.user() != null) {
             throw new IllegalArgumentException("Can't play as " + name);
         }
         current = named(user, name);

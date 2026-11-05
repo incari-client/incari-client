@@ -215,6 +215,11 @@ public final class WorkerPlatform implements Platform {
             public boolean canAcceptConnections() {
                 return false;
             }
+
+            @Override
+            public boolean canOpenSockets() {
+                return false;
+            }
         };
     }
 

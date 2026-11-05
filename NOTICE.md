@@ -31,6 +31,7 @@ A build (`./incari build`) also contains, fetched at build time:
 | [ViaVersion](https://github.com/ViaVersion/ViaVersion) and [ViaBackwards](https://github.com/ViaVersion/ViaBackwards), unmodified | GPL-3.0 |
 | [TeaVM](https://github.com/konsoletyper/teavm)'s runtime and class library | Apache-2.0 |
 | [ThreeTen Backport](https://github.com/ThreeTen/threetenbp) | BSD-3-Clause |
+| [Bouncy Castle](https://www.bouncycastle.org/) (`bcprov`, `bcutil`, `bctls`), unmodified: sign-in's TLS and the browser build's crypto (ADR 0070) | MIT |
 | [JZlib](https://github.com/ymnk/jzlib) | BSD-3-Clause |
 | Minecraft: Java Edition and the libraries Mojang ships with it, from your own download | Mojang's terms and each library's own |
 

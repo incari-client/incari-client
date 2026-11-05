@@ -14,6 +14,17 @@ dependencies {
     compileOnly(libs.netty.transport)
     compileOnly(libs.netty.codec.base)
 
+    // TLS for Microsoft sign-in (incari.net.tls, ADR 0070): Bouncy Castle's lightweight TLS client,
+    // which runs over any NetConnection, a Wisp stream included. Ships in both builds.
+    implementation(libs.bctls)
+    implementation(libs.bcutil)
+    implementation(libs.bcprov)
+    // Microsoft's, Xbox's and Mojang's JSON through Gson's tree API (no reflection). The game ships
+    // Gson, so this is compile-only, as in :online.
+    compileOnly(libs.gson)
+
+    testImplementation(libs.gson)
+    testImplementation(libs.bcpkix)
     testImplementation(libs.netty.buffer)
     testImplementation(libs.netty.transport)
     testImplementation(libs.netty.codec.base)

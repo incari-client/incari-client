@@ -38,7 +38,7 @@ platform layer).
 | `platform-api` | The `Platform*` interfaces: window, input, audio, files, threads, worker pools, WebRTC, profiling | nothing |
 | `platform-desktop` | The LWJGL implementation, for development | `platform-api` |
 | `platform-web` | The browser implementation (Java over TeaVM JSO, plus TypeScript): file system and storage worker, WebRTC, Web Workers | `platform-api` |
-| `net` | WebSocket transport under the game's Netty pipeline; Eagler's handshake, messages, skins and relays | `platform-api` |
+| `net` | WebSocket transport under the game's Netty pipeline; Eagler's handshake, messages, skins and relays; Wisp; Microsoft sign-in over its own TLS (Bouncy Castle) | `platform-api` |
 | `via` | ViaVersion and ViaBackwards as a pipeline stage, to join servers of other versions | nothing |
 | `mesher` | Terrain mesher: section snapshot in, vertices out, byte-identical to the game's. Also compiled alone for workers | nothing |
 | `client` | The patched game plus the adapter code its patches call. Package map in [`client/README.md`](client/README.md) | `platform-api`, `net`, `via`, `mesher`, `framework`, `online`, `features/*` |

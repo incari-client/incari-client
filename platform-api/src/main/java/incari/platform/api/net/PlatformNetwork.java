@@ -37,4 +37,12 @@ public interface PlatformNetwork {
     default boolean canAcceptConnections() {
         return true;
     }
+
+    /**
+     * Whether {@link #connect} opens real TCP connections. A page can't: what needs TCP there goes
+     * through a Wisp proxy instead (Java servers, ADR 0065; Microsoft sign-in, ADR 0070).
+     */
+    default boolean canOpenSockets() {
+        return true;
+    }
 }

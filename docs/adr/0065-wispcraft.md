@@ -34,7 +34,8 @@ server on the add and edit server screens, like the version.
 ## Limits
 
 - **Offline-mode servers only**, like any join from Incari: there's no Microsoft sign-in, which
-  Wispcraft adds for online-mode servers.
-- Everything the player sends passes through the proxy; the screen says so.
+  Wispcraft adds for online-mode servers. (Superseded: ADR 0070 adds it.)
+- Everything the player sends passes through the proxy; the screen says so. On an online-mode
+  server it's encrypted once the login handshake is done (ADR 0070).
 - A server's transfer packet to another host keeps the server's choice only when the game reuses its
   list entry.

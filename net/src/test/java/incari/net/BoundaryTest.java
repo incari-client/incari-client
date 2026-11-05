@@ -19,6 +19,14 @@ class BoundaryTest {
     static final ArchRule onlyNettyAndPlatformApi = classes()
             .should()
             .onlyDependOnClassesThat()
-            .resideInAnyPackage("java..", "org.jspecify..", "io.netty..", "incari.platform.api..", "incari.net..")
+            .resideInAnyPackage(
+                    "java..",
+                    "org.jspecify..",
+                    "io.netty..",
+                    "incari.platform.api..",
+                    "incari.net..",
+                    // Sign-in's TLS and JSON (ADR 0070).
+                    "org.bouncycastle..",
+                    "com.google.gson..")
             .allowEmptyShould(true);
 }

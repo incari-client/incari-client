@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 19:20:26 -0500
+Subject: [PATCH] chat: Sign chat with the Microsoft account's key
+
+Signed-off-by: incari-client <335801235+incari-client@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/Minecraft.java b/src/main/java/net/minecraft/client/Minecraft.java
+index 26bc167966e04c64cf4b94ad70bc0bc29417275d..7117115086828a8964bdac09d8327aaf5a80f051 100644
+--- a/src/main/java/net/minecraft/client/Minecraft.java
++++ b/src/main/java/net/minecraft/client/Minecraft.java
+@@ -2065,3 +2065,5 @@
+     public ProfileKeyPairManager getProfileKeyPairManager() {
+-        return this.profileKeyPairManager;
++        // Incari start: the chat key of the account signed in with Microsoft in Edit Profile
++        return incari.client.account.MicrosoftProfileKeys.manager(this.profileKeyPairManager);
++        // Incari end
+     }

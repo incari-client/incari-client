@@ -88,3 +88,4 @@ when you make a decision someone would otherwise have to rediscover.
 | [0067](0067-custom-sky.md) | Custom Sky: resource packs' OptiFine skies |
 | [0068](0068-rust-build.md) | An experimental Rust build on Horizon |
 | [0069](0069-incari-client-on-horizon.md) | Incari Client itself on Horizon |
+| [0070](0070-microsoft-sign-in.md) | Microsoft sign-in for online-mode servers |

@@ -30,7 +30,11 @@ dependencies {
     compileOnly(libs.teavm.jso)
     // The deflate engine under the Deflater substitute; TeaVM's own zip classes use it too.
     compileOnly(libs.jzlib)
+    // AES, RSA and SHA256withRSA behind Cipher, KeyFactory and Signature (security/, ADR 0070):
+    // Bouncy Castle's lightweight engines, which :net already ships in the build for sign-in's TLS.
+    implementation(libs.bcprov)
     testImplementation(libs.jzlib)
+    testImplementation(libs.bcprov)
     testImplementation(libs.slf4j.api)
 
     testImplementation(platform(libs.junit.bom))

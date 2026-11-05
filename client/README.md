@@ -30,6 +30,7 @@ patches call. It's one compilation because the calls go both ways (ARCHITECTURE.
 | `ui`, `look` | Incari's UI kit, screen edits and skins (ADR 0047), and the Frost look (ADR 0048) |
 | `online`, `cosmetics` | Account and chat screens (ADR 0058, 0059); cosmetics, the Wardrobe and emotes (ADR 0061) |
 | `settings`, `recorder`, `credits`, `profile` | Incari Settings and the screen recorder (ADR 0062), the credits, Edit Profile (ADR 0029) |
+| `account` | Microsoft sign-in (ADR 0070): the saved account, its screen, the handshake's session join, chat keys |
 | `IncariKeys`, `IncariTicks`, `TickPacing` | Incari's key mappings, its once-a-tick work, catch-up ticks paced (ADR 0032) |
 
 ## Invariants

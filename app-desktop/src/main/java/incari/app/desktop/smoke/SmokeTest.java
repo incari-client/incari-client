@@ -1344,6 +1344,7 @@ public final class SmokeTest {
         screens.put("settings", () -> new incari.client.settings.IncariSettingsScreen(new TitleScreen()));
         screens.put("recorder", () -> new incari.client.recorder.RecorderScreen(new TitleScreen()));
         screens.put("edit-profile", () -> incari.client.profile.ProfileScreen.from(new TitleScreen()));
+        screens.put("microsoft-sign-in", () -> new incari.client.account.MicrosoftScreen(new TitleScreen()));
         screens.put("wardrobe-outfits", () -> incari.client.cosmetics.WardrobeScreen.showing(new TitleScreen(), null));
         screens.put(
                 "wardrobe-emotes",
