@@ -103,6 +103,8 @@ public final class ServerConnections {
     private static volatile @Nullable Join lastJoin;
     /** Whether the last connection opened was to a shared world, which {@link #lastJoin} isn't. */
     private static volatile boolean lastWasRelay;
+    /** Whether the connect screen's last join reached the world: a kick after that isn't a refusal. */
+    private static volatile boolean lastJoinReachedWorld;
     /** The Eagler stage of the connect screen's last connection, if it was an Eagler one. */
     private static volatile @Nullable EaglerHandshake lastEagler;
 
@@ -115,11 +117,13 @@ public final class ServerConnections {
      */
     public static void prepare(ServerData server, ServerAddress address) {
         NEXT.remove();
+        ServerVersions.applyQuickPlay(server);
         int retry = VersionRetry.retryProtocol(server);
         int protocol = retry >= 0 ? retry : targetProtocol(server, address);
         VersionRetry.joining(server, address, protocol);
         lastJoin = new Join(server, address);
         lastWasRelay = false;
+        lastJoinReachedWorld = false;
         if (protocol != gameProtocol()) {
             LOGGER.info("Joining {} as {} through Via", address, ServerVersions.name(protocol));
             IncariVia.configure(new File(Minecraft.getInstance().gameDirectory, "incari/via"), gameProtocol());
@@ -283,6 +287,15 @@ public final class ServerConnections {
         return stage != null && stage.droppedDuringLogin();
     }
 
+    /**
+     * The server list entry of the connect screen's last join, if it was refused or dropped before
+     * reaching the world (not a shared world's), or null.
+     */
+    static @Nullable ServerData lastRefusedJoin() {
+        Join join = lastJoin;
+        return join == null || lastWasRelay || lastJoinReachedWorld ? null : join.server();
+    }
+
     /** The protocol the connect screen last joined a server with, or -1 before the first join. */
     public static int lastJoinedProtocol() {
         return lastJoined;
@@ -295,12 +308,17 @@ public final class ServerConnections {
     // --- The server's version ----------------------------------------------------------------
 
     /**
-     * The version to join {@code server} with (ADR 0017, ADR 0018): the player's choice; else the
+     * The version to join {@code server} with (ADR 0017, ADR 0018): the game's own with Via off
+     * (ADR 0071); else the player's choice; else the
      * version an earlier "Auto" join found by being refused; else what the server says of itself
      * (the server list's ping this session, or a quick one now); else the game's own. A wrong
      * guess costs a refused login, which {@link VersionRetry} reads and joins again from.
      */
     private static int targetProtocol(ServerData server, ServerAddress address) {
+        if (!ServerVersions.usesVia(server)) {
+            // Via is off (ADR 0071): nothing to work out.
+            return gameProtocol();
+        }
         if (server.incariVersion != ServerVersions.AUTO && ServerVersions.isCompatible(server.incariVersion)) {
             return server.incariVersion;
         }
@@ -436,6 +454,7 @@ public final class ServerConnections {
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object message) {
             if (message instanceof ClientboundLoginPacket && protocol >= 0) {
+                lastJoinReachedWorld = true;
                 VersionRetry.joined(protocol);
             }
             ctx.fireChannelRead(message);

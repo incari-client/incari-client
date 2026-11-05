@@ -178,7 +178,7 @@ public final class VersionRetry {
     }
 
     /** The refusal's text, and the arguments of its translations, which carry the version. */
-    private static String textOf(Component reason) {
+    static String textOf(Component reason) {
         StringBuilder text = new StringBuilder(reason.getString());
         appendArguments(reason, text, 0);
         return text.toString();

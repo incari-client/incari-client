@@ -49,7 +49,7 @@ final class VersionSelectScreen extends Screen {
     record Choice(int protocol, String name, String note) {}
 
     VersionSelectScreen(Screen parent, List<Choice> choices, int initial, IntConsumer onChoose) {
-        super(Component.literal("Server Version"));
+        super(Component.literal("ViaVersion"));
         this.parent = parent;
         this.choices = choices;
         this.picked = initial;

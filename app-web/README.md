@@ -36,6 +36,7 @@ and serve the page's files directly.
 | --- | --- |
 | `?build=fast` / `compatible` / `rust` | Pick a build, skipping the loading screen's choice. Rust's page gets the other options (Horizon reads `?args=`) |
 | `?server=ws://host:port` | Join that server once the game starts |
+| `?via=auto` / `off` / `1.8.9` | Via for that join (ADR 0071); without it, a new entry has Via off |
 | `?name=` | Offline player name; skips Edit Profile |
 | `?world=&seed=` | Create or open a singleplayer world |
 | `?options=<file>` | Start with that options file, fetched from beside the page |

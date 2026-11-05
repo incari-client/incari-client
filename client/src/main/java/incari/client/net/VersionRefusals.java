@@ -38,6 +38,11 @@ final class VersionRefusals {
 
     private VersionRefusals() {}
 
+    /** Whether {@code message} is a server refusing the client's version, in any of the forms above. */
+    static boolean isAboutVersions(String message) {
+        return ABOUT_VERSIONS.matcher(message.toLowerCase(Locale.ROOT)).find();
+    }
+
     /**
      * The protocol to join with next, after a server refused {@code tried} with {@code message}.
      *
@@ -48,10 +53,10 @@ final class VersionRefusals {
      */
     static int nextProtocol(
             String message, int tried, Set<Integer> attempted, ToIntFunction<String> named, IntPredicate joinable) {
-        String text = message.toLowerCase(Locale.ROOT);
-        if (!ABOUT_VERSIONS.matcher(text).find()) {
+        if (!isAboutVersions(message)) {
             return -1;
         }
+        String text = message.toLowerCase(Locale.ROOT);
         List<Integer> candidates = new ArrayList<>();
         Matcher versions = VERSION.matcher(text);
         while (versions.find()) {

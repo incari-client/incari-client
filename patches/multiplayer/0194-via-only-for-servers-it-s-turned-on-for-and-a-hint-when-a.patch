@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 21:30:16 -0500
+Subject: [PATCH] multiplayer: Via only for servers it's turned on for, and a
+ hint when a version is refused
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/gui/screens/DisconnectedScreen.java b/src/main/java/net/minecraft/client/gui/screens/DisconnectedScreen.java
+index ed78adea68fdc5111e43d12f1acd60eb9f92d484..853196c80929298d23b20d0ecd561ff8fe8cf138 100644
+--- a/src/main/java/net/minecraft/client/gui/screens/DisconnectedScreen.java
++++ b/src/main/java/net/minecraft/client/gui/screens/DisconnectedScreen.java
+@@ -48,3 +48,5 @@
+         this.layout.addChild(new StringWidget(this.title, this.font));
+-        this.layout.addChild(new MultiLineTextWidget(this.details.reason(), this.font).setMaxWidth(this.width - 50).setCentered(true));
++        // Incari start: a version refusal with Via off says how to turn it on
++        this.layout.addChild(new MultiLineTextWidget(incari.client.net.ViaHint.reason(this.details.reason()), this.font).setMaxWidth(this.width - 50).setCentered(true));
++        // Incari end
+         this.layout.defaultCellSetting().padding(2);
+diff --git a/src/main/java/net/minecraft/client/gui/screens/multiplayer/ServerSelectionList.java b/src/main/java/net/minecraft/client/gui/screens/multiplayer/ServerSelectionList.java
+index 48e0437ce5ee320baeab70fd1607e350f0373105..c5024bd43103571b70f58d20ab5e2d591d60cd83 100644
+--- a/src/main/java/net/minecraft/client/gui/screens/multiplayer/ServerSelectionList.java
++++ b/src/main/java/net/minecraft/client/gui/screens/multiplayer/ServerSelectionList.java
+@@ -285,4 +285,4 @@
+                                                 .setState(
+-                                                    // Incari start: servers Via can translate for are compatible
+-                                                    incari.client.net.ServerVersions.isCompatible(this.serverData.protocol)
++                                                    // Incari start: servers Via can translate for are compatible, with Via on
++                                                    incari.client.net.ServerVersions.isCompatible(this.serverData)
+                                                     // Incari end
+diff --git a/src/main/java/net/minecraft/client/multiplayer/ServerData.java b/src/main/java/net/minecraft/client/multiplayer/ServerData.java
+index e1f287abc6d19e2569d0a596ddff5d696fc34355..e2cb6c86fffebbb321b783920e7c87df15ec77ae 100644
+--- a/src/main/java/net/minecraft/client/multiplayer/ServerData.java
++++ b/src/main/java/net/minecraft/client/multiplayer/ServerData.java
+@@ -35,4 +35,4 @@
+     private ServerData.State state = ServerData.State.INITIAL;
+-    // Incari start: the version the player chose for this server (Via), saved with it
+-    public int incariVersion = incari.client.net.ServerVersions.AUTO;
++    // Incari start: the version the player chose for this server (Via, off by default), saved with it
++    public int incariVersion = incari.client.net.ServerVersions.OFF;
+     // Incari end

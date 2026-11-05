@@ -10,18 +10,23 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Which Minecraft version the game speaks to a server (ADR 0017). Each server in the list
- * has a choice, saved with it: automatic (the default) or one release. Automatic means the version
- * the server reports, or else the one an earlier join found; a server that doesn't say (Eagler
- * servers' MOTDs never do) is joined as the game's own version, and a refusal names the right one
- * ({@link VersionRetry}, ADR 0018). Via translates whenever the choice isn't the game's own version.
+ * Which Minecraft version the game speaks to a server (ADR 0017, ADR 0071). Each server in the list
+ * has a choice, saved with it: Via off (the default: the game's own version, no translation),
+ * automatic, or one release. Automatic means the version the server reports, or else the one an
+ * earlier join found; a server that doesn't say (Eagler servers' MOTDs never do) is joined as the
+ * game's own version, and a refusal names the right one ({@link VersionRetry}, ADR 0018). Via
+ * translates whenever the version joined with isn't the game's own.
  */
 public final class ServerVersions {
 
-    /** The saved choice for "work it out". */
+    /** The saved choice for "work it out" through Via. */
     public static final int AUTO = -1;
+
+    /** The default choice: no Via, join as the game's own version (ADR 0071). */
+    public static final int OFF = -3;
 
     /**
      * The server list's protocol for a server that didn't say which version it speaks (an Eagler
@@ -29,31 +34,96 @@ public final class ServerVersions {
      */
     public static final int UNKNOWN = -2;
 
-    private static final String TAG = "incariVersion";
+    /**
+     * Not {@code incariVersion}, which builds before ADR 0071 saved with "Auto" as the default: those
+     * choices are left unread, so every server starts with Via off.
+     */
+    private static final String TAG = "incariVia";
+
+    /** A quick play join's Via choice from the page's {@code ?via=}: the address and the choice, or null. */
+    private static volatile @Nullable QuickPlayVia quickPlay;
+
+    private record QuickPlayVia(String address, int choice) {}
 
     private ServerVersions() {}
+
+    /**
+     * The browser page's {@code ?server=...&via=...}: the Via choice for that quick play join, as
+     * "off", "auto" or a release ("1.8.9"). The game makes the server's entry itself, with Via off;
+     * {@link #applyQuickPlay} then sets the choice on it. Returns false for a choice it can't read.
+     */
+    public static boolean setQuickPlay(String address, String choice) {
+        int parsed = parseChoice(choice);
+        if (parsed == UNKNOWN) {
+            return false;
+        }
+        quickPlay = new QuickPlayVia(address, parsed);
+        return true;
+    }
+
+    /** "off", "auto" or a release Via knows, as a choice; {@link #UNKNOWN} for anything else. */
+    static int parseChoice(String choice) {
+        String text = choice.trim().toLowerCase(java.util.Locale.ROOT);
+        if (text.equals("off")) {
+            return OFF;
+        }
+        if (text.equals("auto")) {
+            return AUTO;
+        }
+        int protocol = IncariVia.protocolNamed(text);
+        return protocol >= 0 ? protocol : UNKNOWN;
+    }
+
+    /** {@link ServerConnections#prepare}: gives the quick play join's entry the page's Via choice, once. */
+    static void applyQuickPlay(ServerData server) {
+        QuickPlayVia pending = quickPlay;
+        if (pending != null && pending.address().equalsIgnoreCase(server.ip)) {
+            server.incariVersion = pending.choice();
+            quickPlay = null;
+        }
+    }
 
     /** The game's own protocol. */
     public static int gameProtocol() {
         return SharedConstants.getCurrentVersion().protocolVersion();
     }
 
-    /** {@code ServerData.write}: saves a non-automatic choice. */
+    /** {@code ServerData.write}: saves a choice that isn't the default. */
     public static void write(ServerData server, CompoundTag tag) {
-        if (server.incariVersion != AUTO) {
+        if (server.incariVersion != OFF) {
             tag.putInt(TAG, server.incariVersion);
         }
     }
 
     /** {@code ServerData.read}. */
     public static void read(ServerData server, CompoundTag tag) {
-        server.incariVersion = tag.getIntOr(TAG, AUTO);
+        server.incariVersion = tag.getIntOr(TAG, OFF);
+    }
+
+    /** Whether the player turned Via on for {@code server}. */
+    public static boolean usesVia(ServerData server) {
+        return server.incariVersion != OFF;
     }
 
     /**
-     * Whether the game can join a server whose ping reported {@code protocol}: its own version, or
-     * one Via translates. The server list marks the rest incompatible.
+     * For a server an Eagler server redirects to: "Auto" if the player turned Via on for the server
+     * last joined, else off.
      */
+    public static int redirectChoice() {
+        ServerConnections.Join join = ServerConnections.lastJoin();
+        return join != null && usesVia(join.server()) ? AUTO : OFF;
+    }
+
+    /**
+     * The server list's check: whether the game can join {@code server}, whose ping reported its
+     * protocol. Other versions only with Via on; the rest are marked incompatible, as in the game.
+     */
+    public static boolean isCompatible(ServerData server) {
+        int protocol = server.protocol;
+        return protocol == UNKNOWN || protocol == gameProtocol() || (usesVia(server) && IncariVia.supports(protocol));
+    }
+
+    /** Whether the game can join a server whose ping reported {@code protocol}: its own version, or one Via translates. */
     public static boolean isCompatible(int protocol) {
         return protocol == UNKNOWN || protocol == gameProtocol() || IncariVia.supports(protocol);
     }
@@ -71,18 +141,20 @@ public final class ServerVersions {
     }
 
     /**
-     * The edit-server screen's version button: shows the choice, automatic or one release, and
+     * The edit-server screen's Via button: shows the choice, off, automatic or one release, and
      * opens the list of them ({@link VersionSelectScreen}), which saves the pick into {@code server}.
      */
     public static Button button(ServerData server, int x, int y) {
         List<VersionSelectScreen.Choice> choices = new ArrayList<>();
+        choices.add(new VersionSelectScreen.Choice(
+                OFF, "Off", "joins as " + SharedConstants.getCurrentVersion().name()));
         choices.add(new VersionSelectScreen.Choice(AUTO, "Auto", "the server's own version"));
         for (IncariVia.Release release : IncariVia.releases()) {
             String note = release.protocol() == gameProtocol() ? "native" : "";
             choices.add(new VersionSelectScreen.Choice(release.protocol(), release.name(), note));
         }
         if (choices.stream().noneMatch(choice -> choice.protocol() == server.incariVersion)) {
-            server.incariVersion = AUTO;
+            server.incariVersion = OFF;
         }
         return new VersionButton(server, x, y, pressed -> {
             Minecraft minecraft = Minecraft.getInstance();
@@ -96,7 +168,7 @@ public final class ServerVersions {
         });
     }
 
-    /** The version button, knowing its server: the edit-server screen's edit puts Wispcraft's beside it. */
+    /** The Via button, knowing its server: the edit-server screen's edit puts Wispcraft's beside it. */
     static final class VersionButton extends Button.Plain {
 
         /** Its width as the game's layout places it: a whole row. */
@@ -116,6 +188,7 @@ public final class ServerVersions {
 
     // Literal English until Incari has its own language files.
     private static Component label(int protocol) {
-        return Component.literal("Version: " + (protocol == AUTO ? "Auto" : name(protocol)));
+        String choice = protocol == OFF ? "Off" : protocol == AUTO ? "Auto" : name(protocol);
+        return Component.literal("Via: " + choice);
     }
 }

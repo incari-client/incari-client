@@ -2,7 +2,8 @@
 # 1.8.9, 1.12.2 or 1.20.4 server behind the dev bridge (tools/wsbridge, which speaks Eagler), or a
 # real EaglerXServer in front of one. It pings nothing first: quick play's version check asks the
 # server's MOTD. Checks read the page's console and the server's answers over RCON (the backend's).
-# README.md ("Other versions") has the setup and commands.
+# The page needs &via=auto: Via is off unless the join asks for it (ADR 0071). README.md ("Old
+# servers") has the setup and commands.
 
 # On a server that has run a while, night falls and mobs can kill the player mid-check. (1.8 and
 # 1.12 take a number; later versions a name. The other form fails harmlessly.)

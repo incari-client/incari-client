@@ -3745,6 +3745,8 @@ public final class SmokeTest {
     /** The dedicated server's list entry: through the Wisp proxy {@code -Pincari.wisp} names, if any. */
     private static ServerData smokeServerData(String address) {
         ServerData data = new ServerData("Incari smoke server", address, ServerData.Type.OTHER);
+        // Via on: the smoke servers run other versions too (ADR 0071).
+        data.incariVersion = incari.client.net.ServerVersions.AUTO;
         String wisp = System.getProperty("incari.smoke.wisp");
         if (wisp != null) {
             data.incariWisp = new incari.client.net.WispChoice(true, wisp);

@@ -1,6 +1,7 @@
 package incari.client.eagler;
 
 import com.mojang.logging.LogUtils;
+import incari.client.net.ServerVersions;
 import incari.net.WebSocketUrl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
@@ -60,6 +61,8 @@ public final class ServerRedirects {
         }
         LOGGER.info("Redirected to {}", address);
         ServerData server = new ServerData(address, address, ServerData.Type.OTHER);
+        // Via as the player set it for the server that sent them on.
+        server.incariVersion = ServerVersions.redirectChoice();
         ConnectScreen.startConnecting(parent, minecraft, ServerAddress.parseString(address), server, false, null);
         return true;
     }

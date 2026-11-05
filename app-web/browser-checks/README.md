@@ -84,7 +84,8 @@ INCARI_RCON_PASSWORD=<the password> ./gradlew :app-web:browserCheck \
 
 **Old servers** (`version-join`): vanilla 1.8.9, 1.12.2 or 1.20.4 (1.8.9 and 1.12.2 need Java 8;
 use `difficulty=0`), each behind its own bridge. The suggested ports: 1.8.9 on 25601 (RCON 25611,
-bridge 8801), 1.12.2 on 25602/25612/8802, 1.20.4 on 25603/25613/8803.
+bridge 8801), 1.12.2 on 25602/25612/8802, 1.20.4 on 25603/25613/8803. Add `&via=auto` to
+`browser.query`: Via is off unless the join asks for it (ADR 0071).
 
 **EaglerXServer** (`version-join`, voice): BungeeCord with the EaglerXServer plugin (downloaded,
 never committed) in front of the 1.8.9 server: `online_mode: false`, lobby `127.0.0.1:25601`,
@@ -93,10 +94,10 @@ never committed) in front of the 1.8.9 server: `online_mode: false`, lobby `127.
 microphone):
 
 ```sh
-INCARI_RCON_PASSWORD=<pw> ./gradlew :app-web:browserCheck "-Pbrowser.query=server=ws://127.0.0.1:25577&name=VoiceA" \
+INCARI_RCON_PASSWORD=<pw> ./gradlew :app-web:browserCheck "-Pbrowser.query=server=ws://127.0.0.1:25577&via=auto&name=VoiceA" \
     -Pbrowser.rcon=127.0.0.1:25611 -Pbrowser.seconds=200 -Pbrowser.steps=@browser-checks/voice-talker.steps &
 sleep 8
-INCARI_RCON_PASSWORD=<pw> ./gradlew :app-web:browserCheck "-Pbrowser.query=server=ws://127.0.0.1:25577&name=VoiceB" \
+INCARI_RCON_PASSWORD=<pw> ./gradlew :app-web:browserCheck "-Pbrowser.query=server=ws://127.0.0.1:25577&via=auto&name=VoiceB" \
     -Pbrowser.rcon=127.0.0.1:25611 -Pbrowser.seconds=200 -Pbrowser.steps=@browser-checks/voice-listener.steps
 ```
 

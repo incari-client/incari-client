@@ -346,6 +346,10 @@ public final class WebMain {
         if (!server.isEmpty()) {
             // Straight into a server, as a launcher's quick play does.
             arguments.addAll(List.of("--quickPlayMultiplayer", server));
+            String via = option("via");
+            if (!via.isEmpty() && !incari.client.net.ServerVersions.setQuickPlay(server, via)) {
+                System.err.println("Not a Via choice: ?via=" + via + " (off, auto or a release)");
+            }
         }
         String world = option("world");
         String seed = option("seed");

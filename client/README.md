@@ -17,7 +17,7 @@ patches call. It's one compilation because the calls go both ways (ARCHITECTURE.
 | Package | What it holds |
 | --- | --- |
 | `platform` | Hooks the patches call into the installed platform: window, input, lifecycle, graphics backends |
-| `net` | Joining servers: WebSocket addresses (ADR 0009), each join's pipeline and the server's version (`ServerConnections`, `VersionRetry`, `JoinFailures`; ADR 0017, 0018), the packet handoff (ADR 0033), featured servers (ADR 0062), Reconnect and Auto Reconnect on the disconnection screen (`Reconnect`) |
+| `net` | Joining servers: WebSocket addresses (ADR 0009), each join's pipeline and the server's version (`ServerConnections`, `VersionRetry`, `JoinFailures`; Via off unless turned on per server, with `ViaHint` on a refusal; ADR 0017, 0018, 0071), the packet handoff (ADR 0033), featured servers (ADR 0062), Reconnect and Auto Reconnect on the disconnection screen (`Reconnect`) |
 | `eagler`, `skins` | Eagler servers' extras: passwords, cookies, redirects, voice chat (ADR 0019), Eagler skins (ADR 0016) |
 | `relay` | Worlds shared through Eagler relays, joined and hosted (ADR 0019, 0062) |
 | `legacy` | Playing older servers as their clients did, 1.8 above all (ADR 0020) |

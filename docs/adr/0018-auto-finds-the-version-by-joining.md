@@ -1,6 +1,6 @@
 # ADR 0018: "Auto" finds a server's version by joining
 
-- Status: accepted
+- Status: accepted (amended by ADR 0071: Via is off by default)
 - Date: 2026-09-29
 
 ## Context
