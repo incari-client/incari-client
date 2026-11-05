@@ -12,6 +12,7 @@ import io.netty.channel.ChannelId;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.DefaultChannelConfig;
 import io.netty.channel.EventLoop;
 import java.net.ConnectException;
@@ -20,6 +21,8 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jspecify.annotations.Nullable;
 
@@ -52,6 +55,12 @@ public abstract class NetConnectionChannel extends AbstractChannel {
     private volatile @Nullable NetConnection connection;
     private volatile @Nullable InetSocketAddress remoteAddress;
     private @Nullable ChannelPromise connectPromise;
+    /**
+     * Gives up on a connect that neither opens nor fails ({@code CONNECT_TIMEOUT_MILLIS}, 30 s by
+     * default, as Netty's socket channels do): a server behind a firewall that drops packets would
+     * otherwise leave "Connecting to the server" up for as long as the browser waits. Event loop only.
+     */
+    private @Nullable ScheduledFuture<?> connectTimeout;
     /** Whether the pipeline asked for data (Netty's read()); event loop only. */
     private boolean readRequested;
 
@@ -141,8 +150,32 @@ public abstract class NetConnectionChannel extends AbstractChannel {
         this.doClose();
     }
 
+    /** The connect took too long: fails it and closes the connection still opening. Event loop only. */
+    private void onConnectTimeout(final ChannelPromise promise, final int millis) {
+        this.connectTimeout = null;
+        // A channel connects once: if this connect is still pending, the promise is this one.
+        if (this.connectPromise == null || this.state != State.CONNECTING) {
+            return;
+        }
+        this.connectPromise = null;
+        promise.tryFailure(new ConnectTimeoutException(
+                "Connection timed out after " + (millis / 1000) + " seconds: " + this.remoteAddress));
+        if (this.isOpen()) {
+            this.unsafe().close(this.unsafe().voidPromise());
+        }
+    }
+
+    private void cancelConnectTimeout() {
+        ScheduledFuture<?> timeout = this.connectTimeout;
+        this.connectTimeout = null;
+        if (timeout != null) {
+            timeout.cancel(false);
+        }
+    }
+
     @Override
     protected void doClose() {
+        this.cancelConnectTimeout();
         this.state = State.CLOSED;
         NetConnection current = this.connection;
         if (current != null) {
@@ -221,6 +254,15 @@ public abstract class NetConnectionChannel extends AbstractChannel {
             NetConnectionChannel.this.state = State.CONNECTING;
             NetConnectionChannel.this.remoteAddress = address;
             NetConnectionChannel.this.connectPromise = promise;
+            int millis = NetConnectionChannel.this.config.getConnectTimeoutMillis();
+            if (millis > 0) {
+                NetConnectionChannel.this.connectTimeout = NetConnectionChannel.this
+                        .eventLoop()
+                        .schedule(
+                                () -> NetConnectionChannel.this.onConnectTimeout(promise, millis),
+                                millis,
+                                TimeUnit.MILLISECONDS);
+            }
             NetConnectionChannel.this.connection = NetConnectionChannel.this.open(address, new EventLoopListener());
         }
     }
@@ -275,6 +317,7 @@ public abstract class NetConnectionChannel extends AbstractChannel {
     }
 
     private void onConnected() {
+        this.cancelConnectTimeout();
         ChannelPromise promise = this.connectPromise;
         this.connectPromise = null;
         if (this.state != State.CONNECTING || promise == null) {
@@ -302,6 +345,7 @@ public abstract class NetConnectionChannel extends AbstractChannel {
     }
 
     private void onClosed(final @Nullable Throwable cause) {
+        this.cancelConnectTimeout();
         ChannelPromise promise = this.connectPromise;
         this.connectPromise = null;
         if (promise != null) {

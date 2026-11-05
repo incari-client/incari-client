@@ -90,3 +90,4 @@ when you make a decision someone would otherwise have to rediscover.
 | [0069](0069-incari-client-on-horizon.md) | Incari Client itself on Horizon |
 | [0070](0070-microsoft-sign-in.md) | Microsoft sign-in for online-mode servers |
 | [0071](0071-via-off-by-default.md) | Via is off unless the player turns it on |
+| [0072](0072-hidden-page-wakeups.md) | A hidden page keeps time in a worker, so servers don't time it out |

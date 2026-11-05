@@ -25,8 +25,13 @@ of the program into coroutines (ADR 0006), and the page's thread may not block o
   sync access handles, writing only changed bytes off the page's thread; `createWritable` where sync
   handles are missing; IndexedDB without OPFS (plain-http pages, older browsers); nothing, with a
   console note, if neither exists. It loads `/incari` at start-up and hands it to the page.
-- **One tab writes:** a Web Lock; a second tab warns and keeps its changes to itself. The page asks
-  for persistent storage.
+- **One tab writes:** a Web Lock; a second tab keeps its changes to itself and tells the player
+  (`PlatformNotice`, a toast), as it does when there's no storage. The page asks for persistent storage.
+- **A change the store couldn't keep is sent again whole** (2026-11): the worker stores the rest of
+  the batch and names the failed paths; five seconds later the page marks them changed, so a lost
+  range never leaves a file damaged. A failed save is told to the player once until saving works again.
+- **Leaving saves singleplayer** (2026-11): the page's own hidden, `beforeunload` and `pagehide`
+  listeners post a save to the world's worker, and in a world the page asks before closing.
 - **The client jar is cached whole and mounted** read-only at `/incari/classpath` (`ZipArchive`),
   each entry inflated when opened: one read instead of 22,844, and a 40 MB buffer outside the heap
   instead of 86 MB in it.
@@ -49,7 +54,8 @@ of the program into coroutines (ADR 0006), and the page's thread may not block o
 ## Consequences
 
 - **A reload can lose** the current frame's writes and a batch not yet applied (milliseconds). An
-  interrupted OPFS batch can be partly applied; IndexedDB batches are whole.
+  interrupted OPFS batch can be partly applied; IndexedDB batches are whole. A failed change is
+  sent again, whole.
 - **Everything stored is in memory** (worlds too), until region files stay in place (ADR 0041).
 - **File times:** OPFS keeps its own; a time the game sets is kept only in IndexedDB. Read-only flags aren't kept.
 - **Without persistent storage**, the browser may evict data when the disk is nearly full.

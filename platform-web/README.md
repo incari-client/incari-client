@@ -10,13 +10,14 @@ Audio and WebRTC. Designs: input ADR 0010, networking ADR 0009, storage ADR 0011
 | --- | --- |
 | `WebPlatform` | The platform. `endFrame` waits for the next animation frame and logs a heartbeat |
 | `Dom` | Every JavaScript snippet for input, fullscreen, Pointer Lock, the clipboard, dropped files |
-| `DomEventQueue`, `DomKeys`, `CanvasSize`, `DroppedFiles` | Plain Java (JVM-tested): DOM events become SDL-style events between frames; `KeyboardEvent.code` → scancodes; F then a digit is that function key (F+3 = F3, F+0 = F10) for Chromebooks, not while typing text |
-| `CanvasWindow`, `WebDisplays` | The window and displays |
+| `DomEventQueue`, `DomKeys`, `CanvasSize`, `DroppedFiles` | Plain Java (JVM-tested): DOM events become SDL-style events between frames; `KeyboardEvent.code` → scancodes; on ChromeOS only (`?fchord=on`/`off` overrides), F then a digit is that function key (F+3 = F3, F+0 = F10), not while typing text; elsewhere F is reported at once. A lost WebGL context (`"graphics"`, from render-webgl2) keeps the window minimized |
+| `CanvasWindow`, `WebDisplays` | The window and displays. The leave-page prompt is on while the mouse is held or the player is in a world (`setLeaveWarning`) |
 | `audio/` | One `AudioContext` with the unlock prompt; decoding through the browser; `Spatializer` matches OpenAL Soft's panning |
 | `WebSocketNetwork` | Server connections; callbacks queue events, `pollEvents` delivers them on the game's thread |
 | `rtc/WebRtc` | Peer connections, data channels and the microphone, for voice and shared worlds (ADR 0019) |
 | `WebProfiling` | Memory figures and per-frame rows in `window.__incariFrames` for the benchmark (ADR 0021) |
-| `storage/` | `WebFileSystem` (flushes once a frame), `TreeFileSystem` (the in-memory tree, JVM-tested), `BrowserStore` and `src/main/js/storage-worker.js` (the worker that writes OPFS or IndexedDB) |
+| `storage/` | `WebFileSystem` (flushes once a frame; a change the store couldn't keep is sent again whole 5 s later; read-only, no-storage and failed saves become `PlatformNotice`s), `TreeFileSystem` (the in-memory tree, JVM-tested), `BrowserStore` and `src/main/js/storage-worker.js` (the worker that writes OPFS or IndexedDB, and names the paths it couldn't) |
+| `JsChannel` | A game worker's channel; `sendWhenLeaving` has the page's own listeners (hidden, `beforeunload`, `pagehide`) post a message, so singleplayer's server saves with no game frame to come |
 
 ## Invariants
 
@@ -29,6 +30,9 @@ Audio and WebRTC. Designs: input ADR 0010, networking ADR 0009, storage ADR 0011
 - **Keys belong to the game only while it has focus.** The host page's own controls keep theirs.
 - **The page sizes the canvas with CSS.** The platform sets the backing store to CSS size × device
   pixel ratio.
+- **A hidden page keeps answering servers.** Its frames' quarter-second fallback, and the background
+  pool's, use the page's worker timer (`window.incariTimer`, app-web's `wakeups.ts`) while hidden:
+  the page's own timers are held to one wake-up a minute after five minutes hidden.
 
 ## How to test
 

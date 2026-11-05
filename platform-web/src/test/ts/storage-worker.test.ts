@@ -398,6 +398,23 @@ describe("the storage worker", () => {
     assert.deepEqual(sizes, ["/incari/game/saves/World/level.dat:1", `${region}:5`]);
   });
 
+  it("stores the rest of a batch when one change fails, and names the one that did", async () => {
+    const opfs = new FakeDirectory();
+    const worker = new Worker({ opfs });
+    await worker.open();
+    await worker.apply([{ op: "write", path: "/incari/held", size: 1, at: 0, data: bytes("h"), mtime: 1 }]);
+    const held = (opfs.children.get("incari") as FakeDirectory).children.get("held") as FakeFile;
+    held.openHandles = 1;
+    const applied = await worker.apply([
+      { op: "write", path: "/incari/held", size: 2, at: 1, data: bytes("2"), mtime: 2 },
+      { op: "write", path: "/incari/fine", size: 1, at: 0, data: bytes("f"), mtime: 2 },
+    ]);
+    assert.match(String(applied.error), /NoModificationAllowedError/);
+    assert.deepEqual(applied.failed, ["/incari/held"]);
+    assert.equal(textAt(opfs, "/incari/fine"), "f");
+    assert.equal(textAt(opfs, "/incari/held"), "h");
+  });
+
   it("writes a file's ranges through one handle, in order", async () => {
     const opfs = new FakeDirectory();
     const worker = new Worker({ opfs });

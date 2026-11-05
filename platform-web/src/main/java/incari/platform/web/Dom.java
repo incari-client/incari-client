@@ -44,16 +44,19 @@ final class Dom {
 
     /**
      * Calls back on the next animation frame, or after a quarter second if none comes: hidden tabs
-     * get no animation frames, and the game (its integrated server too) would stop. Their timers,
-     * throttled to about once a second, keep it going.
+     * get no animation frames, and the game would stop. A hidden page's own timers are held to a
+     * wake-up a second, then a minute, too few to answer a server's keep-alives, so while hidden the
+     * quarter second is timed by the page's worker timer ({@code window.incariTimer}, app-web's
+     * {@code wakeups.ts}) where there is one.
      */
     @JSBody(
             params = "callback",
-            script = "var done = false, timer = 0;"
-                    + "function run() { if (done) return; done = true; clearTimeout(timer);"
+            script = "var done = false, cancel = null;"
+                    + "function run() { if (done) return; done = true; if (cancel) cancel();"
                     + "  var frames = window.__incariFrames; if (frames) frames.begin();"
                     + "  callback(); if (frames) frames.returned(); }"
-                    + "requestAnimationFrame(run); timer = setTimeout(run, 250);")
+                    + "requestAnimationFrame(run); var fb = window.incariFallback, tm = fb ? 0 : setTimeout(run, 250);"
+                    + "cancel = fb ? fb(run, 250) : function() { clearTimeout(tm); };")
     private static native void requestAnimationFrame(FrameCallback callback);
 
     /**
@@ -89,7 +92,10 @@ final class Dom {
      * the runner turns on.
      */
     @JSBody(
-            script = "var f = { start: 0, ended: true, waited: false, frames: 0, waiting: 0, slow: 0, slowWaiting: 0,"
+            script = "window.incariFallback = function(run, delay) { var t = window.incariTimer;"
+                    + "  if (document.hidden && t) { var id = t.set(run, delay); return function() { t.clear(id); }; }"
+                    + "  var timer = setTimeout(run, delay); return function() { clearTimeout(timer); }; };"
+                    + "var f = { start: 0, ended: true, waited: false, frames: 0, waiting: 0, slow: 0, slowWaiting: 0,"
                     + " worst: 0, worstWaiting: 0, waitMillis: 0, waitStalls: 0, worstWait: 0, last: null,"
                     + " columns: " + FRAME_COLUMNS + ", capacity: " + FRAME_ROWS + ", count: 0, lastEnd: 0,"
                     + " sample: null, marks: {}, heap: 0, collections: 0, idle: 0, late: 0 };"
@@ -289,8 +295,8 @@ final class Dom {
                             + "      first ? 8 : 1); } return; }"
                             + "  s.helped = false;"
                             + "  if (s.scheduled) return; s.scheduled = true;"
-                            + "  var done = false, timer = 0;"
-                            + "  function run(time) { if (done) return; done = true; clearTimeout(timer);"
+                            + "  var done = false, cancel = null;"
+                            + "  function run(time) { if (done) return; done = true; if (cancel) cancel();"
                             + "    if (typeof time === 'number') {"
                             // The display's interval, from the steps between animation frames. Only a step
                             // near one interval counts: the pool asks for a slot only when it has work, so
@@ -301,7 +307,8 @@ final class Dom {
                             + "        s.interval += (step - s.interval) * 0.1;"
                             + "      s.previous = time; s.frame = time; } else { s.frame = performance.now(); }"
                             + "    channel.port2.postMessage(0); }"
-                            + "  requestAnimationFrame(run); timer = setTimeout(run, 250); };"
+                            + "  requestAnimationFrame(run); var fb = window.incariFallback, tm = fb ? 0 : setTimeout(run, 250);"
+                            + "  cancel = fb ? fb(run, 250) : function() { clearTimeout(tm); }; };"
                             + "(window.__incariIdleSlots = window.__incariIdleSlots || []).push(s);"
                             + "return s;")
     private static native JSObject createIdleSlot();
@@ -425,6 +432,19 @@ final class Dom {
                     "var p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';"
                             + "return /^mac/i.test(p);")
     static native boolean isMac();
+
+    /**
+     * Whether F then a digit types a function key ({@code DomEventQueue}): on ChromeOS, whose
+     * keyboards have no function row the game can use, and nowhere else, where it would hold back
+     * F (swap hands) until it's released. {@code ?fchord=on} or {@code off} in the page's address
+     * overrides it.
+     */
+    @JSBody(
+            script = "var q = null; try { q = new URLSearchParams(location.search).get('fchord'); } catch (e) {}"
+                    + "if (q === 'on') return true; if (q === 'off') return false;"
+                    + "var p = (navigator.userAgentData && navigator.userAgentData.platform) || '';"
+                    + "return /^chrome ?os$/i.test(p) || /\\bCrOS\\b/.test(navigator.userAgent || '');")
+    static native boolean functionKeyChords();
 
     // --- Shell -------------------------------------------------------------------------------
 
@@ -557,6 +577,13 @@ final class Dom {
                     + "    case 'wheel': return true;"
                     + "  } return false; }\n"
                     + "canvas.__incariSink = sink;\n"
+                    // The page may be closed with no game frame to come: what must happen then
+                    // (singleplayer's server saving) is registered in window.__incariOnLeave by the
+                    // channels (JsChannel) and run straight from these listeners, at most once a second.
+                    + "var lastLeave = 0;"
+                    + "function leaving() { var now = Date.now(); if (now - lastLeave < 1000) return; lastLeave = now;"
+                    + "  var hooks = window.__incariOnLeave || [];"
+                    + "  for (var i = 0; i < hooks.length; i++) { try { hooks[i](); } catch (err) {} } }\n"
                     + "function flags(e) { var m = e.getModifierState ? function(k) { return e.getModifierState(k); }"
                     + " : function() { return false; };"
                     + " return (e.shiftKey ? 1 : 0) | (e.ctrlKey ? 2 : 0) | (e.altKey ? 4 : 0) | (e.metaKey ? 8 : 0)"
@@ -599,6 +626,7 @@ final class Dom {
                     // Hiding the tab counts as losing focus (DomEventQueue); showing it again gives
                     // focus back only if the page has it, which no focus event may announce.
                     + "document.addEventListener('visibilitychange', function() {"
+                    + "  if (document.hidden) leaving();"
                     + "  sink('visibility', '', '', document.hidden ? 1 : 0, 0, 0, 0, 0, 0);"
                     + "  if (!document.hidden && document.hasFocus && document.hasFocus())"
                     + "    sink('focus', '', '', 0, 0, 0, 0, 0, 0); });\n"
@@ -647,8 +675,9 @@ final class Dom {
                     // Closing the tab by accident while playing (Ctrl+W is sprint and walk) asks
                     // first. Only while the game holds the mouse (setLeaveGuard): a browser asks
                     // only after the player has used the page anyway.
-                    + "window.addEventListener('beforeunload', function(e) {"
+                    + "window.addEventListener('beforeunload', function(e) { leaving();"
                     + "  if (canvas.__incariGuard) { e.preventDefault(); e.returnValue = ''; } });\n"
+                    + "window.addEventListener('pagehide', function() { leaving(); });\n"
                     + "document.addEventListener('pointerlockchange', function() {"
                     + "  sink('lock', '', '', document.pointerLockElement === canvas ? 1 : 0, 0, 0, 0, 0, 0); });\n"
                     + "document.addEventListener('pointerlockerror', function() {"

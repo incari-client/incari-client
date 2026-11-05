@@ -49,6 +49,24 @@ class JournalTest {
     }
 
     @Test
+    void aFileTheStoreFailedToKeepIsSentWholeAgain() throws IOException {
+        files.load("/incari/game/r.0.0.mca", false, 1, bytes("0123456789"));
+        VirtualFileAccessor region = files.getFile("/incari/game/r.0.0.mca").createAccessor(true, true, false);
+        region.seek(2);
+        region.write(bytes("ab"), 0, 2);
+        files.collectChanges();
+        // That range never reached the store: what's sent now must cover it too.
+        files.resend("/incari/game/r.0.0.mca");
+        assertThat(describe(files.collectChanges())).containsExactly("write /incari/game/r.0.0.mca 10 @0 01ab456789");
+    }
+
+    @Test
+    void aDeleteTheStoreFailedToKeepIsSentAgain() throws IOException {
+        files.resend("/incari/game/gone.txt");
+        assertThat(describe(files.collectChanges())).containsExactly("delete /incari/game/gone.txt");
+    }
+
+    @Test
     void writesFarApartAreSentApart() throws IOException {
         // A region file's write: the chunk's offset in the header, then its sectors much further on.
         files.load("/incari/game/r.0.0.mca", false, 1, new byte[20_000]);

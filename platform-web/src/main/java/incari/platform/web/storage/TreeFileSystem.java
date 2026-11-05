@@ -380,6 +380,14 @@ public final class TreeFileSystem implements VirtualFileSystem {
         return files;
     }
 
+    /**
+     * Marks {@code path} changed as a whole, so the next {@link #collectChanges} sends all of it
+     * (or its deletion, if it's gone): the store failed to keep its last change.
+     */
+    void resend(String path) {
+        journal.reshaped(path);
+    }
+
     /** The changes to persist since the last call. */
     List<StoreOp> collectChanges() {
         return journal.collect(this);

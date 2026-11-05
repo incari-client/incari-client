@@ -193,6 +193,8 @@ public final class WorkerWorlds {
                             files == null ? new byte[0] : files)
                     .encode();
             channel.send(WorldMessages.START, start, 0, start.length);
+            // A page closed or hidden mid-game saves the world: the page tells the worker itself.
+            channel.sendWhenLeaving(WorldMessages.SAVE);
         } catch (IOException | RuntimeException e) {
             LOGGER.error("Couldn't hand the world to singleplayer's server in a worker", e);
             channel.close();

@@ -30,6 +30,10 @@ every call first (ADR 0007). Every vanilla pipeline runs (ADR 0012). The browser
 - **Uploads bind on the last texture unit**, so draw bindings stay cached.
 - **Only terrain draws indirectly, one instance per draw.** The multi-draw path relies on it.
 - **Depends only on the game's render API, `incari.client.render` and TeaVM JSO** (`BoundaryTest`).
+- **A lost context isn't rebuilt.** The game keeps no copies of what it put on the GPU. `WebGl`
+  cancels `webglcontextlost`, shows a "reload the page" box, and tells platform-web through the
+  canvas's event sink, which reports the window minimized (no drawing, 10 frames a second, the world
+  saved). The surface reports the loss to the game once, not every frame.
 
 ## Debugging
 

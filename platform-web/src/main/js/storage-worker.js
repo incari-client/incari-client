@@ -7,7 +7,9 @@
 // Runs as a classic worker created from a Blob URL (platform-web's BrowserStore), so the page needs
 // no extra file. Messages, each answered with the same `id` except "apply" (fire and forget):
 //   {type: "open", id, root, lock, inPlace?} -> {id, backend, readOnly, entries, error?}
-//   {type: "apply", ops}            -> {type: "applied", count, error?}
+//   {type: "apply", ops}            -> {type: "applied", count, error?, failed}
+//                                      (failed: the paths not stored, which the page sends again
+//                                      whole; the batch's other changes are stored all the same)
 //   {type: "jar", id, url, key}     -> {id, data?, cached, error?}
 //   {type: "forget", id, key}       -> {id}
 //   {type: "read", id, path}        -> {id, data: ArrayBuffer | null}
@@ -56,12 +58,26 @@ function isInPlace(inPlace, path) {
  * @property {string} kind "opfs" or "indexeddb" (or "memory": nothing survives)
  * @property {(root: string, inPlace: InPlace | null) => Promise<Entry[]>} load everything under a folder
  * @property {(root: string) => Promise<Entry[]>} stat everything under a folder: sizes, no bytes
- * @property {(ops: Op[]) => Promise<void>} apply
+ * @property {(ops: Op[]) => Promise<Applied>} apply
  * @property {(key: string) => Promise<ArrayBuffer | null>} cached
  * @property {(key: string, data: ArrayBuffer) => Promise<void>} cache replaces the whole cache
  * @property {(key: string) => Promise<void>} forget
  * @property {(path: string) => Promise<ArrayBuffer | null>} read one file
  */
+
+/**
+ * What applying a batch did: the paths whose change wasn't stored, and why the first one wasn't.
+ * @typedef {{failed: string[], error: string | null}} Applied
+ */
+
+/**
+ * The paths a batch changes, each once: all of them failed when a batch is stored whole or not at all.
+ * @param {Op[]} ops
+ * @returns {string[]}
+ */
+function pathsOf(ops) {
+  return [...new Set(ops.map((op) => op.path))];
+}
 
 /**
  * The parts of a synchronous access handle this worker uses (lib.dom doesn't declare it).
@@ -262,39 +278,53 @@ function opfsBackend(root) {
     load: (rootPath, inPlace) => loadUnder(rootPath, (path) => isInPlace(inPlace, path)),
     stat: (rootPath) => loadUnder(rootPath, () => true),
     async apply(ops) {
+      // Each change on its own: one that fails (a full disk, a file held open elsewhere) mustn't
+      // keep the rest of the batch from being stored. The page sends a failed path again, whole:
+      // its writes are only the bytes that changed, and a range lost here would leave the file
+      // damaged for good.
+      /** @type {Applied} */
+      const result = { failed: [], error: null };
       for (let i = 0; i < ops.length; i++) {
         const op = /** @type {Op} */ (ops[i]);
         const names = parts(op.path);
-        if (op.op === "mkdir") {
-          await folder(names, true);
-        } else if (op.op === "write") {
-          // The file's next writes in this batch go through the same handle.
-          const writes = [{ at: op.at, data: op.data }];
-          let size = op.size;
-          for (let next = ops[i + 1]; next?.op === "write" && next.path === op.path; next = ops[i + 1]) {
-            writes.push({ at: next.at, data: next.data });
-            size = next.size;
-            i++;
-          }
-          const name = names.pop();
-          const directory = await folder(names, true);
-          if (directory && name !== undefined) {
-            await writeInto(await fileIn(directory, name), size, writes);
-          }
-        } else {
-          const name = names.pop();
-          const directory = await folder(names, false);
-          if (directory && name !== undefined) {
-            try {
-              await directory.removeEntry(name, { recursive: true });
-            } catch (error) {
-              if (!isError(error, "NotFoundError")) {
-                throw error;
+        try {
+          if (op.op === "mkdir") {
+            await folder(names, true);
+          } else if (op.op === "write") {
+            // The file's next writes in this batch go through the same handle.
+            const writes = [{ at: op.at, data: op.data }];
+            let size = op.size;
+            for (let next = ops[i + 1]; next?.op === "write" && next.path === op.path; next = ops[i + 1]) {
+              writes.push({ at: next.at, data: next.data });
+              size = next.size;
+              i++;
+            }
+            const name = names.pop();
+            const directory = await folder(names, true);
+            if (directory && name !== undefined) {
+              await writeInto(await fileIn(directory, name), size, writes);
+            }
+          } else {
+            const name = names.pop();
+            const directory = await folder(names, false);
+            if (directory && name !== undefined) {
+              try {
+                await directory.removeEntry(name, { recursive: true });
+              } catch (error) {
+                if (!isError(error, "NotFoundError")) {
+                  throw error;
+                }
               }
             }
           }
+        } catch (error) {
+          if (!result.failed.includes(op.path)) {
+            result.failed.push(op.path);
+          }
+          result.error ??= describe(error);
         }
       }
+      return result;
     },
     async cached(key) {
       return readFile(`/${CACHE_FOLDER}/${key}`);
@@ -465,7 +495,13 @@ async function indexedDbBackend(factory, keyRange) {
           files.delete(below(op.path));
         }
       }
-      await finished;
+      try {
+        await finished;
+      } catch (error) {
+        // One transaction: none of it was stored.
+        return { failed: pathsOf(ops), error: describe(error) };
+      }
+      return { failed: [], error: null };
     },
     async cached(key) {
       const data = /** @type {ArrayBuffer | undefined} */ (
@@ -507,7 +543,7 @@ function memoryBackend() {
     kind: "memory",
     load: () => Promise.resolve([]),
     stat: () => Promise.resolve([]),
-    apply: () => Promise.resolve(),
+    apply: () => Promise.resolve({ failed: [], error: null }),
     cached: () => Promise.resolve(null),
     cache: () => Promise.resolve(),
     forget: () => Promise.resolve(),
@@ -626,11 +662,17 @@ function serve(scope) {
         if (readOnly) {
           return;
         }
+        /** @type {Applied} */
+        let applied;
         try {
-          await backend.apply(ops);
-          from.postMessage({ type: "applied", count: ops.length }, []);
+          applied = await backend.apply(ops);
         } catch (error) {
-          from.postMessage({ type: "applied", count: ops.length, error: describe(error) }, []);
+          applied = { failed: pathsOf(ops), error: describe(error) };
+        }
+        if (applied.error === null) {
+          from.postMessage({ type: "applied", count: ops.length, failed: [] }, []);
+        } else {
+          from.postMessage({ type: "applied", count: ops.length, error: applied.error, failed: applied.failed }, []);
         }
         return;
       }

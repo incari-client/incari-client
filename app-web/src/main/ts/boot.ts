@@ -8,7 +8,14 @@
  */
 import { detectFeatures } from "./features.ts";
 import { createJspiImports, supportsJspi } from "./jspi.ts";
-import { createAsyncImports } from "./wakeups.ts";
+import {
+  createAsyncImports,
+  createPageAsyncImports,
+  createPageTimer,
+  pageWakeupScope,
+  startTimerWorker,
+  type PageTimer,
+} from "./wakeups.ts";
 import {
   buildFor,
   buildName,
@@ -64,6 +71,11 @@ interface IncariWindow {
     program?: { runtime: string; module: string; jspi: boolean };
   };
   TeaVM?: TeaVmRuntime;
+  /**
+   * A timer a hidden page still gets on time (wakeups.ts): platform-web's frames and background
+   * pool fall back on it while the page is hidden.
+   */
+  incariTimer?: PageTimer;
   /** The single-file page's embedded files (offline.ts): where a script of theirs loads from. */
   incariFiles?: { base: string; url(href: string): string };
 }
@@ -286,6 +298,15 @@ async function startBuild(manifest: BuildManifest, kind: BuildKind, target: Wasm
   // The Fast build suspends through JSPI (jspi.ts); Compatible imports none of it. Given wherever the
   // browser has JSPI, so an experiment's Fast build (no manifest to say so) runs too.
   const jspi = supportsJspi() ? createJspiImports(fail) : null;
+  // A hidden page's own timers are held to a wake-up a second, then a minute (Chrome, after five
+  // minutes hidden and silent): too few to answer a server's keep-alives. While hidden, the game's
+  // threads wake through a channel and a worker's timer instead (wakeups.ts); `?wakeups=timers`
+  // keeps TeaVM's own timers throughout.
+  const timerWorker = options.get("wakeups") === "timers" ? null : startTimerWorker();
+  const pageTimer = timerWorker === null ? null : createPageTimer(timerWorker);
+  if (pageTimer !== null) {
+    page.incariTimer = pageTimer;
+  }
   if (page.incariBuild !== undefined) {
     page.incariBuild.program = { runtime: versioned(manifest, target.runtime), module: moduleUrl, jspi: jspi !== null };
   }
@@ -297,9 +318,12 @@ async function startBuild(manifest: BuildManifest, kind: BuildKind, target: Wasm
           imports.teavmJspi = jspi.module;
         }
         // Threads woken without the browser's 4 ms timer clamp (wakeups.ts), as in singleplayer's
-        // worker; on the page only when asked, until the page's frames are measured with it.
+        // worker; on the page always only when asked, until the page's frames are measured with
+        // it, and otherwise only while the page is hidden.
         if (options.get("wakeups") === "channel") {
           imports.teavmAsync = createAsyncImports();
+        } else if (pageTimer !== null) {
+          imports.teavmAsync = createPageAsyncImports(pageWakeupScope(pageTimer));
         }
       },
     }),

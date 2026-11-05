@@ -20,6 +20,7 @@ This is the audit of every blocking call (ADR 0015 has the decisions). Each buil
 | **A waiting render thread gets the pool at once** | Slots run immediately, 4 ms at a time, until the frame ends |
 | **Woken threads skip the 4 ms timer clamp** | The server worker schedules through a `MessageChannel` (`wakeups.ts`, ADR 0040) |
 | **The page paces frames, not sleeps** | The frame limiter's sleep is replaced by waiting for animation frames (`Platform.limitFrameRate`) |
+| **A hidden page keeps time in a worker** | Hidden, its threads wake and its frames come from a worker's timer, not the page's throttled ones (`wakeups.ts`, ADR 0072) |
 | **Stalls are counted** | The frame monitor (`window.__incariFrames`) counts frames where the render thread waited; `Waits` prints the stack of any wait of 50 ms or more |
 | **The gate** | `browser-checks/soak.steps`: 30 minutes over fresh terrain with no render-thread wait of 50 ms |
 

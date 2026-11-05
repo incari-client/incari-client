@@ -16,12 +16,12 @@ patches call. It's one compilation because the calls go both ways (ARCHITECTURE.
 
 | Package | What it holds |
 | --- | --- |
-| `platform` | Hooks the patches call into the installed platform: window, input, lifecycle, graphics backends |
+| `platform` | Hooks the patches call into the installed platform: window, input, lifecycle, graphics backends; `PlatformNotices` shows the platform's notices (saves not kept) and, once, the browser's Ctrl+W hint |
 | `net` | Joining servers: WebSocket addresses (ADR 0009), each join's pipeline and the server's version (`ServerConnections`, `VersionRetry`, `JoinFailures`; Via off unless turned on per server, on the edit-server screen or Direct Connect (`DirectJoinVia`), with `ViaHint` on a refusal (not for featured servers) and "Needs Via" in the list for an Eagler server known to run another version; ADR 0017, 0018, 0071), the packet handoff (ADR 0033), featured servers (ADR 0062), Reconnect and Auto Reconnect on the disconnection screen (`Reconnect`) |
 | `eagler`, `skins` | Eagler servers' extras: passwords, cookies, redirects, voice chat (ADR 0019), Eagler skins (ADR 0016) |
 | `relay` | Worlds shared through Eagler relays, joined and hosted (ADR 0019, 0062) |
 | `legacy` | Playing older servers as their clients did, 1.8 above all (ADR 0020) |
-| `singleplayer` | Singleplayer's server in a Web Worker (ADR 0039 to 0043) |
+| `singleplayer` | Singleplayer's server in a Web Worker (ADR 0039 to 0043); it saves when the page is hidden or closed (`SAVE`, posted by the page itself) |
 | `audio`, `resources` | Sounds through the platform's decoder (ADR 0013); resources fetched from the asset index (ADR 0037) |
 | `render`, `gui`, `particle`, `world` | Performance work in the game's own paths (ADR 0022 to 0034) |
 | `memory`, `datafix`, `startup`, `tier` | The memory diet (ADR 0025), start-up (ADR 0026), the device's quality tier |

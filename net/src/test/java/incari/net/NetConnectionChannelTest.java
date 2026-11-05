@@ -12,6 +12,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.local.LocalIoHandler;
@@ -107,6 +109,33 @@ class NetConnectionChannelTest {
         assertThat(connect.channel().closeFuture().await(5, TimeUnit.SECONDS)).isTrue();
     }
 
+    @Test
+    void aConnectThatNeverAnswersTimesOut() throws Exception {
+        network.silent = true;
+
+        ChannelFuture connect = bootstrap(new CompletableFuture<>())
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 200)
+                .connect(InetSocketAddress.createUnresolved("127.0.0.1", 1));
+
+        assertThat(connect.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(connect.cause()).isInstanceOf(ConnectTimeoutException.class);
+        assertThat(connect.channel().closeFuture().await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(network.closedByUs).isTrue();
+    }
+
+    @Test
+    void aConnectThatOpensInTimeStaysOpen() throws Exception {
+        ChannelFuture connect = bootstrap(new CompletableFuture<>())
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 200)
+                .connect(InetSocketAddress.createUnresolved("127.0.0.1", 1));
+        assertThat(connect.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(connect.isSuccess()).isTrue();
+
+        Thread.sleep(400);
+
+        assertThat(connect.channel().isActive()).isTrue();
+    }
+
     private Bootstrap bootstrap(CompletableFuture<String> reply) {
         return new Bootstrap()
                 .group(loop)
@@ -143,6 +172,9 @@ class NetConnectionChannelTest {
     private static final class EchoNetwork implements PlatformNetwork {
         final List<String> opened = new CopyOnWriteArrayList<>();
         volatile boolean refuse;
+        /** Neither opens nor fails, like a server behind a firewall that drops packets. */
+        volatile boolean silent;
+
         volatile boolean closedByUs;
         private volatile NetConnection.@Nullable Listener listener;
 
@@ -161,6 +193,9 @@ class NetConnectionChannelTest {
         private NetConnection start(NetConnection.Listener listener) {
             this.listener = listener;
             Thread.ofVirtual().start(() -> {
+                if (silent) {
+                    return;
+                }
                 if (refuse) {
                     listener.closed(new ConnectException("refused"));
                 } else {

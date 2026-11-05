@@ -1,8 +1,11 @@
 package incari.platform.web.storage;
 
+import incari.platform.api.PlatformNotice;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 import org.teavm.jso.JSBody;
@@ -19,6 +22,10 @@ import org.teavm.runtime.fs.VirtualFileSystemProvider;
  * <p>Writes are stored within a frame: {@link #flush}, once a frame, sends the changes to the
  * worker. The game's save points (options, the server list, a world's save) are ordinary writes
  * and renames. A page closed mid-frame loses what that frame wrote.
+ *
+ * <p>A change the store couldn't keep (a full disk) is sent again, whole, a few seconds later: the
+ * store is sent only the bytes that changed, and a range lost would leave the file damaged. That
+ * saving fails, or can't happen at all, is told to the player ({@link #takeNotice}).
  */
 public final class WebFileSystem {
 
@@ -46,6 +53,18 @@ public final class WebFileSystem {
     private final List<StoreOp> pending = new ArrayList<>();
     /** In a worker's copy: whether the world it was handed was left in place (ADR 0041). */
     private boolean inPlaceSession;
+
+    /** How long a change the store couldn't keep waits before it's sent again, in milliseconds. */
+    private static final double RETRY_MILLIS = 5000;
+
+    /** Paths whose change the store couldn't keep, to send again whole at {@link #retryAt}. */
+    private final Set<String> failedPaths = new LinkedHashSet<>();
+
+    private double retryAt;
+    /** Notices for the player, oldest first ({@link #takeNotice}). */
+    private final List<PlatformNotice> notices = new ArrayList<>();
+    /** Saving failed and the player was told; cleared once a batch is stored whole again. */
+    private boolean failureReported;
 
     private WebFileSystem(
             TreeFileSystem tree, @Nullable JSObject store, boolean detached, String backend, boolean readOnly) {
@@ -221,8 +240,10 @@ public final class WebFileSystem {
         if (!BrowserStore.locked(reply)) {
             warn("[Incari] Storage: the game is open in another tab, which keeps its files; nothing this tab "
                     + "changes will be saved.");
+            files.notices.add(PlatformNotice.SAVES_HELD_ELSEWHERE);
         } else if (backend.equals("memory")) {
             warn("[Incari] Storage: this browser offers the page no storage; nothing will be saved.");
+            files.notices.add(PlatformNotice.SAVES_UNAVAILABLE);
         }
         return files;
     }
@@ -238,6 +259,9 @@ public final class WebFileSystem {
      */
     public void flush() {
         JSObject storage = store;
+        if (storage != null && !readOnly) {
+            retryFailed(storage);
+        }
         if (tree.hasChanges()) {
             List<StoreOp> ops = tree.collectChanges();
             if (storage == null) {
@@ -255,6 +279,41 @@ public final class WebFileSystem {
             lastProblem = problem;
             warn("[Incari] Storage: " + problem);
         }
+        if (problem != null && !failureReported && !detached) {
+            failureReported = true;
+            notices.add(PlatformNotice.SAVE_FAILED);
+        } else if (failureReported && failedPaths.isEmpty() && BrowserStore.lastBatchStored(storage)) {
+            // Saving works again: a later failure is news.
+            failureReported = false;
+            lastProblem = null;
+        }
+    }
+
+    /**
+     * Collects the paths the store reported it couldn't keep, and once their wait is over marks them
+     * changed in the tree, so this flush sends them again whole (or deletes them, if they're gone).
+     * Hot path: allocates nothing while nothing failed.
+     */
+    private void retryFailed(JSObject storage) {
+        String path;
+        while ((path = BrowserStore.takeFailedPath(storage)) != null) {
+            if (failedPaths.isEmpty()) {
+                retryAt = now() + RETRY_MILLIS;
+            }
+            failedPaths.add(path);
+        }
+        if (failedPaths.isEmpty() || now() < retryAt) {
+            return;
+        }
+        for (String failed : failedPaths) {
+            tree.resend(failed);
+        }
+        failedPaths.clear();
+    }
+
+    /** The oldest notice for the player not yet taken, or null. The page's thread, once a frame. */
+    public @Nullable PlatformNotice takeNotice() {
+        return notices.isEmpty() ? null : notices.remove(0);
     }
 
     private static void send(JSObject store, List<StoreOp> ops) {

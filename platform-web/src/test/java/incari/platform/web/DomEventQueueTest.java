@@ -20,7 +20,8 @@ import org.junit.jupiter.api.Test;
 class DomEventQueueTest {
 
     private final FakeSurface surface = new FakeSurface();
-    private final DomEventQueue queue = new DomEventQueue(surface, new CanvasSize(800, 600, 1600, 1200, 2), false);
+    private final DomEventQueue queue =
+            new DomEventQueue(surface, new CanvasSize(800, 600, 1600, 1200, 2), false, true);
 
     // --- Keys ---
 
@@ -32,6 +33,29 @@ class DomEventQueueTest {
     }
 
     // --- F+digit function keys (Chromebooks) ---
+
+    @Test
+    void withoutChordsFIsReportedAtOnce() {
+        DomEventQueue plain = new DomEventQueue(surface, new CanvasSize(800, 600, 800, 600, 1), false, false);
+        plain.event("keydown", "KeyF", "f", 0, 0, 0, 0, 0, 0);
+        assertThat(drain(plain)).containsExactly("key 9 102 0 PRESS");
+        plain.event("keydown", "Digit3", "3", 0, 0, 0, 0, 0, 0);
+        plain.event("keyup", "Digit3", "3", 0, 0, 0, 0, 0, 0);
+        plain.event("keyup", "KeyF", "f", 0, 0, 0, 0, 0, 0);
+        assertThat(drain(plain)).containsExactly("key 32 51 0 PRESS", "key 32 51 0 RELEASE", "key 9 102 0 RELEASE");
+    }
+
+    // --- Lost graphics ---
+
+    @Test
+    void lostGraphicsKeepTheWindowMinimized() {
+        queue.event("graphics", "", "", 1, 0, 0, 0, 0, 0);
+        queue.event("visibility", "", "", 1, 0, 0, 0, 0, 0);
+        queue.event("visibility", "", "", 0, 0, 0, 0, 0, 0);
+        assertThat(drain())
+                .filteredOn(e -> e.startsWith("minimized"))
+                .containsExactly("minimized true", "minimized true", "minimized true");
+    }
 
     @Test
     void fThenDigitIsAFunctionKey() {
@@ -408,7 +432,7 @@ class DomEventQueueTest {
 
     @Test
     void commandReleasesKeysOnMac() {
-        DomEventQueue mac = new DomEventQueue(surface, new CanvasSize(800, 600, 800, 600, 1), true);
+        DomEventQueue mac = new DomEventQueue(surface, new CanvasSize(800, 600, 800, 600, 1), true, true);
         mac.event("keydown", "MetaLeft", "Meta", 0, 0, 0, 0, 0, DOM_META);
         mac.event("keydown", "KeyC", "c", 0, 0, 0, 0, 0, DOM_META);
         mac.event("keyup", "MetaLeft", "Meta", 0, 0, 0, 0, 0, 0);

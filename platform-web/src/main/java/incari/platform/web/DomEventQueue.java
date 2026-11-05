@@ -68,6 +68,11 @@ final class DomEventQueue {
      * browser drops those keyups, so they're released when Command is.
      */
     private final boolean metaSwallowsKeyUps;
+    /**
+     * Whether F then a digit types a function key ({@link #chord}): on ChromeOS, whose keyboards
+     * have no function row the game can use. Elsewhere F is reported the moment it goes down.
+     */
+    private final boolean functionKeyChords;
 
     private final ArrayDeque<Event> pending = new ArrayDeque<>();
     private final boolean[] keysDown = new boolean[Scancodes.COUNT];
@@ -108,6 +113,15 @@ final class DomEventQueue {
     private boolean composing;
 
     private boolean focused = true;
+    /** The tab is hidden ("visibility"). */
+    private boolean hidden;
+    /**
+     * The WebGL context was lost ("graphics", sent by render-webgl2's {@code WebGl}): the canvas
+     * can't be drawn again, so the game is told its window is minimized, which stops it drawing
+     * and holds it to a few frames a second until the page is reloaded.
+     */
+    private boolean graphicsLost;
+
     private boolean textInput;
 
     /** Whether the game wants relative mouse mode; {@link #pointerLocked} is whether it has it. */
@@ -132,9 +146,10 @@ final class DomEventQueue {
     private CanvasSize latest;
     private boolean sizeReportForced;
 
-    DomEventQueue(Surface surface, CanvasSize initialSize, boolean metaSwallowsKeyUps) {
+    DomEventQueue(Surface surface, CanvasSize initialSize, boolean metaSwallowsKeyUps, boolean functionKeyChords) {
         this.surface = surface;
         this.metaSwallowsKeyUps = metaSwallowsKeyUps;
+        this.functionKeyChords = functionKeyChords;
         this.applied = initialSize;
         this.latest = initialSize;
         surface.setBackingSize(initialSize.pixelWidth(), initialSize.pixelHeight());
@@ -180,14 +195,24 @@ final class DomEventQueue {
                 yield false;
             }
             case "visibility" -> {
-                boolean hidden = a != 0;
+                hidden = a != 0;
                 if (hidden && focused) {
                     // A hidden tab can't be played. Browsers usually send blur first, but not in
                     // every case (some systems minimize without it): release everything and let
                     // the game pause, as it does when focus leaves.
                     blur();
                 }
-                add(Event.window(Kind.MINIMIZED, hidden));
+                add(Event.window(Kind.MINIMIZED, hidden || graphicsLost));
+                yield false;
+            }
+            case "graphics" -> {
+                boolean lost = a != 0;
+                if (lost && !graphicsLost) {
+                    graphicsLost = true;
+                    add(Event.window(Kind.MINIMIZED, true));
+                }
+                // A restored context doesn't bring back what was on the GPU: the page must be
+                // reloaded, so the game stays minimized.
                 yield false;
             }
             case "enter" -> {
@@ -271,8 +296,8 @@ final class DomEventQueue {
     }
 
     /**
-     * Chromebooks have no function row keys the game can use, so F then a digit types the function
-     * key: F+3 is F3, F+5 is F5, and F+3+H is F3+H (F+1..9 are F1..F9, F+0 is F10). Not while
+     * On ChromeOS ({@link #functionKeyChords}), whose keyboards have no function row keys the game
+     * can use, F then a digit types the function key: F+3 is F3, F+5 is F5, and F+3+H is F3+H (F+1..9 are F1..F9, F+0 is F10). Not while
      * typing text, where "f3" is just text.
      *
      * <p>F alone still presses F, but only when it's released or another key goes down, because the
@@ -282,6 +307,9 @@ final class DomEventQueue {
      * @return whether the queue handled the key, so the caller must not report it as it came
      */
     private boolean chord(boolean down, int scancode, int keyCode, KeyAction action, int flags) {
+        if (!functionKeyChords) {
+            return false;
+        }
         boolean plain = (flags & (DOM_CTRL | DOM_ALT | DOM_META | DOM_ALT_GRAPH)) == 0;
         if (scancode == CHORD_KEY) {
             if (down) {

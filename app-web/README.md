@@ -44,6 +44,8 @@ and serve the page's files directly.
 | `?profile`, `?overlay` | Profiler collecting from the start; its overlay (F9 in game) |
 | `?tier=`, `?particles=` | Force a quality tier |
 | `?sw=off` | No service worker (and unregister it) |
+| `?wakeups=channel` / `timers` | The game's threads always wake through a `MessageChannel`; or always on the page's own timers. By default they use the page's timers while visible and a worker's timer while hidden, so a background tab still answers servers (ADR 0072) |
+| `?fchord=on` / `off` | F then a digit as a function key; on by default only on ChromeOS |
 | `?renderer=headless` | Run the game loop without drawing |
 | `?shaders=eager` | Link every WebGL program at start-up |
 | `?multidraw=off`, `?drawcensus`, `?gpucensus` | Compare terrain drawing; count draws |

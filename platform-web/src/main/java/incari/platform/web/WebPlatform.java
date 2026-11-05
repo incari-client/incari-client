@@ -3,6 +3,7 @@ package incari.platform.web;
 import incari.platform.api.AppInfo;
 import incari.platform.api.NativeSurfaceFactory;
 import incari.platform.api.Platform;
+import incari.platform.api.PlatformNotice;
 import incari.platform.api.PlatformRecorder;
 import incari.platform.api.PlatformShell;
 import incari.platform.api.audio.PlatformAudio;
@@ -175,7 +176,7 @@ public final class WebPlatform implements Platform {
         CanvasWindow canvasWindow = new CanvasWindow(Dom.canvas(CANVAS_ID));
         JSObject canvas = canvasWindow.canvas();
         CanvasSize size = CanvasSize.initial(Dom.cssWidth(canvas), Dom.cssHeight(canvas), Dom.devicePixelRatio());
-        DomEventQueue queue = new DomEventQueue(canvasWindow, size, Dom.isMac());
+        DomEventQueue queue = new DomEventQueue(canvasWindow, size, Dom.isMac(), Dom.functionKeyChords());
         canvasWindow.connect(queue);
         Dom.listen(canvas, DomEventQueue::consumesKey);
         Dom.listenTextInput(canvas);
@@ -212,6 +213,10 @@ public final class WebPlatform implements Platform {
         DomEventQueue queue = requireInitialized(events);
         takeQueued(queue);
         queue.drainTo(listener);
+        PlatformNotice notice;
+        while ((notice = files.takeNotice()) != null) {
+            listener.notice(notice);
+        }
         // Network callbacks queue in the page like input does; the game's thread delivers them.
         network.deliver();
         rtc.deliver();
