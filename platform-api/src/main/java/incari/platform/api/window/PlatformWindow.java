@@ -90,6 +90,13 @@ public interface PlatformWindow extends AutoCloseable {
      */
     void setRelativeMouseMode(boolean enabled);
 
+    /**
+     * Whether closing the window now would lose the player's game (they're in a world): a browser
+     * then asks before the page is closed or reloaded, as it already does while the mouse is held.
+     * Cheap to call every frame with the same value. The desktop ignores it.
+     */
+    default void setLeaveWarning(boolean warn) {}
+
     /** Moves the cursor to a position in window coordinates. Ignored where not allowed. */
     void warpMouse(double x, double y);
 

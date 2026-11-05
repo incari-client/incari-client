@@ -292,6 +292,13 @@ public final class WorldWorker {
                         running.setClientPaused(message.bytes().length > 0 && message.bytes()[0] != 0);
                     }
                 }
+                case WorldMessages.SAVE -> {
+                    if (running != null) {
+                        // As the integrated server does when the game pauses; the files go to the
+                        // storage worker straight from here (ADR 0041), so the page needn't run.
+                        running.execute(() -> running.saveEverything(true, false, false));
+                    }
+                }
                 case WorldMessages.DISTANCES -> {
                     if (running != null) {
                         running.setDistances(

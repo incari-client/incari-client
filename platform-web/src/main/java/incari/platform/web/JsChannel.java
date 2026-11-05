@@ -65,6 +65,17 @@ final class JsChannel implements PlatformChannel {
         closeChannel(channel);
     }
 
+    @Override
+    public void sendWhenLeaving(int kind) {
+        sendOnLeave(channel, kind);
+    }
+
+    /** Registers the channel's leave message with the page's listeners ({@code Dom.listen}). */
+    @JSBody(
+            params = {"channel", "kind"},
+            script = "if (channel.onLeave) channel.onLeave(kind);")
+    private static native void sendOnLeave(JSObject channel, int kind);
+
     private static @Nullable Message message(@Nullable JSObject envelope) {
         if (envelope == null) {
             return null;
@@ -140,13 +151,22 @@ final class JsChannel implements PlatformChannel {
                     + "worker.postMessage({start: {runtime: new URL(build.runtime, base).href,"
                     + "  module: new URL(build.module, base).href, jspi: build.jspi, role: role,"
                     + "  query: location.search}, storage: storage}, storage ? [storage] : []);"
+                    + "var leave = null;"
+                    + "function unhook() { var hooks = window.__incariOnLeave;"
+                    + "  if (leave && hooks) { var at = hooks.indexOf(leave); if (at >= 0) hooks.splice(at, 1); } leave = null; }"
                     + "return {"
                     + "  send: function(kind, data) { worker.postMessage({kind: kind, data: data}, [data]); },"
                     + "  take: function() { var head = queue[0]; if (head === undefined || head === null) return null;"
                     + "    queue.shift(); return head; },"
                     + "  next: function() { if (queue.length > 0) return Promise.resolve(queue.shift());"
                     + "    return new Promise(function(resolve) { waiting = resolve; }); },"
-                    + "  close: function() { worker.postMessage({kind: -1, data: new ArrayBuffer(0)});"
+                    // Posted from the page's own listener: the worker runs on while the page is
+                    // hidden, or shows its leave dialog, and gets the message even if no game frame
+                    // ever comes again.
+                    + "  onLeave: function(kind) { unhook(); if (ended) return;"
+                    + "    leave = function() { if (!ended) worker.postMessage({kind: kind, data: new ArrayBuffer(0)}); };"
+                    + "    (window.__incariOnLeave = window.__incariOnLeave || []).push(leave); },"
+                    + "  close: function() { unhook(); worker.postMessage({kind: -1, data: new ArrayBuffer(0)});"
                     + "    setTimeout(function() { worker.terminate(); }, 5000); push(null); } };")
     private static native @Nullable JSObject createWorker(String role);
 }

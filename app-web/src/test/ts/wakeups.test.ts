@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, it } from "node:test";
 
-import { createAsyncImports, type WakeupScope } from "../../main/ts/wakeups.ts";
+import {
+  createAsyncImports,
+  createPageAsyncImports,
+  createPageTimer,
+  type PageTimer,
+  type TimerWorker,
+  type WakeupScope,
+} from "../../main/ts/wakeups.ts";
 
 /** Channels the tests made: an open port keeps Node running, so each test closes them. */
 const channels: MessageChannel[] = [];
@@ -103,5 +110,56 @@ describe("wakeups", () => {
     // Timers clamped to 1 ms or more would take half a second at least.
     const elapsed = performance.now() - started;
     assert.ok(elapsed < 400, `${elapsed.toFixed(0)} ms`);
+  });
+
+  it("leaves a visible page on plain timers, and times a hidden one in the worker", async () => {
+    const s = scope(() => 1000);
+    let hidden = false;
+    const set: number[] = [];
+    const cleared: number[] = [];
+    const timer: PageTimer = {
+      set(handler, delay) {
+        set.push(delay);
+        setTimeout(handler, 1);
+        return set.length;
+      },
+      clear(id) {
+        cleared.push(id);
+      },
+    };
+    const imports = createPageAsyncImports({ ...s, hidden: () => hidden, timer });
+    const ran: string[] = [];
+    const visible = imports.offer("visible", (instance) => ran.push(instance as string), 1000);
+    assert.ok(visible > 0 && visible < 2 ** 30);
+    assert.equal(s.timers, 1);
+    hidden = true;
+    const now = imports.offer("now", (instance) => ran.push(instance as string), 900);
+    const later = imports.offer("later", (instance) => ran.push(instance as string), 1500);
+    assert.ok(now >= 2 ** 30 && later >= 2 ** 30);
+    assert.deepEqual(set, [0, 500]);
+    assert.equal(s.timers, 1);
+    imports.kill(later);
+    assert.deepEqual(cleared, [2]);
+    await sleep(30);
+    assert.deepEqual([...ran].sort(), ["later", "now", "visible"]);
+  });
+
+  it("times a page timer in its worker and cancels it there", () => {
+    const posted: unknown[] = [];
+    const worker: TimerWorker = {
+      postMessage(message) {
+        posted.push(message);
+      },
+      onmessage: null,
+    };
+    const timer = createPageTimer(worker);
+    const ran: number[] = [];
+    const first = timer.set(() => ran.push(1), 250);
+    const second = timer.set(() => ran.push(2), -5);
+    timer.clear(second);
+    assert.deepEqual(posted, [{ id: first, delay: 250 }, { id: second, delay: 0 }, { id: second }]);
+    worker.onmessage?.({ data: second });
+    worker.onmessage?.({ data: first });
+    assert.deepEqual(ran, [1]);
   });
 });

@@ -1,5 +1,6 @@
 package incari.platform.api.window;
 
+import incari.platform.api.PlatformNotice;
 import incari.platform.api.input.KeyAction;
 import incari.platform.api.input.KeyModifiers;
 import incari.platform.api.input.Scancodes;
@@ -103,4 +104,10 @@ public interface PlatformEventListener {
 
     /** Files were dropped onto the window, as platform paths or URLs. */
     default void filesDropped(List<String> paths) {}
+
+    /**
+     * Something the player must be told: that their game isn't being saved, for one. Each notice
+     * comes once when it starts to apply, not every frame.
+     */
+    default void notice(PlatformNotice notice) {}
 }

@@ -47,6 +47,12 @@ final class WorldMessages {
     /** Whether guests may use commands: 1 or 0. */
     static final int HOST_GUEST_COMMANDS = 5;
 
+    /**
+     * Save now, and play on: the page is being hidden, reloaded or closed. Sent by the page's own
+     * listeners, not the game ({@code PlatformChannel.sendWhenLeaving}), as no game frame may come.
+     */
+    static final int SAVE = 13;
+
     // --- A shared world's guests (ADR 0062): each message starts with the guest's number ---------
 
     /** Whether the world is shared now (guests may join): one byte, 1 or 0. */

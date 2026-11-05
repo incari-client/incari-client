@@ -9,7 +9,7 @@ Version translation is `:via`'s job.
 
 | Where | What |
 | --- | --- |
-| `NetConnectionChannel` | A Netty channel over a platform connection |
+| `NetConnectionChannel` | A Netty channel over a platform connection. A connect that neither opens nor fails gives up after `CONNECT_TIMEOUT_MILLIS` (30 s by default, as Netty's socket channels) |
 | `WebSocketUrl`, `WebSocketAddress` | `ws://`/`wss://` addresses, parsed as a browser reads them |
 | `MessageFraming` | One packet per WebSocket message, replacing length-prefix framing under the same handler names |
 | `eagler.EaglerHandshake` | The Eagler stage: protocol V5, then answers the game's login in the server's place, then passes packets |

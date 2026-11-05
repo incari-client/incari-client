@@ -2,6 +2,8 @@ package com.mojang.blaze3d.platform;
 
 import incari.client.modules.IncariModules;
 import incari.client.platform.ClientPlatform;
+import incari.client.platform.PlatformNotices;
+import incari.platform.api.PlatformNotice;
 import incari.platform.api.input.KeyAction;
 import incari.platform.api.input.KeyModifiers;
 import incari.platform.api.window.PlatformEventListener;
@@ -12,6 +14,7 @@ import net.minecraft.client.input.InputQuirks;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.client.input.PreeditEvent;
+import net.minecraft.client.server.IntegratedServer;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -57,6 +60,10 @@ public class SDLEventHandler implements PlatformEventListener {
         looping = true;
         ClientPlatform.get().endFrame();
         ClientPlatform.get().pollEvents(this);
+        // In a world, closing the page loses what the last save didn't keep (a browser asks first),
+        // and Ctrl+W, sprinting forward, is the browser's close-tab shortcut.
+        this.window.platformWindow().setLeaveWarning(this.minecraft.level != null);
+        PlatformNotices.tick(this.minecraft);
     }
 
     /**
@@ -111,6 +118,12 @@ public class SDLEventHandler implements PlatformEventListener {
         if (minimized) {
             // A hidden page may be closed next, with nothing run after.
             IncariModules.saveNow();
+            // Singleplayer's server on the page saves now too, as it does when the game pauses (a
+            // world in a worker is told by the page itself: PlatformChannel.sendWhenLeaving).
+            IntegratedServer server = this.minecraft.getSingleplayerServer();
+            if (server != null) {
+                server.execute(() -> server.saveEverything(true, false, false));
+            }
         }
         this.window.onMinimized(minimized);
     }
@@ -219,6 +232,11 @@ public class SDLEventHandler implements PlatformEventListener {
         double finalY = scrollY;
         long handle = this.window.handle();
         this.minecraft.execute(() -> this.minecraft.mouseHandler.onScroll(handle, finalX, finalY));
+    }
+
+    @Override
+    public void notice(final PlatformNotice notice) {
+        PlatformNotices.show(this.minecraft, notice);
     }
 
     @Override

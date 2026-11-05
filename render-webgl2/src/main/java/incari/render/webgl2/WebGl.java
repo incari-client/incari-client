@@ -39,9 +39,37 @@ final class WebGl {
             params = "canvasId",
             script = "var canvas = document.getElementById(canvasId);"
                     + "if (!canvas || !canvas.getContext) return null;"
-                    + "return canvas.getContext('webgl2', { alpha: false, depth: false, stencil: false,"
+                    + "var gl = canvas.getContext('webgl2', { alpha: false, depth: false, stencil: false,"
                     + " antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: false,"
-                    + " powerPreference: 'high-performance' }) || null;")
+                    + " powerPreference: 'high-performance' }) || null;"
+                    + "if (gl && !canvas.__incariGlWatched) { canvas.__incariGlWatched = true;"
+                    // Cancelled, so the browser may give the context back. What was on the GPU
+                    // (textures, meshes, shaders) isn't: the game keeps no copies to upload again,
+                    // so the page must be reloaded. The platform's event queue hears of it through
+                    // the canvas's sink (platform-web's Dom.listen) and reports the window
+                    // minimized: the game stops drawing and, minimized, saves its singleplayer world.
+                    + "  canvas.addEventListener('webglcontextlost', function(e) { e.preventDefault();"
+                    + "    console.error('[Incari] The WebGL context was lost; the page must be reloaded');"
+                    + "    var sink = canvas.__incariSink; if (sink) sink('graphics', '', '', 1, 0, 0, 0, 0, 0);"
+                    + "    if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();"
+                    + "    if (document.fullscreenElement && document.exitFullscreen) {"
+                    + "      var p = document.exitFullscreen(); if (p && p.catch) p.catch(function() {}); }"
+                    + "    if (document.getElementById('incari-graphics-lost')) return;"
+                    + "    var box = document.createElement('div'); box.id = 'incari-graphics-lost';"
+                    + "    box.setAttribute('role', 'alert');"
+                    + "    box.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);"
+                    + "max-width:min(420px,90vw);padding:16px 20px;border-radius:8px;background:rgba(0,0,0,0.85);"
+                    + "color:#eee;font:15px/1.4 system-ui,sans-serif;text-align:center;z-index:2147483647';"
+                    + "    var text = document.createElement('p'); text.style.margin = '0 0 12px';"
+                    + "    text.textContent = 'The graphics stopped working (the browser reset them). "
+                    + "Singleplayer worlds are being saved. Reload the page to keep playing.';"
+                    + "    var button = document.createElement('button'); button.textContent = 'Reload';"
+                    + "    button.style.cssText = 'font:inherit;padding:6px 18px;cursor:pointer';"
+                    + "    button.addEventListener('click', function() { location.reload(); });"
+                    + "    box.appendChild(text); box.appendChild(button); document.body.appendChild(box); });"
+                    + "  canvas.addEventListener('webglcontextrestored', function() {"
+                    + "    console.warn('[Incari] The WebGL context came back, empty; reload the page to draw again'); }); }"
+                    + "return gl;")
     static native @Nullable WebGL2RenderingContext context(String canvasId);
 
     /** Turns an extension on; false if the browser doesn't have it. */

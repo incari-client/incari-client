@@ -55,6 +55,14 @@ public interface PlatformChannel {
     @Nullable
     Message poll();
 
+    /**
+     * Asks the platform to send an empty message of {@code kind} on its own whenever the page is
+     * about to be hidden, reloaded or closed: when the game's thread may never run again, so it
+     * can't send it itself (singleplayer's server saves on it). From the side that started the
+     * worker; the desktop, which has no page, ignores it. Once per channel; ends with it.
+     */
+    default void sendWhenLeaving(int kind) {}
+
     /** Closes the channel; the other end's {@link #receive} returns null. Ends the worker it started. */
     void close();
 }

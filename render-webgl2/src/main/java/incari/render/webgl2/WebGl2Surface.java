@@ -26,6 +26,8 @@ final class WebGl2Surface implements GpuSurfaceBackend {
 
     private final WebGl2Device device;
     private GpuSurface.Configuration configuration = new GpuSurface.Configuration(1, 1, GpuSurface.PresentMode.FIFO);
+    /** The lost context was reported to the game ({@link #acquireNextTexture}). */
+    private boolean lostReported;
 
     WebGl2Surface(WebGl2Device device) {
         this.device = device;
@@ -43,9 +45,13 @@ final class WebGl2Surface implements GpuSurfaceBackend {
 
     @Override
     public void acquireNextTexture() throws SurfaceException {
-        if (WebGl.isContextLost(device.gl())) {
-            // Restoring a lost context (the GPU process crashed, or the tab was starved) isn't done yet.
-            throw new SurfaceException("The WebGL context was lost");
+        if (!lostReported && WebGl.isContextLost(device.gl())) {
+            // The GPU process crashed or the tab was starved. Said once: the game logs every
+            // failure, and the context never comes back with the game's resources on it. The
+            // platform reports the window minimized from the next frame, which stops the game
+            // asking; until then, and after, drawing into a lost context does nothing.
+            lostReported = true;
+            throw new SurfaceException("The WebGL context was lost; the page must be reloaded");
         }
     }
 

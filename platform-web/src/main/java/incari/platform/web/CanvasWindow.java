@@ -22,6 +22,12 @@ final class CanvasWindow implements PlatformWindow, DomEventQueue.Surface {
 
     private final JSObject canvas;
     private @Nullable DomEventQueue events;
+    /** The game holds the mouse ({@link #setRelativeMouseMode}). */
+    private boolean mouseHeld;
+    /** The player is in a world ({@link #setLeaveWarning}). */
+    private boolean inWorld;
+    /** Whether the page's leave guard is on now, so it's set only when it changes. */
+    private boolean guarded;
 
     CanvasWindow(JSObject canvas) {
         this.canvas = canvas;
@@ -178,7 +184,27 @@ final class CanvasWindow implements PlatformWindow, DomEventQueue.Surface {
         events().setRelativeMouseMode(enabled);
         // The game holds the mouse while the player plays: that's when closing the tab by
         // accident loses the most.
-        Dom.setLeaveGuard(canvas, enabled);
+        mouseHeld = enabled;
+        updateLeaveGuard();
+    }
+
+    /**
+     * In a world, closing the tab loses what wasn't saved (an inventory or chat open doesn't pause
+     * singleplayer, so doesn't save it), and Ctrl+W, sprinting forward, is the browser's close-tab
+     * shortcut outside fullscreen: the page asks first.
+     */
+    @Override
+    public void setLeaveWarning(boolean warn) {
+        inWorld = warn;
+        updateLeaveGuard();
+    }
+
+    private void updateLeaveGuard() {
+        boolean guard = mouseHeld || inWorld;
+        if (guard != guarded) {
+            guarded = guard;
+            Dom.setLeaveGuard(canvas, guard);
+        }
     }
 
     @Override

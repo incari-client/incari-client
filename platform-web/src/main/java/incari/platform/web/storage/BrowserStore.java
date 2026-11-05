@@ -32,10 +32,11 @@ final class BrowserStore {
             params = "source",
             script = "var url = URL.createObjectURL(new Blob([source], {type: 'text/javascript'}));\n"
                     + "var worker = new Worker(url, {name: 'incari-storage'});\n"
-                    + "var store = {worker: worker, calls: {}, next: 1, pending: 0, problems: []};\n"
+                    + "var store = {worker: worker, calls: {}, next: 1, pending: 0, problems: [], failed: []};\n"
                     + "worker.onmessage = function(e) { var m = e.data;\n"
                     + "  if (m.type === 'applied') { store.pending--;"
-                    + "    if (m.error) store.problems.push('saving failed: ' + m.error); return; }\n"
+                    + "    store.lastOk = !m.error; if (m.error) store.problems.push('saving failed: ' + m.error);"
+                    + "    if (m.failed) for (var i = 0; i < m.failed.length; i++) store.failed.push(m.failed[i]); return; }\n"
                     + "  var call = store.calls[m.id]; if (call) { delete store.calls[m.id]; call(m); } };\n"
                     + "worker.onerror = function(e) { store.problems.push('storage worker: ' + (e.message || e)); };\n"
                     + "store.call = function(message, callback) { message.id = store.next++;"
@@ -63,10 +64,11 @@ final class BrowserStore {
      */
     @JSBody(
             script = "var port = self.__incariStorage; if (!port) return null;"
-                    + "var store = {worker: port, calls: {}, next: 1, pending: 0, problems: []};"
+                    + "var store = {worker: port, calls: {}, next: 1, pending: 0, problems: [], failed: []};"
                     + "port.onmessage = function(e) { var m = e.data;"
                     + "  if (m.type === 'applied') { store.pending--;"
-                    + "    if (m.error) store.problems.push('saving failed: ' + m.error); return; }"
+                    + "    store.lastOk = !m.error; if (m.error) store.problems.push('saving failed: ' + m.error);"
+                    + "    if (m.failed) for (var i = 0; i < m.failed.length; i++) store.failed.push(m.failed[i]); return; }"
                     + "  var call = store.calls[m.id]; if (call) { delete store.calls[m.id]; call(m); } };"
                     + "store.call = function(message, callback) { message.id = store.next++;"
                     + "  store.calls[message.id] = callback; port.postMessage(message); };"
@@ -209,6 +211,17 @@ final class BrowserStore {
     /** The oldest problem the worker reported and nobody has read yet, or null. */
     @JSBody(params = "store", script = "return store.problems.length ? String(store.problems.shift()) : null;")
     static native @Nullable String takeProblem(JSObject store);
+
+    /**
+     * The oldest path whose change the worker couldn't store and nobody has read yet, or null. The
+     * file system sends it again whole ({@code WebFileSystem#flush}).
+     */
+    @JSBody(params = "store", script = "return store.failed.length ? String(store.failed.shift()) : null;")
+    static native @Nullable String takeFailedPath(JSObject store);
+
+    /** Whether the last batch the worker answered for was stored whole (true before any answer). */
+    @JSBody(params = "store", script = "return store.lastOk !== false;")
+    static native boolean lastBatchStored(JSObject store);
 
     // --- The client jar ---------------------------------------------------------------------
 
