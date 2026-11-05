@@ -13,10 +13,11 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ViaHint {
 
-    // Literal English until Incari has its own language files.
-    static final String HINT =
-            "This server may run another Minecraft version. To join it with ViaVersion, edit it in the"
-                    + " server list and set Via to Auto.";
+    // Literal English until Incari has its own language files. Says both ways in: a server from the
+    // list is edited there; one joined by Direct Connect or a link isn't in the list the player sees
+    // (the game keeps it hidden), and Direct Connect has a Via button of its own (DirectJoinVia).
+    static final String HINT = "This server may run another Minecraft version. To join it with ViaVersion, set"
+            + " Via to Auto: edit it in the server list, or use the Via button on Direct Connect.";
 
     private ViaHint() {}
 
@@ -24,7 +25,8 @@ public final class ViaHint {
     public static Component reason(Component reason) {
         ServerData server = ServerConnections.lastRefusedJoin();
         boolean refused = VersionRefusals.isAboutVersions(VersionRetry.textOf(reason));
-        if (!applies(server, refused, ServerConnections.lastJoinDroppedDuringLogin())) {
+        boolean featured = server != null && FeaturedServers.is(server);
+        if (!applies(server, featured, refused, ServerConnections.lastJoinDroppedDuringLogin())) {
             return reason;
         }
         return Component.empty()
@@ -35,9 +37,15 @@ public final class ViaHint {
 
     /**
      * Whether to hint: the last join, refused before it reached the world, was to a server with Via
-     * off, and the refusal was about versions or a silent drop during an Eagler login.
+     * off, and the refusal was about versions or a silent drop during an Eagler login. Never for a
+     * featured server: it can't be edited, and it runs the game's version (ADR 0071), so a drop there
+     * is something else, such as a rejoin while the old session lingers (ADR 0018).
      */
-    static boolean applies(@Nullable ServerData server, boolean refusedForVersion, boolean droppedDuringLogin) {
-        return server != null && !ServerVersions.usesVia(server) && (refusedForVersion || droppedDuringLogin);
+    static boolean applies(
+            @Nullable ServerData server, boolean featured, boolean refusedForVersion, boolean droppedDuringLogin) {
+        return server != null
+                && !featured
+                && !ServerVersions.usesVia(server)
+                && (refusedForVersion || droppedDuringLogin);
     }
 }

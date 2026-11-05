@@ -116,7 +116,11 @@ public final class MicrosoftSignIn {
                 case "slow_down" -> new Poll(PollState.SLOW_DOWN, null);
                 case "expired_token" -> throw failure("The sign-in code expired. Start again.");
                 case "authorization_declined", "access_denied" -> throw failure("Sign-in was cancelled.");
-                default -> throw failure("Microsoft refused the sign-in (" + error + ")");
+                default ->
+                    // Microsoft's own trouble passes; anything else it said is its answer.
+                    throw serviceTrouble(response)
+                            ? temporaryFailure("Microsoft's sign-in isn't answering right now (" + error + ")")
+                            : failure("Microsoft refused the sign-in (" + error + ")");
             };
         });
     }
@@ -131,6 +135,11 @@ public final class MicrosoftSignIn {
         return post(MicrosoftEndpoints.TOKEN, FORM, form(form), Map.of()).thenApply(response -> {
             JsonObject json = json(response, "Microsoft");
             if (!response.ok()) {
+                if (serviceTrouble(response)) {
+                    // Not the sign-in's fault: it's still good, and the next try may get through.
+                    throw temporaryFailure("Microsoft's sign-in isn't answering right now. Try again in a moment.");
+                }
+                // invalid_grant and the like: the refresh token expired or was revoked.
                 throw failure("The Microsoft sign-in has expired. Sign in again.");
             }
             return tokens(json);
@@ -361,7 +370,15 @@ public final class MicrosoftSignIn {
         Throwable cause =
                 failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
         String message = cause.getMessage();
-        throw failure("Couldn't reach Microsoft's sign-in" + (message != null ? ": " + message : "."), cause);
+        throw new CompletionException(new SignInException(
+                "Couldn't reach Microsoft's sign-in" + (message != null ? ": " + message : ".") + " Try again.",
+                cause,
+                true));
+    }
+
+    /** Whether a refusal is the service's own trouble (a 5xx, or too many requests), not an answer. */
+    static boolean serviceTrouble(HttpResponse response) {
+        return response.status() >= 500 || response.status() == 429;
     }
 
     /** The body as a JSON object; an empty object for an empty or non-JSON error body. */
@@ -475,7 +492,7 @@ public final class MicrosoftSignIn {
         return new CompletionException(new SignInException(message));
     }
 
-    private static CompletionException failure(String message, Throwable cause) {
-        return new CompletionException(new SignInException(message, cause));
+    private static CompletionException temporaryFailure(String message) {
+        return new CompletionException(new SignInException(message, true));
     }
 }

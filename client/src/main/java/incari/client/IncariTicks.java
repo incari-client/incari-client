@@ -5,6 +5,7 @@ import incari.client.eagler.EaglerVoice;
 import incari.client.legacy.LegacyRules;
 import incari.client.look.Looks;
 import incari.client.modules.IncariModules;
+import incari.client.net.ServerConnections;
 import incari.client.online.IncariOnline;
 import incari.client.profiler.Profiling;
 import incari.client.recorder.ScreenRecorder;
@@ -25,6 +26,8 @@ public final class IncariTicks {
 
     public static void tick(Minecraft minecraft) {
         Looks.start(minecraft);
+        // A join that reached a world: a kick from here on isn't a refusal of its version.
+        ServerConnections.tick(minecraft);
         // First: the rest of the tick moves the player by the rules of the server it's on.
         LegacyRules.update(minecraft);
         // Push to talk works with no screen open, as other keys do, and while chat is closed.

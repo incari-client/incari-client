@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 22:43:03 -0500
+Subject: [PATCH] multiplayer: Direct Connect's Via choice applies to its
+ server
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java b/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java
+index 21d827ae425297c5bf0b24f4f1303550c22ce79f..06c41c3ee9f63ff7e810114486dd57bf0731d42a 100644
+--- a/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java
++++ b/src/main/java/net/minecraft/client/gui/screens/multiplayer/JoinMultiplayerScreen.java
+@@ -233,2 +233,5 @@
+             ServerData serverData = this.servers.get(this.editingServer.ip);
++            // Incari start: the Via choice made on Direct Connect
++            if (incari.client.net.DirectJoinVia.apply(serverData != null ? serverData : this.editingServer) && serverData != null) this.servers.save();
++            // Incari end
+             if (serverData == null) {

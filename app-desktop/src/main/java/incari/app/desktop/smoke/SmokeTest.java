@@ -1321,6 +1321,10 @@ public final class SmokeTest {
                         ok -> {},
                         new ServerData("Test", "ws://127.0.0.1:8801", ServerData.Type.OTHER)));
         screens.put(
+                "direct-connect",
+                () -> new net.minecraft.client.gui.screens.DirectJoinServerScreen(
+                        new TitleScreen(), ok -> {}, new ServerData("", "", ServerData.Type.OTHER)));
+        screens.put(
                 "wispcraft",
                 () -> incari.client.net.WispServers.screen(
                         new TitleScreen(), new ServerData("Test", "127.0.0.1", ServerData.Type.OTHER), () -> {}));
