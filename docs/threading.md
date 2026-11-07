@@ -57,6 +57,7 @@ This is the audit of every blocking call (ADR 0015 has the decisions). Each buil
 | `TracingExecutor.shutdownAndAwait`, `ClientShutdownWatchdog` | shutdown only |
 | `Util$9.run` | sleeps forever by design (a Windows timer fix) |
 | `LanServerPinger.run` | Open to LAN |
+| `WebFetch.get` (skins, player heads, server packs) | the game's download pool, the pack download queue |
 
 **Not in the browser's paths:** Realms, Mojang's services, online skin registration, the Chase
 debug feature, Netty's NIO transport, and joins of already-finished futures in DataFixerUpper and

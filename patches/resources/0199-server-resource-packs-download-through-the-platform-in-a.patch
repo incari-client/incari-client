@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Sat, 7 Nov 2026 12:16:33 -0500
+Subject: [PATCH] resources: Server resource packs download through the
+ platform in a page
+
+The browser build has no URLConnection, so every server's resource pack
+failed to download. The desktop keeps the game's own download.
+
+Signed-off-by: incari-client <335801235+incari-client@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/server/packs/DownloadQueue.java b/src/main/java/net/minecraft/server/packs/DownloadQueue.java
+index 0295eb3c3991f611eaa074056cb71a33ab0baf7b..e9bbc86dbd4050be46fdc521c1019513ffffcb83 100644
+--- a/src/main/java/net/minecraft/server/packs/DownloadQueue.java
++++ b/src/main/java/net/minecraft/server/packs/DownloadQueue.java
+@@ -53,5 +53,7 @@
+                 try {
+-                    downloadedFile = HttpUtil.downloadFile(
++                    // Incari start: in a page, through the platform's fetch (the browser build has no URLConnection)
++                    downloadedFile = incari.client.resources.PackDownloads.download(
+                         targetDir, request.url, config.headers, config.hashFunction, request.hash, config.maxSize, config.proxy, config.listener
+                     );
++                    // Incari end
+                     result.downloaded.put(id, downloadedFile);

@@ -13,7 +13,7 @@ the game is debugged with a real debugger and profiler.
 - `audio`: `OpenAlAudio` and its device, sources and buffers. It's also the reference the
   browser's sound is held to: `openAlReference` (below) measures how it pans and fades.
 - `net`: `DesktopNetwork`: TCP sockets with a virtual thread per connection, and WebSockets
-  through the JDK's HTTP client (`java.net.http`).
+  and HTTP GETs (`fetch`) through the JDK's HTTP client (`java.net.http`).
 
 ## Invariants
 

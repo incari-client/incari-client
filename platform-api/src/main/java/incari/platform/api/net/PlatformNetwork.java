@@ -1,9 +1,12 @@
 package incari.platform.api.net;
 
+import java.io.IOException;
+
 /**
  * Connections to game servers. Two kinds: a TCP byte stream (the desktop only), and a WebSocket
  * carrying one packet per binary message (every platform; the only kind a browser has). The game's
- * own protocol code (compression, packets) runs on top of either.
+ * own protocol code (compression, packets) runs on top of either. Small files come by HTTP GET
+ * ({@link #fetch}).
  */
 public interface PlatformNetwork {
 
@@ -28,6 +31,24 @@ public interface PlatformNetwork {
      * @param url a {@code ws://} or {@code wss://} URL, already checked for syntax by the caller
      */
     NetConnection openWebSocket(String url, NetConnection.Listener listener);
+
+    /**
+     * The body of an HTTP GET of {@code url}: public files such as player skins and server
+     * resource packs. Blocks the calling thread until the whole body has arrived, so call it from a
+     * background thread, never the render thread. The bytes are the caller's. No headers beyond
+     * the platform's own are sent.
+     *
+     * <p>In a browser the server must allow the page's origin (CORS), and an {@code https} page
+     * can't fetch {@code http} URLs.
+     *
+     * @param url an absolute {@code http} or {@code https} URL
+     * @param maxBytes the largest body accepted; a bigger one fails, before it's all downloaded
+     *     when the server gives its length
+     * @throws IOException if it can't be fetched, the answer isn't a 2xx, or the body is too big
+     */
+    default byte[] fetch(String url, int maxBytes) throws IOException {
+        throw new IOException("This platform can't fetch " + url);
+    }
 
     /**
      * Whether other machines can connect to this one: the game's "Open to LAN" listens on a TCP

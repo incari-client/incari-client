@@ -13,7 +13,8 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int8Array;
 
 /**
- * Server connections in the browser: WebSockets only, since a page can't open a TCP socket.
+ * Server connections in the browser: WebSockets only, since a page can't open a TCP socket. HTTP
+ * GETs go through {@code fetch} ({@link WebFetch}).
  *
  * <p>The browser's socket callbacks never call Java: they queue what happened in a JavaScript
  * array on the socket, and {@link #deliver} (called by the platform once per frame, on the game's
@@ -59,6 +60,11 @@ final class WebSocketNetwork implements PlatformNetwork {
         Socket socket = new Socket(url, listener, handle);
         sockets.add(socket);
         return socket;
+    }
+
+    @Override
+    public byte[] fetch(String url, int maxBytes) throws IOException {
+        return WebFetch.get(url, maxBytes);
     }
 
     /** Delivers every queued socket event to its listener. The game's thread, once per frame. */

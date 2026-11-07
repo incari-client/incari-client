@@ -13,7 +13,8 @@ types: the window and its events, input, audio, the graphics surface, files, cli
 - `input`: keyboard state and key names; `Scancodes` and `KeyModifiers` define the values, which
   are SDL3's (USB HID usage ids, `SDL_Keymod` bits), the format the game's key handling reads.
 - `audio`: output devices, sources, PCM buffers, the listener.
-- `net`: `PlatformNetwork`, a byte stream (TCP) or a message stream (WebSocket) to a server.
+- `net`: `PlatformNetwork`, a byte stream (TCP) or a message stream (WebSocket) to a server, and a
+  blocking, size-capped HTTP GET (`fetch`) for public files such as skins and server packs.
 - `rtc`: `PlatformRtc`, WebRTC peer connections with voice and data channels, and the
   microphone, for Eagler voice chat and shared worlds; only the browser has it (ADR 0019).
 - `storage`, `threads`, and `PlatformShell` (clipboard, links, message boxes).

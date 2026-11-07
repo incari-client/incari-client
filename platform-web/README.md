@@ -14,6 +14,7 @@ Audio and WebRTC. Designs: input ADR 0010, networking ADR 0009, storage ADR 0011
 | `CanvasWindow`, `WebDisplays` | The window and displays. The leave-page prompt is on while the mouse is held or the player is in a world (`setLeaveWarning`) |
 | `audio/` | One `AudioContext` with the unlock prompt; decoding through the browser; `Spatializer` matches OpenAL Soft's panning |
 | `WebSocketNetwork` | Server connections; callbacks queue events, `pollEvents` delivers them on the game's thread |
+| `WebFetch` | `PlatformNetwork.fetch` over the browser's `fetch`; the calling thread suspends until the body is in |
 | `rtc/WebRtc` | Peer connections, data channels and the microphone, for voice and shared worlds (ADR 0019) |
 | `WebProfiling` | Memory figures and per-frame rows in `window.__incariFrames` for the benchmark (ADR 0021) |
 | `storage/` | `WebFileSystem` (flushes once a frame; a change the store couldn't keep is sent again whole 5 s later; read-only, no-storage and failed saves become `PlatformNotice`s), `TreeFileSystem` (the in-memory tree, JVM-tested), `BrowserStore` and `src/main/js/storage-worker.js` (the worker that writes OPFS or IndexedDB, and names the paths it couldn't) |

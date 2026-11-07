@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Sat, 7 Nov 2026 12:09:08 -0500
+Subject: [PATCH] skins: Skin and player-head textures download through the
+ platform
+
+The browser build has no URLConnection, so every texture a profile
+names (custom heads such as Slimefun's items, players' Mojang skins
+and capes) failed and stayed the default.
+
+Signed-off-by: incari-client <335801235+incari-client@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/renderer/texture/SkinTextureDownloader.java b/src/main/java/net/minecraft/client/renderer/texture/SkinTextureDownloader.java
+index bfd934b88617d08a7e7378fdf294a93a4ac4b858..b7a12d99b21b55987bef6232f39d34a250aec672 100644
+--- a/src/main/java/net/minecraft/client/renderer/texture/SkinTextureDownloader.java
++++ b/src/main/java/net/minecraft/client/renderer/texture/SkinTextureDownloader.java
+@@ -43,3 +43,5 @@
+             try {
+-                loadedSkin = this.downloadSkin(localCopy, texture.url());
++                // Incari start: fetched through the platform (the browser build has no URLConnection)
++                loadedSkin = incari.client.skins.SkinDownloads.read(localCopy, texture.url());
++                // Incari end
+             } catch (IOException e) {

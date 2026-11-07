@@ -1,7 +1,9 @@
 package incari.platform.desktop.net;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.sun.net.httpserver.HttpServer;
 import incari.platform.api.PlatformLog;
 import incari.platform.api.net.NetConnection;
 import java.io.ByteArrayOutputStream;
@@ -9,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -22,6 +25,44 @@ import org.junit.jupiter.api.Test;
 class DesktopNetworkTest {
 
     private final DesktopNetwork network = new DesktopNetwork(PlatformLog.NONE);
+
+    @Test
+    void fetchesABodyAndFailsOnAnErrorStatusOrOneTooBig() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/skin", exchange -> {
+            byte[] body = {(byte) 0x89, 'P', 'N', 'G'};
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.createContext("/chunked", exchange -> {
+            // Length 0: chunked, so the size is only known by reading.
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().write(new byte[10]);
+            exchange.close();
+        });
+        server.createContext("/missing", exchange -> {
+            exchange.sendResponseHeaders(404, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String base = "http://127.0.0.1:" + server.getAddress().getPort();
+            assertThat(network.fetch(base + "/skin", 4)).containsExactly((byte) 0x89, 'P', 'N', 'G');
+            assertThatThrownBy(() -> network.fetch(base + "/skin", 3))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("over the limit");
+            assertThat(network.fetch(base + "/chunked", 10)).hasSize(10);
+            assertThatThrownBy(() -> network.fetch(base + "/chunked", 9))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("over the limit");
+            assertThatThrownBy(() -> network.fetch(base + "/missing", 4))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("404");
+        } finally {
+            server.stop(0);
+        }
+    }
 
     @Test
     void sendsQueuedBytesOnceConnectedAndReceivesTheReply() throws Exception {
