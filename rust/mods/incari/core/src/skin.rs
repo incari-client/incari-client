@@ -13,12 +13,16 @@ const SWEEP_MILLIS: f64 = 650.0;
 #[derive(Default)]
 pub struct Skin {
     track: [f32; 4],
+    settings: crate::settings_skin::SettingsSkin,
 }
 
 impl Skin {
     /// Draws sprite `name` over `rect` in the look and returns true, or false for the game to draw
     /// it. `color`'s alpha fades it.
     pub fn sprite(&mut self, p: &mut Painter, name: &str, rect: [f32; 4], color: u32) -> bool {
+        if let Some(part) = name.strip_prefix("horizon/settings/") {
+            return self.settings.part(p, part, rect);
+        }
         let Some(name) = name
             .strip_prefix("gui/sprites/")
             .or_else(|| name.strip_prefix("gui/"))

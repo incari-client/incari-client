@@ -6,7 +6,8 @@ draws with WebGPU, and the loading screen offers it as **Rust** beside Fast and 
 WebGPU works.
 
 None of Incari's Java runs in it, but it is the same client (ADR 0069): the Frost look over every
-screen, Incari's own title, pause menu, module menu, module settings, HUD editor, Incari Settings
+screen (Horizon's own Graphics, Controls and Shaders screens too, under Incari's mark: the fork's
+`graphics_style` asks the skin for `horizon/settings/` parts and takes the theme's text colours), Incari's own title, pause menu, module menu, module settings, HUD editor, Incari Settings
 and profiles, every module with the Java ids, and the profiles in the Java client's files. The
 client is the `incari_core` crate; Incari's features are Horizon **native mods** that read its
 settings and draw their HUD through it: horizon-mixins bundles that hook Horizon's named hook

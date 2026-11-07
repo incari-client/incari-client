@@ -30,6 +30,7 @@ pub mod schematic;
 pub mod screen;
 pub mod screens;
 pub mod server_menu;
+pub mod settings_skin;
 pub mod skin;
 pub mod theme;
 pub mod ui;

@@ -742,6 +742,7 @@ pub(super) fn frame(game: &mut super::Game<'_>, batch: &mut HudBatch) {
                 client.open_in_world(shell, Box::new(incari_core::screens::chat_menu::ChatMenu::default()));
             }
             client.frame(shell, &Font(atlas), size, scale);
+            settings_palette(&client.theme);
             replay(&client.list, atlas, batch, Some(view));
             for list in DEFERRED.with(|d| std::mem::take(&mut *d.borrow_mut())) {
                 replay(&list, atlas, batch, Some(view));
@@ -861,6 +862,22 @@ fn install_featured() {
         });
     };
     horizon_client::multiplayer::set_featured(servers, Some(std::rc::Rc::new(label)));
+}
+
+/// The theme's colours for the text of Horizon's settings screens (Graphics and the like), whose
+/// shapes the skin draws (`horizon/settings/` names). Hot path: a copy, no allocation.
+fn settings_palette(theme: &incari_core::theme::Theme) {
+    let p = incari_core::settings_skin::palette(theme);
+    horizon_client::graphics_style::set_palette(Some(horizon_client::graphics_style::Palette {
+        text: p.text,
+        soft: p.soft,
+        muted: p.muted,
+        accent: p.accent,
+        note: p.note,
+        positive: p.positive,
+        warning: p.warning,
+        negative: p.negative,
+    }));
 }
 
 /// Frost over the game's own widgets, by sprite name (`hud::set_skin`).
