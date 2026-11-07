@@ -328,6 +328,11 @@ final class ModuleGame implements Game {
     }
 
     @Override
+    public void predictBreaks(boolean crystals, boolean anchors) {
+        ModuleBreaks.hold(crystals, anchors);
+    }
+
+    @Override
     public void overrideHitColor(int rgb, int strength) {
         ModuleEffects.hitColor(rgb, strength);
     }

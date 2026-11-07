@@ -1,0 +1,51 @@
+# Incari's Fast Crystal (features/fastcrystal) for the Rust build (ADR 0068, 0069, 0073). Hooks by
+# name where Horizon has stamped the hook point (native-hooks.json), by function where it's still
+# pending. Its settings are the client's (rust/mods/incari), shown in the module menu.
+[mod]
+id = "incari_fastcrystal"
+version = "0.1.0"
+priority = 100
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "incari_fastcrystal"
+source = "runtime.rs"
+
+[[injection]]
+id = "attacked"
+# Horizon's object_attacked hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_fast_crystal.json), so this targets its function. Make it
+# `hook = "object_attacked"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_object_attacked"
+kind = "HEAD"
+helper = "attacked.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "entity", ty = "u32", value = "entity" },
+]
+
+[[injection]]
+id = "used"
+# Horizon's block_used hook point is still a pending fragment
+# (tools/native-hook-fragments/incari_fast_crystal.json), so this targets its function. Make it
+# `hook = "block_used"` and `hook_version = 1` once Horizon stamps it.
+target = "horizon_client::game::native_hooks::Game<'_>::native_block_used"
+kind = "HEAD"
+helper = "used.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "pos", ty = "[i32; 3]", value = "pos" },
+  { name = "main_hand", ty = "bool", value = "main_hand" },
+  { name = "sequence", ty = "i32", value = "sequence" },
+]
+
+[[injection]]
+id = "tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]

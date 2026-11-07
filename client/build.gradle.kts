@@ -182,6 +182,7 @@ dependencies {
     implementation(project(":features:hitboxes"))
     implementation(project(":features:schematics"))
     implementation(project(":features:norender"))
+    implementation(project(":features:fastcrystal"))
     implementation(project(":features:oldanimations"))
     implementation(project(":features:shulkertooltips"))
     implementation(project(":features:theme"))

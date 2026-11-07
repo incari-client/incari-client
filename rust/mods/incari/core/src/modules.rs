@@ -255,6 +255,7 @@ pub fn all() -> Vec<Module> {
         cooldown_indicator(),
         hit_effects(),
         hitboxes(),
+        fast_crystal(),
         old_animations(),
         freelook(),
         zoom(),
@@ -1089,6 +1090,23 @@ fn low_fire() -> Module {
     )
 }
 
+fn fast_crystal() -> Module {
+    module!(
+        "fastcrystal",
+        "Fast Crystal",
+        "Crystals and anchors go as you break them, not a ping later.",
+        Category::Combat
+    )
+    .setting(
+        s::bool("crystals", "Crystals", true)
+            .described("A crystal you hit is gone at once, so the next can go in its place."),
+    )
+    .setting(
+        s::bool("anchors", "Anchors", true)
+            .described("A charged anchor you set off is gone at once, outside the Nether."),
+    )
+}
+
 fn no_render() -> Module {
     module!(
         "norender",
@@ -1377,7 +1395,7 @@ mod tests {
 
     #[test]
     fn has_every_java_module() {
-        assert_eq!(all().len(), 35, "Features.all registers 35");
+        assert_eq!(all().len(), 36, "Features.all registers 36");
         let theme = all().into_iter().find(|m| m.id == "theme").unwrap();
         assert!(theme.always_on);
         let fps = all().into_iter().find(|m| m.id == "fpsdisplay").unwrap();

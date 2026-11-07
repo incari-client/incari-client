@@ -149,6 +149,9 @@ public interface Game {
         public void overrideNoRender(@Nullable NoRender noRender) {}
 
         @Override
+        public void predictBreaks(boolean crystals, boolean anchors) {}
+
+        @Override
         public void overrideBrightness(float level) {}
 
         @Override
@@ -312,6 +315,15 @@ public interface Game {
      * next one made); null draws everything again. Held until changed.
      */
     void overrideNoRender(@Nullable NoRender noRender);
+
+    /**
+     * Takes away an end crystal the player hits ({@code crystals}), and a charged respawn anchor the
+     * player sets off where it explodes ({@code anchors}), on this client at once, not a round trip
+     * later when the server says so: the next one can go in its place without waiting for the ping.
+     * Only what the player's own click already sent the server: no packet more, none sooner. One
+     * the server keeps comes back. Both false gives the game's own back. Held until changed.
+     */
+    void predictBreaks(boolean crystals, boolean anchors);
 
     /**
      * Lights the world as night vision would, at {@code level} from 0 (the game's own light) to 1

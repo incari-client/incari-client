@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: incari-client <335801235+incari-client@users.noreply.github.com>
+Date: Fri, 6 Nov 2026 17:42:38 -0500
+Subject: [PATCH] combat: Fast Crystal takes crystals and anchors away as the
+ player breaks them
+
+Signed-off-by: bedrock3359 <181285672+nobuildersnotools@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/client/multiplayer/ClientPacketListener.java b/src/main/java/net/minecraft/client/multiplayer/ClientPacketListener.java
+index 33eca288c0364666a69c00099c060c06ac35e05d..2a32404b195379dd36f151b3e18fd4a77e0ebe57 100644
+--- a/src/main/java/net/minecraft/client/multiplayer/ClientPacketListener.java
++++ b/src/main/java/net/minecraft/client/multiplayer/ClientPacketListener.java
+@@ -774,2 +774,3 @@
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
++        incari.client.modules.ModuleBreaks.removed(packet.entityIds()); // Incari: Fast Crystal's crystals confirmed
+         packet.entityIds().forEach(entityId -> {
+diff --git a/src/main/java/net/minecraft/client/multiplayer/MultiPlayerGameMode.java b/src/main/java/net/minecraft/client/multiplayer/MultiPlayerGameMode.java
+index 597fef6b4273a979a984351d7dd60053ad3a9db5..a8649843821ca545cd6a52e3799a3c93480575e7 100644
+--- a/src/main/java/net/minecraft/client/multiplayer/MultiPlayerGameMode.java
++++ b/src/main/java/net/minecraft/client/multiplayer/MultiPlayerGameMode.java
+@@ -437,2 +437,3 @@
+         player.attack(entity);
++        incari.client.modules.ModuleBreaks.attacked(player, entity); // Incari: Fast Crystal, after the one packet
+         player.resetAttackStrengthTicker();
+diff --git a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+index 520cd86d3be81c78cb357623ad8bae845ebec2e7..32779d8f969da62bf187770b9e883f5c549ac144 100644
+--- a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -120,2 +120,3 @@
+         } else {
++            incari.client.modules.ModuleBreaks.anchorUsed(level, pos); // Incari: Fast Crystal's anchors
+             return InteractionResult.CONSUME;

@@ -9,6 +9,7 @@ import incari.features.cps.Cps;
 import incari.features.crosshair.CrosshairEditor;
 import incari.features.customscoreboard.CustomScoreboard;
 import incari.features.customsky.CustomSky;
+import incari.features.fastcrystal.FastCrystal;
 import incari.features.fpsdisplay.FpsDisplay;
 import incari.features.freelook.Freelook;
 import incari.features.fullbright.Fullbright;
@@ -64,6 +65,7 @@ final class Features {
                 new CooldownIndicator(),
                 new HitEffects(),
                 new HitboxesModule(),
+                new FastCrystal(),
                 new OldAnimations(),
                 new Freelook(),
                 new Zoom(),

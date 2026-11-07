@@ -96,6 +96,7 @@ public final class IncariModules {
         ModuleEffects.tick(minecraft, modules);
         MapTerrain.tick(minecraft);
         ModuleHands.tick(minecraft);
+        ModuleBreaks.tick(minecraft);
         MapMemory.tick();
         while (IncariKeys.MODULE_MENU.consumeClick()) {
             if (minecraft.gui.screen() == null) {
@@ -181,6 +182,7 @@ public final class IncariModules {
             MapMemory.close();
             ModuleSky.leave();
             ModuleEffects.leave();
+            ModuleBreaks.leave();
         }
         if (connection != null) {
             // Before the join event: a module joining may read the world's waypoints.

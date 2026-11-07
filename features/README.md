@@ -19,6 +19,7 @@ Rust build has it (ADR 0068, 0069): its settings and HUD are the Rust client's o
 | [Custom Scoreboard](customscoreboard/README.md) | HUD | Place and scale the server's sidebar | Ported |
 | [Custom Sky](customsky/README.md) | Visual | Resource packs' skies, OptiFine's format | Ported |
 | [Enchant Glint](glintcolor/README.md) | Visual | Enchantment shimmer in your colour | Ported |
+| [Fast Crystal](fastcrystal/README.md) | Combat | Crystals and anchors gone as you break them, not a ping later | Ported |
 | [FPS Display](fpsdisplay/README.md) | HUD | Frames per second | Ported |
 | [Freelook](freelook/README.md) | Visual | Look around without turning | Ported |
 | [Fullbright](fullbright/README.md) | Visual | Caves and nights as light as day | Ported |

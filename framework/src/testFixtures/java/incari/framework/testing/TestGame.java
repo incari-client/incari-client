@@ -435,6 +435,11 @@ public final class TestGame implements KeyInput, Game {
     /** What a module last asked the world to leave out ({@link Game#overrideNoRender}); null for nothing. */
     public @Nullable NoRender noRender;
 
+    /** What a module last asked the client to break at once ({@link Game#predictBreaks}). */
+    public boolean predictCrystals;
+
+    public boolean predictAnchors;
+
     /** The hurt tint a module last asked for, and how strong in percent; strength 0 for the game's. */
     public int hitColor;
 
@@ -485,6 +490,12 @@ public final class TestGame implements KeyInput, Game {
     @Override
     public void overrideNoRender(@Nullable NoRender noRender) {
         this.noRender = noRender;
+    }
+
+    @Override
+    public void predictBreaks(boolean crystals, boolean anchors) {
+        predictCrystals = crystals;
+        predictAnchors = anchors;
     }
 
     @Override

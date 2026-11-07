@@ -39,6 +39,7 @@ colours from Theme's settings.
 | [`cps`](mods/cps/) | [CPS](../features/cps/README.md) | hud | |
 | [`customsky`](mods/customsky/) | [Custom Sky](../features/customsky/README.md) | frame, resources reloaded, sky layers\* | Nearest-sampled textures; not in Horizon's own packs' water reflection; a shader pack's own sky shows under the layers; biomes, heights, days, transition, sun and moon_phases not read (as Java) |
 | [`customscoreboard`](mods/customscoreboard/) | [Custom Scoreboard](../features/customscoreboard/README.md) | sidebar place\*, hud | Placed by the size it had the frame before; the editor's sample is drawn by the mod, not the game |
+| [`fastcrystal`](mods/fastcrystal/) | [Fast Crystal](../features/fastcrystal/README.md) | object attacked\*, block used\*, tick | Waits for the server in whole ticks, not milliseconds |
 | [`fpsdisplay`](mods/fpsdisplay/) | [FPS Display](../features/fpsdisplay/README.md) | hud | |
 | [`freelook`](mods/freelook/) | [Freelook](../features/freelook/README.md) | key, tick, turn\*, camera rotation\* | Billboards and the in-water fog check follow the player's facing |
 | [`fullbright`](mods/fullbright/) | [Fullbright](../features/fullbright/README.md) | frame | Brightness below 100%: Horizon lights fully or not at all |

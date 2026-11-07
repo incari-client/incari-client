@@ -19,6 +19,8 @@ pub mod incari_cps;
 pub mod incari_customscoreboard;
 #[path = "mods/customsky/runtime.rs"]
 pub mod incari_customsky;
+#[path = "mods/fastcrystal/runtime.rs"]
+pub mod incari_fastcrystal;
 #[path = "mods/fpsdisplay/runtime.rs"]
 pub mod incari_fpsdisplay;
 #[path = "mods/freelook/runtime.rs"]
