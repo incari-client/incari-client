@@ -1383,7 +1383,7 @@ public final class SmokeTest {
             constructor.setAccessible(true);
             return constructor.newInstance(
                     new TitleScreen(),
-                    "0.1.5",
+                    "0.1.6",
                     java.util.List.of(
                             "Buttons and text fit their boxes on small screens and at browser zoom.",
                             "The default GUI scale is one step smaller, so menus leave room for the game."));

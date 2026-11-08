@@ -10,7 +10,7 @@ use crate::paint::Measure;
 /// What the build was made from (`incari.properties`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct BuildInfo {
-    /// `incari.version`: this tree's Incari Client version (`0.1.5`).
+    /// `incari.version`: this tree's Incari Client version (`0.1.6`).
     pub version: String,
     /// `incari.repository`: the public repository, where the notice and the credits lead.
     pub repository: String,
@@ -243,13 +243,13 @@ mod tests {
         }
     }
 
-    const PROPERTIES: &str = "# comment\nincari.version=0.1.5\nincari.repository=https://github.com/incari-client/incari-client\n\
+    const PROPERTIES: &str = "# comment\nincari.version=0.1.6\nincari.repository=https://github.com/incari-client/incari-client\n\
         incari.featured=Carrotcraft|wss://eagler.carrot-craft.org\nhorizon.repository=https://github.com/x/horizon-web.git\nhorizon.revision=abc\n";
 
     #[test]
     fn reads_incari_properties() {
         let b = BuildInfo::from_properties(PROPERTIES, true);
-        assert_eq!(b.version, "0.1.5");
+        assert_eq!(b.version, "0.1.6");
         assert_eq!(b.featured, "Carrotcraft|wss://eagler.carrot-craft.org");
         assert_eq!(
             b.horizon_page("LICENSE"),
@@ -260,11 +260,11 @@ mod tests {
 
     #[test]
     fn compares_releases_as_java_does() {
-        assert!(newer("0.2.0", "0.1.5"));
+        assert!(newer("0.2.0", "0.1.6"));
         assert!(newer("1.10", "1.9.9"));
         assert!(!newer("1.2", "1.2.0"));
-        assert!(!newer("0.1.4", "0.1.5"));
-        assert!(!newer("0.2.0-beta", "0.1.5"));
+        assert!(!newer("0.1.4", "0.1.6"));
+        assert!(!newer("0.2.0-beta", "0.1.6"));
         assert!(!newer("1.2.3.4.5", "0.1"));
         assert!(!newer("1234567", "0.1"));
         assert!(note("Faster chunk loading"));
@@ -292,7 +292,7 @@ mod tests {
         assert_eq!(notice.hint, NOTES_HINT);
         assert_eq!(notice.notes, ["Faster"]);
         assert_eq!(
-            Notice::now(&release, false, &Service(Some("0.1.5"), false, vec![])),
+            Notice::now(&release, false, &Service(Some("0.1.6"), false, vec![])),
             None
         );
         let needed = Notice::now(&release, false, &Service(None, true, vec![])).unwrap();
