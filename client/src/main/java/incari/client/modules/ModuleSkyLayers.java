@@ -282,8 +282,9 @@ public final class ModuleSkyLayers {
     }
 
     /**
-     * A cube 200 across around the camera, each face a sixth of the texture: OptiFine's layout, the
-     * bottom face from the grid's middle of the lower row, and its faces in OptiFine's order.
+     * A cube 200 across around the camera, each face a sixth of the texture: OptiFine's layout (the
+     * bottom face from the grid's top left, the top from its top middle) and its faces in OptiFine's
+     * order.
      */
     private static GpuBuffer cube() {
         GpuBuffer built = cube;
@@ -294,13 +295,16 @@ public final class ModuleSkyLayers {
                 ByteBufferBuilder.exactlySized(24 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
             BufferBuilder builder =
                     new BufferBuilder(bytes, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            // OptiFine turns every face by Y(-90) X(90) Z(-90) first: the sky's frame, then its
+            // own. Together that's X(90); without it the sky lies on its side.
+            float quarter = (float) (Math.PI / 2);
             Matrix4f pose = new Matrix4f();
-            face(builder, pose, 4);
-            face(builder, pose.rotationX((float) (Math.PI / 2)), 1);
-            face(builder, pose.rotationX((float) (-Math.PI / 2)), 0);
-            face(builder, pose.rotationZ((float) (Math.PI / 2)), 5);
-            face(builder, pose.rotationZ((float) Math.PI), 2);
-            face(builder, pose.rotationZ((float) (Math.PI * 1.5)), 3);
+            face(builder, pose.rotationX(quarter), 4);
+            face(builder, pose.rotationX(quarter).rotateX(quarter), 1);
+            face(builder, pose.rotationX(quarter).rotateX(-quarter), 0);
+            face(builder, pose.rotationX(quarter).rotateZ(quarter), 5);
+            face(builder, pose.rotationX(quarter).rotateZ((float) Math.PI), 2);
+            face(builder, pose.rotationX(quarter).rotateZ(quarter * 3), 3);
             try (MeshData mesh = builder.buildOrThrow()) {
                 built = RenderSystem.getDevice().createBuffer(() -> "Custom sky cube", 40, mesh.vertexBuffer());
             }
