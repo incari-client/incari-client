@@ -51,8 +51,8 @@ final class ModuleListScreen extends Screen {
     private static final int CARD_HEIGHT = 46;
     private static final int GAP = 6;
     private static final int SCROLL_STEP = 24;
-    private static final Component EDIT_HUD = Component.literal("Edit HUD");
-    private static final Component COSMETICS = Component.literal("Cosmetics");
+    private static final Component EDIT_HUD = Component.literal("编辑 HUD");
+    private static final Component COSMETICS = Component.literal("外观");
     /** The narrowest the search field gets before Edit HUD and Cosmetics lose their words. */
     private static final int MIN_SEARCH = 80;
     /** An icon-only menu button: the icon and its margins. */
@@ -79,7 +79,7 @@ final class ModuleListScreen extends Screen {
     private int shown;
 
     ModuleListScreen(@Nullable Screen parent, ModuleSystem system) {
-        super(Component.literal("Modules"));
+        super(Component.literal("模块"));
         this.parent = parent;
         this.system = system;
     }
@@ -109,7 +109,7 @@ final class ModuleListScreen extends Screen {
         // categories don't run into the Theme, GUI and Profile lines.
         int step = y + counts.size() * (ENTRY + 2) + ENTRY + 2 <= bottom - 3 * (ENTRY + 2) ? ENTRY + 2 : ENTRY;
         addRenderableWidget(new Entry(
-                Component.literal("All"),
+                Component.literal("全部"),
                 String.valueOf(listed),
                 x,
                 y,
@@ -135,7 +135,7 @@ final class ModuleListScreen extends Screen {
         Module theme = system.module("theme");
         if (theme != null) {
             addRenderableWidget(new Entry(
-                    Component.literal("Theme"),
+                    Component.literal("主题"),
                     theme.settings().get("preset") instanceof ChoiceSetting<?> preset ? preset.label() : "",
                     x,
                     bottom - 3 * step,
@@ -144,12 +144,12 @@ final class ModuleListScreen extends Screen {
                     () -> IncariModules.openSettings(this, theme)));
         }
         addRenderableWidget(new Entry(
-                Component.literal("GUI"), label(Look.preset()), x, bottom - 2 * step, entryWidth, () -> false, () -> {
+                Component.literal("界面"), label(Look.preset()), x, bottom - 2 * step, entryWidth, () -> false, () -> {
                     Look.set(Look.normal() ? GuiPreset.POTATO : GuiPreset.NORMAL);
                     rebuildWidgets();
                 }));
         addRenderableWidget(new Entry(
-                Component.literal("Profile"),
+                Component.literal("配置"),
                 system.activeProfile(),
                 x,
                 bottom - step,
@@ -191,9 +191,9 @@ final class ModuleListScreen extends Screen {
             cosmetics.setTooltip(Ui.tooltip(COSMETICS.getString()));
         }
         EditBox search = Ui.textField(
-                font, Component.literal("Search"), gridWidth - editWidth - cosmeticsWidth - 2 * Theme.GAP, 64);
+                font, Component.literal("搜索"), gridWidth - editWidth - cosmeticsWidth - 2 * Theme.GAP, 64);
         search.setPosition(gridX, panelY + PADDING);
-        search.setHint(Component.literal("Search modules"));
+        search.setHint(Component.literal("搜索模块"));
         search.setValue(query);
         search.setResponder(text -> {
             query = text;
@@ -290,7 +290,7 @@ final class ModuleListScreen extends Screen {
         if (shown == 0) {
             graphics.centeredText(
                     font,
-                    Component.literal("No modules match \"" + query.trim() + "\""),
+                    Component.literal("没有符合 \"" + query.trim() + "\" 的模块"),
                     gridX + gridWidth / 2,
                     gridY + 24,
                     Theme.MUTED);
@@ -319,8 +319,10 @@ final class ModuleListScreen extends Screen {
     }
 
     private static String label(GuiPreset preset) {
-        String name = preset.name().toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        return switch (preset) {
+            case POTATO -> "土豆";
+            case NORMAL -> "普通";
+        };
     }
 
     /** A line in the sidebar: a category, the GUI preset, the profile. */

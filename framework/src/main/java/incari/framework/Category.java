@@ -5,13 +5,13 @@ public enum Category {
     /** Information drawn on the HUD: keystrokes, FPS, coordinates, armor. */
     HUD("HUD"),
     /** Combat: displays and the feel of fighting. */
-    COMBAT("Combat"),
+    COMBAT("战斗"),
     /** How the player moves: toggle sprint, toggle sneak. */
-    MOVEMENT("Movement"),
+    MOVEMENT("移动"),
     /** How the world looks: zoom, freelook, the crosshair, presets. */
-    VISUAL("Visual"),
+    VISUAL("视觉"),
     /** Everything else: chat, screenshots, waypoints. */
-    UTILITY("Utility");
+    UTILITY("实用");
 
     private final String label;
 
