@@ -412,6 +412,18 @@ public final class ModuleSystem {
     }
 
     /**
+     * Replaces every profile with the ones a settings transfer brings and applies its active one.
+     *
+     * @return false if the profiles couldn't be written
+     */
+    public boolean replaceProfiles(Profiles.Transfer transfer) {
+        return profileChange("replace the profiles", () -> {
+            profiles.replaceAll(transfer);
+            return true;
+        });
+    }
+
+    /**
      * Applies a preset (1.8 PvP, Modern PvP, QoL): switches to the profile {@code name} (copying the
      * active one if it doesn't exist), then turns on exactly the modules in {@code on} and the rest
      * off. Always-on modules aren't switched, and unknown ids are skipped. Settings stay as they were

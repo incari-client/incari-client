@@ -206,3 +206,15 @@ support; worn cosmetics then stay on the device.
 - Logs passwords, tokens or recovery codes.
 - Waits on the service: nothing in the game blocks on an answer, and without a service the client
   behaves as if accounts didn't exist.
+
+
+## Client state
+
+A signed-in client MAY add a `clientState` string to the `settings` request. The service keeps it
+against the account and hands it back inside `settings` on `signup`, `signin`, `resume` and
+`recover`. It holds the client's settings bundle (the `incari-settings.json` content: client
+switches, client keybinds, module profiles) minified, and the whole message must stay within the
+message-size cap; a bundle that no longer fits is not pushed rather than truncated.
+
+A service that does not keep client state answers `bad_request`; the client then stops pushing for
+the session and everything else keeps working.

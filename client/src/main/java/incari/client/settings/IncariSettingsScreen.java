@@ -116,6 +116,21 @@ public final class IncariSettingsScreen extends ListScreen {
                 "Once a day, sends Incari a random number, the version and the build, nothing else. "
                         + "It helps us know how many people play.",
                 ClientSettings.USAGE_COUNTS));
+        rows.add(list.heading(Component.literal("Transfer")));
+        rows.add(list.row(
+                Component.literal("Settings file"),
+                "One file with these switches, the client's keybinds and every profile: export it to keep or share, import one back.",
+                List.of(
+                        Ui.button(Component.literal("Export"), Theme.SMALL_BUTTON_WIDTH, SettingsTransfer::export),
+                        Ui.button(
+                                Component.literal("Import"),
+                                Theme.SMALL_BUTTON_WIDTH,
+                                () -> SettingsTransfer.openImport(this)),
+                        Ui.button(
+                                Component.literal("From account"),
+                                Theme.SMALL_BUTTON_WIDTH,
+                                () -> SettingsTransfer.importFromAccount(this))),
+                () -> {}));
         return rows;
     }
 

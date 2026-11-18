@@ -11,8 +11,11 @@ import incari.framework.Module;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
@@ -163,6 +166,55 @@ public final class Profiles {
             }
         }
         return true;
+    }
+
+    /**
+     * The profiles of a settings file: a name to the profile as {@link ProfileCodec} JSON, and the
+     * name of the one that applies.
+     */
+    public record Transfer(String active, JsonObject data) {
+
+        /** Builds one, dropping names that can't name a profile and entries that aren't objects. */
+        public static Transfer of(@Nullable String active, JsonObject data) {
+            JsonObject kept = new JsonObject();
+            for (Map.Entry<String, JsonElement> entry : data.entrySet()) {
+                if (validName(entry.getKey()) && entry.getValue().isJsonObject()) {
+                    kept.add(entry.getKey(), entry.getValue());
+                }
+            }
+            return new Transfer(active == null || active.isBlank() ? DEFAULT : active, kept);
+        }
+    }
+
+    /**
+     * Replaces every profile with {@code transfer}'s, keeping entries for modules this build doesn't
+     * have as the file has them, then makes {@code transfer}'s active one active and applies it. An
+     * active that isn't one of the names falls back to the first profile left.
+     */
+    public void replaceAll(Transfer transfer) throws IOException {
+        Set<String> kept = new HashSet<>();
+        List<String> keptNames = new ArrayList<>();
+        for (Map.Entry<String, JsonElement> entry : transfer.data().entrySet()) {
+            String name = entry.getKey();
+            storage.write(file(name), pretty(entry.getValue().getAsJsonObject()));
+            kept.add(name.toLowerCase(Locale.ROOT));
+            keptNames.add(name);
+        }
+        for (String name : List.copyOf(names)) {
+            if (!kept.contains(name.toLowerCase(Locale.ROOT))) {
+                storage.delete(file(name));
+            }
+        }
+        names.clear();
+        if (keptNames.isEmpty()) {
+            names.add(DEFAULT);
+        } else {
+            names.addAll(keptNames);
+        }
+        int at = indexOf(transfer.active());
+        this.active = at >= 0 ? names.get(at) : names.get(0);
+        apply(this.active);
+        writeIndex();
     }
 
     private void apply(String name) throws IOException {

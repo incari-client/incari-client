@@ -524,4 +524,39 @@ class OnlineServiceTest {
                 .findFirst()
                 .orElseThrow();
     }
+    @Test
+    void clientStateSavesAgainstTheAccount() {
+        Client client = signedUp("Frost");
+        Result<Void> saved =
+                client.<Void>await(done -> client.service.saveClientState("{\"app\":\"incari-settings\"}", done));
+        assertThat(saved.ok()).isTrue();
+        assertThat(client.service.clientState()).isEqualTo("{\"app\":\"incari-settings\"}");
+    }
+
+    @Test
+    void clientStateFollowsTheAccountToAnotherClient() {
+        Client first = signedUp("Frost");
+        assertThat(
+                        first.<Void>await(done -> first.service.saveClientState("{\"app\":\"incari-settings\"}", done))
+                                .ok())
+                .isTrue();
+        Client second = new Client(fake, first.storage);
+        second.service.start();
+        second.service.tick();
+        second.service.tick();
+        second.settle();
+        assertThat(second.service.status()).isEqualTo(Status.SIGNED_IN);
+        assertThat(second.service.clientState()).isEqualTo("{\"app\":\"incari-settings\"}");
+    }
+
+    @Test
+    void aServiceWithoutClientStateStopsSyncingQuietly() {
+        fake.rejectClientState = true;
+        Client client = signedUp("Frost");
+        Result<Void> saved =
+                client.<Void>await(done -> client.service.saveClientState("{\"app\":\"incari-settings\"}", done));
+        assertThat(saved.failure()).isEqualTo(Failure.REJECTED);
+        assertThat(client.service.clientStateSupported()).isFalse();
+    }
+
 }

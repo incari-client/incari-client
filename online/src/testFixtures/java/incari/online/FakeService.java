@@ -37,6 +37,8 @@ public final class FakeService implements PlatformNetwork {
     int protocol = OnlineService.PROTOCOL;
     boolean reachable = true;
     boolean answerHello = true;
+    /** When set, the service turns a clientState save away, as an older service would. */
+    boolean rejectClientState;
 
     /** The latest release {@code hello} names, or none. */
     @Nullable
@@ -85,6 +87,7 @@ public final class FakeService implements PlatformNetwork {
         String messages = "friends";
         boolean friendRequests = true;
         boolean badge = true;
+        String clientState;
         /** What the account wears (ADR 0061), and the cosmetics it was given past the free ones. */
         List<String> equipped = new ArrayList<>();
 
@@ -401,6 +404,13 @@ public final class FakeService implements PlatformNetwork {
                         message.has("badge") && message.get("badge").getAsBoolean() != account.badge;
                 if (message.has("badge")) {
                     account.badge = message.get("badge").getAsBoolean();
+                }
+                if (rejectClientState && message.has("clientState")) {
+                    socket.say(err(id, "bad_request"));
+                    return;
+                }
+                if (message.has("clientState")) {
+                    account.clientState = message.get("clientState").getAsString();
                 }
                 socket.say(ok(id));
                 if (badgeChanged) {
@@ -1055,6 +1065,9 @@ public final class FakeService implements PlatformNetwork {
         settings.addProperty("messages", account.messages);
         settings.addProperty("friendRequests", account.friendRequests);
         settings.addProperty("badge", account.badge);
+        if (account.clientState != null) {
+            settings.addProperty("clientState", account.clientState);
+        }
         json.add("settings", settings);
         return json;
     }

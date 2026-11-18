@@ -1,5 +1,7 @@
 package incari.client.settings;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +41,10 @@ public final class ClientSettings {
 
     /** The disconnection screen joins the server again after a countdown ({@code Reconnect}). */
     public static final Flag AUTO_RECONNECT = new Flag("auto-reconnect", false);
+
+    /** Every switch, for a settings file's export and import. */
+    private static final Flag[] FLAGS = {COPY_SCREENSHOTS, USAGE_COUNTS, SHOW_BADGES, RECORD_MICROPHONE, AUTO_RECONNECT
+    };
 
     private static final Map<String, String> VALUES = new TreeMap<>();
     private static @Nullable Path file;
@@ -103,6 +109,25 @@ public final class ClientSettings {
             Files.writeString(path, lines, StandardCharsets.UTF_8);
         } catch (IOException e) {
             LOGGER.warn("Couldn't save {}: {}", path, e.toString());
+        }
+    }
+
+    /** Every switch as JSON, for a settings file. */
+    public static JsonObject export() {
+        JsonObject settings = new JsonObject();
+        for (Flag flag : FLAGS) {
+            settings.addProperty(flag.key(), flag.get() ? "true" : "false");
+        }
+        return settings;
+    }
+
+    /** Sets the switches {@code settings} name, and saves. */
+    public static void importFrom(JsonObject settings) {
+        for (Flag flag : FLAGS) {
+            JsonElement value = settings.get(flag.key());
+            if (value != null && value.isJsonPrimitive()) {
+                put(flag.key(), value.getAsString());
+            }
         }
     }
 

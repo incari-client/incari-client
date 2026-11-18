@@ -177,6 +177,12 @@ public final class OnlineService implements Online {
 
     private boolean shareServer = true;
     private boolean badge = true;
+
+    /** The client state the service keeps for the account (the settings bundle in one string). */
+    private @Nullable String clientState;
+
+    /** Whether the service keeps client state at all: false once it turned a save away. */
+    private boolean clientStateSupported = true;
     private long revision;
     /**
      * Counts sign-ups and local sign-outs: a proof of work or resume answer that finds it changed is
@@ -1549,6 +1555,45 @@ public final class OnlineService implements Online {
         open.sendText(text);
     }
 
+    /**
+     * The client state the service keeps for the account (the settings bundle in one JSON
+     * string), or null if it keeps none.
+     */
+    public @Nullable String clientState() {
+        return clientState;
+    }
+
+    /** Whether the service keeps client state: false once it turned a save away. */
+    public boolean clientStateSupported() {
+        return clientStateSupported;
+    }
+
+    /**
+     * Saves {@code json} as the account's client state, so signing in elsewhere can restore it
+     * (docs/online-protocol.md, {@code clientState}). A service that doesn't keep client state
+     * answers {@code bad_request}; the sync then stays off for the session instead of failing
+     * every save.
+     */
+    public void saveClientState(String json, Consumer<Result<Void>> done) {
+        if (!signedInAndConnected(done)) {
+            return;
+        }
+        JsonObject form = request("settings");
+        form.addProperty("clientState", json);
+        send(
+                form,
+                answer -> {
+                    Result<Void> result = done(answer, Failure.REJECTED);
+                    if (result.ok()) {
+                        clientState = json;
+                        revision++;
+                    } else if (result.failure() == Failure.REJECTED) {
+                        clientStateSupported = false;
+                    }
+                    done.accept(result);
+                });
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Signing in and out
     // ---------------------------------------------------------------------------------------------
@@ -1600,6 +1645,10 @@ public final class OnlineService implements Online {
                 settings.has("friendRequests")
                         ? settings.get("friendRequests").getAsBoolean()
                         : social.friendRequests());
+        // A service before client state existed leaves it out.
+        if (settings.has("clientState") && settings.get("clientState").isJsonPrimitive()) {
+            clientState = settings.get("clientState").getAsString();
+        }
     }
 
     private void signedOutHere() {
@@ -1611,6 +1660,7 @@ public final class OnlineService implements Online {
         accountName = null;
         shareServer = true;
         badge = true;
+        clientState = null;
         world.askAll();
         if (connection != null && greeted) {
             setStatus(Status.SIGNED_OUT);
