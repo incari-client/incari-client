@@ -1,5 +1,8 @@
 package incari.client;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 
 /**
@@ -41,6 +44,39 @@ public final class IncariKeys {
      */
     public static final KeyMapping RECORD_SCREEN =
             new KeyMapping("Incari - Record Screen", 65, KeyMapping.Category.MISC);
+
+    /** The binds as JSON (a name to the game's save string), for a settings file. */
+    public static JsonObject export() {
+        JsonObject keys = new JsonObject();
+        for (KeyMapping mapping : all()) {
+            keys.addProperty(mapping.getName(), mapping.saveString());
+        }
+        return keys;
+    }
+
+    /** Sets the binds {@code keys} name, and rebuilds the game's key lookup. */
+    public static void importFrom(JsonObject keys) {
+        boolean changed = false;
+        for (KeyMapping mapping : all()) {
+            JsonElement value = keys.get(mapping.getName());
+            if (value == null || !value.isJsonPrimitive()) {
+                continue;
+            }
+            String saved = value.getAsString();
+            if (saved.equals(mapping.saveString())) {
+                continue;
+            }
+            InputConstants.Key key = InputConstants.getKey(saved);
+            if (key == InputConstants.UNKNOWN) {
+                continue;
+            }
+            mapping.setKey(key);
+            changed = true;
+        }
+        if (changed) {
+            KeyMapping.resetMapping();
+        }
+    }
 
     /** Every Incari key mapping, as a new array for the game's list. */
     public static KeyMapping[] all() {

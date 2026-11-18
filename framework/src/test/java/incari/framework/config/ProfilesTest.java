@@ -2,6 +2,8 @@ package incari.framework.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import incari.framework.Category;
 import incari.framework.Module;
 import incari.framework.setting.ColorSetting;
@@ -134,5 +136,45 @@ class ProfilesTest {
         assertThat(ProfileCodec.parseColor("#80000000")).isEqualTo(0x80000000);
         assertThat(ProfileCodec.parseColor("00AA11")).isNull();
         assertThat(ProfileCodec.parseColor("#GG0000")).isNull();
+    }
+
+    @Test
+    void replaceAllSwapsEveryProfileInAndAppliesTheNewOne() {
+        Sample sample = new Sample();
+        TestGame game = new TestGame(sample);
+        game.system().createProfile("PvP");
+        sample.amount.set(9);
+        sample.setEnabled(true);
+        game.system().flush();
+        String saved = game.files.get("profiles/PvP.json");
+        assertThat(saved).isNotNull();
+
+        JsonObject data = new JsonObject();
+        data.add("Fresh", JsonParser.parseString(saved));
+        assertThat(game.system().replaceProfiles(Profiles.Transfer.of("Fresh", data)))
+                .isTrue();
+
+        assertThat(game.system().profiles()).containsExactly("Fresh");
+        assertThat(game.system().activeProfile()).isEqualTo("Fresh");
+        assertThat(sample.amount.get()).isEqualTo(9);
+        assertThat(sample.isEnabled()).isTrue();
+        assertThat(game.files).containsKey("profiles/Fresh.json");
+        assertThat(game.files).doesNotContainKey("profiles/PvP.json");
+    }
+
+    @Test
+    void replaceAllWithNothingLeftFallsBackToDefaults() {
+        Sample sample = new Sample();
+        TestGame game = new TestGame(sample);
+        game.system().createProfile("PvP");
+        sample.amount.set(9);
+        game.system().flush();
+
+        assertThat(game.system().replaceProfiles(Profiles.Transfer.of("PvP", new JsonObject())))
+                .isTrue();
+        assertThat(game.system().profiles()).containsExactly("Default");
+        assertThat(game.system().activeProfile()).isEqualTo("Default");
+        assertThat(sample.amount.get()).isEqualTo(3);
+        assertThat(game.files).doesNotContainKey("profiles/PvP.json");
     }
 }
